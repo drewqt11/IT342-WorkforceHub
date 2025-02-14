@@ -34,8 +34,8 @@
         <li><a href="#installation">Installation</a></li>
       </ul>
     </li>
-     <li><a href="#additional-resources"> <h5>Additional Resources</h5></a></li>
-     <li><a href="#contact"> <h5>Developers Profile</h5></a></li>
+     <li><a href="#additional-resources">Additional Resources</a></li>
+     <li><a href="#contact">Developers Profile></a></li>
   </ol>
 </details>
 
