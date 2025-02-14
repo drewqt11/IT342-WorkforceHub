@@ -1,7 +1,7 @@
 <!-- PROJECT LOGO -->
 <div align="center">
     <img src="https://github.com/drewqt11/IT342-WorkforceHub/blob/e5f8f7fd261957a151ab8211379f5259c50f63ed/logoText.png" alt="logoText">
-    <h3>HR Management System READ ME</h3>
+    <h3>HR Information System READ ME</h3>
 </div>
 <details>
   <summary>Table of Contents</summary>
