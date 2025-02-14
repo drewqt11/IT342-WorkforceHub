@@ -41,20 +41,9 @@
 
 
 
-## About The Project
+## Product Description
 
 The **HR Management System** is a comprehensive platform designed to streamline and optimize the core functions of Human Resources. Built to simplify processes like employee data management, attendance tracking, payroll processing, performance evaluations, and recruitment, this system serves as an all-in-one solution for HR departments of any size. By centralizing data and automating repetitive tasks, it reduces administrative workload and helps HR teams focus on strategic activities, such as talent development and employee engagement.
-
-
-### Key Features
-- **Employee Profiles**: Centralized database for managing employee records and personal information.
-- **Attendance Management**: Efficiently track attendance, leaves, and absences with real-time counts for absentees, leaves, and those present, while providing comprehensive records, with overtime and  regular hours record to ensure transparency and accountability.
-- **Payroll Management**: Automated calculations, deductions, and payments with secure storage and accessibility
-- **Performance Management**: Tools for peer feedback, self-assessment, supervisor feedback, and sanction reporting
-- **Recruitment Tools**: Simplifies the hiring process with applicant tracking, resume management, and scheduling capabilities.
-- **Analytics Dashboard**: Real-time insights into HR data to support decision-making and compliance.
-
-
 
 
 ## Built With  
@@ -63,6 +52,14 @@ The **HR Management System** is a comprehensive platform designed to streamline 
 - **Database**: PostgreSQL - A powerful and reliable database system for managing structured data.  
 - **Frontend**: Tailwind CSS - A utility-first CSS framework for designing responsive and customizable user interfaces.  
 
+
+## List Of Features
+- **Employee Profiles**: Centralized database for managing employee records and personal information.
+- **Attendance Management**: Efficiently track attendance, leaves, and absences with real-time counts for absentees, leaves, and those present, while providing comprehensive records, with overtime and  regular hours record to ensure transparency and accountability.
+- **Payroll Management**: Automated calculations, deductions, and payments with secure storage and accessibility
+- **Performance Management**: Tools for peer feedback, self-assessment, supervisor feedback, and sanction reporting
+- **Recruitment Tools**: Simplifies the hiring process with applicant tracking, resume management, and scheduling capabilities.
+- **Analytics Dashboard**: Real-time insights into HR data to support decision-making and compliance.
 
 ## Getting Started
 
@@ -149,27 +146,6 @@ Ensure you have the following:
    - To run SQL commands, right-click on the database and select `Query Tool`.
 
 
-## Usage
-
-1. **Run Migrations**
-   ```bash
-   python manage.py makemigrations
-   python manage.py migrate
-   ```
-
-2. **Start the Development Server**
-   ```bash
-   python manage.py runserver
-   ```
-
-3. **Access the Application**
-   Visit `http://127.0.0.1:8000/` in your browser.
-
-4. **Explore Features**
-   - Leverage the Django admin panel for CRUD operations.
-   - Use the Tailwind-enhanced interface for a smooth user experience.
-
-
 
 ## Contact
 
@@ -183,13 +159,6 @@ Ensure you have the following:
 - [Functional Requirements Document](https://docs.google.com/document/d/1wRUX7TfamZ61ei4otYVEJMC07NCnUOh7NaZMVRlH61s/edit?tab=t.0)
 - 
 
-
-
-## Acknowledgments
-
-- [Django Documentation](https://docs.djangoproject.com/)
-- [PostgreSQL Documentation](https://www.postgresql.org/docs/)
-- Special thanks to the open-source community.
 
 
 
