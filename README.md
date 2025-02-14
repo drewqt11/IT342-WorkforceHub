@@ -8,14 +8,14 @@
   <summary>Table of Contents</summary>
   <ol>
     <li>
-      <a href="#about-the-project">About The Project</a>
+      <h5>About The Project</h5>
       <ul>
         <li><a href="#product-description">Product Description</a></li>
           <li><a href="#built-with">Built With</a></li>
       </ul>
     </li>
        <li>
-      <a href="#list-of-features">List of Features</a>
+       <h5>List of Features</h5>
       <ul>
         <li><a href="#feature-1">Feature 1</a></li>
         <li><a href="#feature-2">Feature 2</a></li>
@@ -28,14 +28,14 @@
       </ul>
     </li>
     <li>
-      <a href="#getting-started">Getting Started</a>
+       <h5>Getting Started</h5>
       <ul>
         <li><a href="#prerequisites">Prerequisites</a></li>
         <li><a href="#installation">Installation</a></li>
       </ul>
     </li>
-     <li><a href="#additional-resources">Additional Resources</a></li>
-     <li><a href="#contact">Developers Profile</a></li>
+     <li><a href="#additional-resources"> <h5>Additional Resources</h5></a></li>
+     <li><a href="#contact"> <h5>Developers Profile</h5></a></li>
   </ol>
 </details>
 
