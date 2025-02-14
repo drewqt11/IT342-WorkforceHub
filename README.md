@@ -1,6 +1,6 @@
 <!-- PROJECT LOGO -->
 <div align="center">
-    <img src="https://github.com/drewqt11/IT342-WorkforceHub/blob/e5f8f7fd261957a151ab8211379f5259c50f63ed/logoText.png" alt="logoText">
+    <img src="https://github.com/drewqt11/IT342-WorkforceHub/blob/bd1cc260de64edbaacd0f03b2e5184805cd76570/Logo%20with%20Background.png" alt="logoText">
     <h3>HR Information System READ ME</h3>
 </div>
 <details>
@@ -26,6 +26,29 @@
   </ol>
 </details>
 
+<details>
+  <summary>Table of Contents</summary>
+  <ol>
+    <li>
+      <a href="#about-the-project">About The Project</a>
+      <ul>
+        <li><a href="#product-description">Product Description</a></li>
+          <li><a href="#built-with">Built With</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#getting-started">Getting Started</a>
+      <ul>
+        <li><a href="#prerequisites">Prerequisites</a></li>
+        <li><a href="#installation">Installation</a></li>
+      </ul>
+    </li>
+    <li><a href="#usage">Usage</a></li>
+    <li><a href="#contact">Contact</a></li>
+     <li><a href="#additional-resources">Additional Resources</a></li>
+    <li><a href="#acknowledgments">Acknowledgments</a></li>
+  </ol>
+</details>
 
 
 
