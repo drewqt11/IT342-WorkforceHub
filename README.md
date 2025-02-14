@@ -1,6 +1,6 @@
 <!-- PROJECT LOGO -->
 <div align="center">
-    <img src="https://github.com/user-attachments/assets/c56ec18e-af4d-42a2-8def-772cbefbb604" alt="logoText">
+    <img src="[https://github.com/user-attachments/assets/c56ec18e-af4d-42a2-8def-772cbefbb604](https://github.com/drewqt11/IT342-WorkforceHub/blob/e5f8f7fd261957a151ab8211379f5259c50f63ed/logoText.png)" alt="logoText">
     <h3>HR Management System READ ME</h3>
 </div>
 <details>
