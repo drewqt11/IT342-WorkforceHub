@@ -15,10 +15,16 @@
       </ul>
     </li>
        <li>
-      <a href="#list-of-features">Getting Started</a>
+      <a href="#list-of-features">List of Features</a>
       <ul>
-        <li><a href="#prerequisites">Prerequisites</a></li>
-        <li><a href="#installation">Installation</a></li>
+        <li><a href="#feature-1">Feature 1</a></li>
+        <li><a href="#feature-2">Feature 2</a></li>
+        <li><a href="#feature-3">Feature 3</a></li>
+        <li><a href="#feature-4">Feature 4</a></li>
+        <li><a href="#feature-5">Feature 5</a></li>
+        <li><a href="#feature-6">Feature 6</a></li>
+        <li><a href="#feature-7">Feature 7</a></li>
+        <li><a href="#feature-8">Feature 8</a></li>
       </ul>
     </li>
     <li>
@@ -28,10 +34,8 @@
         <li><a href="#installation">Installation</a></li>
       </ul>
     </li>
-    <li><a href="#usage">Usage</a></li>
-    <li><a href="#contact">Contact</a></li>
      <li><a href="#additional-resources">Additional Resources</a></li>
-    <li><a href="#acknowledgments">Acknowledgments</a></li>
+     <li><a href="#contact">Developers Profile</a></li>
   </ol>
 </details>
 
