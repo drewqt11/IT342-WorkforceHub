@@ -35,7 +35,7 @@
       </ul>
     </li>
      <li><a href="#additional-resources">Additional Resources</a></li>
-     <li><a href="#contact">Developers Profile></a></li>
+     <li><a href="#contact">Developers Profiles</a></li>
   </ol>
 </details>
 
@@ -146,18 +146,18 @@ Ensure you have the following:
    - To run SQL commands, right-click on the database and select `Query Tool`.
 
 
-
-## Contact
-
-  
-- [Katrina Amores](https://github.com/katkatty21): katrina.amores@cit.edu
-
-
-
 ## Additional Resources
 
 - [Functional Requirements Document](https://docs.google.com/document/d/1wRUX7TfamZ61ei4otYVEJMC07NCnUOh7NaZMVRlH61s/edit?tab=t.0)
 - 
+
+
+
+## Developers Profile
+
+  
+- [Katrina Amores](https://github.com/katkatty21): katrina.amores@cit.edu
+
 
 
 
