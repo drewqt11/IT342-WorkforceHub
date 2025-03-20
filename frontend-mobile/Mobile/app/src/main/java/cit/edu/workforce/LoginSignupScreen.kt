@@ -101,7 +101,7 @@ fun LoginSignupScreen(
 ) {
     val gradientColors = listOf(
         Color(0xFF1F1F1F), // Dark gray
-        Color(0xFF121212)  // Almost black
+        Color(0xFF312F2F)  // Almost black
     )
 
     Box(

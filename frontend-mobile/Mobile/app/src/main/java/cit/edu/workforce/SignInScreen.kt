@@ -50,8 +50,7 @@ fun AnimatedButtons(
 
     Button(
         onClick = onClick,
-        modifier = modifier
-            .scale(scale),
+        modifier = modifier.scale(scale),
         shape = RoundedCornerShape(28.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = containerColor,
@@ -66,6 +65,7 @@ fun AnimatedButtons(
         )
     }
 }
+
 @Composable
 fun SignInScreen(
     onSignUpClick: () -> Unit,
@@ -77,7 +77,7 @@ fun SignInScreen(
 
     val gradientColors = listOf(
         Color(0xFF1F1F1F), // Dark gray
-        Color(0xFF121212)  // Almost black
+        Color(0xFF312F2F)  // Almost black
     )
 
     Box(
@@ -93,39 +93,44 @@ fun SignInScreen(
                 .padding(24.dp)
                 .statusBarsPadding()
         ) {
-            Spacer(modifier = Modifier.height(150.dp))
+            Spacer(modifier = Modifier.height(80.dp))
 
             // Header Text
             Text(
                 text = "Hello",
                 color = Color.White,
-                fontSize = 32.sp,
+                fontSize = 36.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 4.dp)
             )
             Text(
                 text = "Sign in!",
                 color = Color.White,
-                fontSize = 32.sp,
+                fontSize = 36.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 32.dp)
             )
+
             Spacer(modifier = Modifier.height(20.dp))
+
             // Input Fields Container
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 3.dp)
-                    .defaultMinSize(minHeight = 300.dp),
-                shape = RoundedCornerShape(24.dp),
+                    .padding(horizontal = 8.dp)
+                    .defaultMinSize(minHeight = 380.dp),
+                shape = RoundedCornerShape(32.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = Color.White
+                ),
+                elevation = CardDefaults.cardElevation(
+                    defaultElevation = 8.dp
                 )
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(24.dp)
+                        .padding(horizontal = 24.dp, vertical = 32.dp)
                 ) {
                     // Gmail Field
                     TextField(
@@ -133,13 +138,14 @@ fun SignInScreen(
                         onValueChange = { email = it },
                         label = { 
                             Text(
-                                "Email"
+                                "Email",
+                                color = if (email.isEmpty()) Color.Gray else Color(0xFF000000)
                             ) 
                         },
                         singleLine = true,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(bottom = 16.dp),
+                            .padding(bottom = 24.dp),
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Email,
                             imeAction = ImeAction.Next
@@ -147,6 +153,7 @@ fun SignInScreen(
                         colors = TextFieldDefaults.colors(
                             focusedContainerColor = Color.Transparent,
                             unfocusedContainerColor = Color.Transparent,
+                            focusedIndicatorColor = Color(0xFF32747E),
                             unfocusedIndicatorColor = Color.LightGray,
                         )
                     )
@@ -157,13 +164,15 @@ fun SignInScreen(
                         onValueChange = { password = it },
                         label = { 
                             Text(
-                                "Password"
+                                "Password",
+                                color = if (password.isEmpty()) Color.Gray else Color(0xFF000000)
                             ) 
                         },
                         singleLine = true,
                         visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                         modifier = Modifier
-                            .fillMaxWidth(),
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp),
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Password,
                             imeAction = ImeAction.Done
@@ -172,15 +181,15 @@ fun SignInScreen(
                             IconButton(onClick = { passwordVisible = !passwordVisible }) {
                                 Icon(
                                     imageVector = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
-                                    contentDescription = if (passwordVisible) "Hide password" else "Show password",
-                                    tint = Color.Gray
+                                    contentDescription = if (passwordVisible) "Hide password" else "Show password"
                                 )
                             }
                         },
                         colors = TextFieldDefaults.colors(
                             focusedContainerColor = Color.Transparent,
                             unfocusedContainerColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.LightGray,
+                            focusedIndicatorColor = Color(0xFF32747E),
+                            unfocusedIndicatorColor = Color.LightGray
                         )
                     )
 
@@ -191,12 +200,12 @@ fun SignInScreen(
                     ) {
                         Text(
                             text = "Forgot password?",
-                            color = Color.Gray,
+                            color = Color(0xFF666666),
                             fontSize = 14.sp
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(32.dp))
 
                     // Sign In Button
                     AnimatedButtons(
@@ -219,15 +228,15 @@ fun SignInScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Don't have account?",
-                    color = Color(0xFFFFFFFF),
-                    fontSize = 14.sp
+                    text = "Don't have account? ",
+                    color = Color.White.copy(alpha = 0.8f),
+                    fontSize = 15.sp
                 )
                 TextButton(onClick = onSignUpClick) {
                     Text(
                         text = "Sign up",
-                        color = Color(0xFFFFFFFF),
-                        fontSize = 14.sp,
+                        color = Color.White,
+                        fontSize = 15.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }
