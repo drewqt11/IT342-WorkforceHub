@@ -6,8 +6,10 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
+import androidx.compose.runtime.Composable
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import cit.edu.workforce.ui.theme.WorkforceHubTheme
 
 class MainActivity : ComponentActivity() {
@@ -16,18 +18,35 @@ class MainActivity : ComponentActivity() {
         setContent {
             WorkforceHubTheme {
                 Surface(
-                    modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    var isLogin by remember { mutableStateOf(true) }
-                    
-                    LoginSignupScreen(
-                        isLogin = isLogin,
-                        onNavigateToSignup = { isLogin = false },
-                        onNavigateToLogin = { isLogin = true }
-                    )
+                    AppNavigation()
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun AppNavigation() {
+    val navController = rememberNavController()
+
+    NavHost(
+        navController = navController,
+        startDestination = "login_signup"
+    ) {
+        composable("login_signup") {
+            LoginSignupScreen(
+                isLogin = true,
+                onNavigateToSignup = { /* Handle later */ },
+                onNavigateToLogin = { navController.navigate("sign_in") }
+            )
+        }
+        composable("sign_in") {
+            SignInScreen(
+                onSignUpClick = { navController.navigate("login_signup") },
+                onForgotPasswordClick = { /* Handle later */ }
+            )
         }
     }
 }
