@@ -4,202 +4,200 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.graphicsLayer
 import cit.edu.workforce.R
 
-@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AnimatedButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    containerColor: Color,
+    contentColor: Color = Color.White,
+    text: String
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.95f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        )
+    )
+
+    Button(
+        onClick = onClick,
+        modifier = modifier
+            .scale(scale),
+        shape = RoundedCornerShape(28.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = containerColor,
+            contentColor = contentColor
+        ),
+        interactionSource = interactionSource
+    ) {
+        Text(
+            text = text,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold
+        )
+    }
+}
+
+@Composable
+fun AnimatedIconButton(
+    onClick: () -> Unit,
+    icon: Int,
+    contentDescription: String,
+    modifier: Modifier = Modifier
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.85f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        )
+    )
+
+    IconButton(
+        onClick = onClick,
+        modifier = modifier
+            .scale(scale),
+        interactionSource = interactionSource
+    ) {
+        Image(
+            painter = painterResource(id = icon),
+            contentDescription = contentDescription,
+            modifier = Modifier.size(24.dp)
+        )
+    }
+}
+
 @Composable
 fun LoginSignupScreen(
     isLogin: Boolean,
     onNavigateToSignup: () -> Unit,
     onNavigateToLogin: () -> Unit
 ) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var confirmPassword by remember { mutableStateOf("") }
+    val gradientColors = listOf(
+        Color(0xFF1F1F1F), // Dark gray
+        Color(0xFF121212)  // Almost black
+    )
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Top
+            .background(
+                brush = Brush.verticalGradient(colors = gradientColors)
+            )
     ) {
-        Spacer(modifier = Modifier.height(48.dp))
-        
-        // Workforce Hub Logo
-        Image(
-            painter = painterResource(id = R.drawable.logo_nobgplain),
-            contentDescription = "Workforce Hub Logo",
+        Column(
             modifier = Modifier
-                .size(300.dp)
-                .padding(bottom = 24.dp),
-            contentScale = ContentScale.Fit
-        )
+                .fillMaxSize()
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Spacer(modifier = Modifier.weight(0.5f))
 
-        // App Name
-//        Text(
-//            text = "Workforce Hub",
-//            fontSize = 28.sp,
-//            fontWeight = FontWeight.Bold,
-//            color = MaterialTheme.colorScheme.primary,
-//            textAlign = TextAlign.Center,
-//            modifier = Modifier.padding(bottom = 8.dp)
-//        )
-        
-        // Welcome Text
-//        Text(
-//            text = if (isLogin) "The all-in-one HR Platform" else "Create Account",
-//            fontSize = 20.sp,
-//            fontWeight = FontWeight.Medium,
-//            color = MaterialTheme.colorScheme.onBackground,
-//            textAlign = TextAlign.Center,
-//            modifier = Modifier.padding(bottom = 32.dp)
-//        )
-
-        // Email Field
-        OutlinedTextField(
-            value = email,
-            onValueChange = { email = it },
-            label = { Text("Email") },
-            leadingIcon = {
-                Icon(
-                    imageVector = Icons.Default.Email,
-                    contentDescription = "Email",
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            },
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Email,
-                imeAction = ImeAction.Next
-            ),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = TextFieldDefaults.outlinedTextFieldColors(
-                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                unfocusedBorderColor = MaterialTheme.colorScheme.outline
+            // Logo
+            Image(
+                painter = painterResource(id = R.drawable.logo_nowhitebg),
+                contentDescription = "Fitness Club Logo",
+                modifier = Modifier
+                    .size(230.dp),
+                contentScale = ContentScale.Fit
             )
-        )
+            Spacer(modifier = Modifier.height(60.dp))
 
-        // Password Field
-        OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("Password") },
-            leadingIcon = {
-                Icon(
-                    imageVector = Icons.Default.Lock,
-                    contentDescription = "Password",
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            },
-            visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Password,
-                imeAction = if (isLogin) ImeAction.Done else ImeAction.Next
-            ),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = if (isLogin) 24.dp else 16.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = TextFieldDefaults.outlinedTextFieldColors(
-                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                unfocusedBorderColor = MaterialTheme.colorScheme.outline
-            )
-        )
-
-        // Confirm Password Field (only for signup)
-        if (!isLogin) {
-            OutlinedTextField(
-                value = confirmPassword,
-                onValueChange = { confirmPassword = it },
-                label = { Text("Confirm Password") },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.Lock,
-                        contentDescription = "Confirm Password",
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                },
-                visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Password,
-                    imeAction = ImeAction.Done
-                ),
+            // Sign In Button
+            AnimatedButton(
+                onClick = onNavigateToLogin,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 24.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = TextFieldDefaults.outlinedTextFieldColors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
-                )
+                    .height(56.dp),
+                containerColor = Color(0xFF32747E),
+                text = "SIGN IN"
             )
-        }
 
-        // Action Button
-        Button(
-            onClick = { /* Handle login/signup */ },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary
-            )
-        ) {
-            Text(
-                text = if (isLogin) "Sign In" else "Sign Up",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold
-            )
-        }
+            Spacer(modifier = Modifier.height(16.dp))
 
-        // Toggle between Login and Signup
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 16.dp),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = if (isLogin) "Don't have an account? " else "Already have an account? ",
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+            // Sign Up Button
+            AnimatedButton(
+                onClick = { /* Handle sign up */ },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                containerColor = Color.White,
+                contentColor = Color(0xFF000000),
+                text = "SIGN UP"
             )
-            TextButton(
-                onClick = if (isLogin) onNavigateToSignup else onNavigateToLogin,
-                colors = ButtonDefaults.textButtonColors(
-                    contentColor = MaterialTheme.colorScheme.primary
-                )
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // Social Media Login Text
+            Text(
+                text = "Or continue with",
+                color = Color.White,
+                fontSize = 14.sp,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+
+            // Social Media Icons Row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = if (isLogin) "Sign Up" else "Sign In",
-                    fontWeight = FontWeight.Bold
+                // Google Icon
+                AnimatedIconButton(
+                    onClick = { /* Handle Google login */ },
+                    icon = R.drawable.ic_google,
+                    contentDescription = "Login with Google",
+                    modifier = Modifier.size(40.dp)
+                )
+
+                Spacer(modifier = Modifier.width(24.dp))
+
+                // Facebook Icon
+                AnimatedIconButton(
+                    onClick = { /* Handle Facebook login */ },
+                    icon = R.drawable.ic_facebook,
+                    contentDescription = "Login with Facebook",
+                    modifier = Modifier.size(40.dp)
+                )
+
+                Spacer(modifier = Modifier.width(24.dp))
+
+                // GitHub Icon
+                AnimatedIconButton(
+                    onClick = { /* Handle GitHub login */ },
+                    icon = R.drawable.ic_github,
+                    contentDescription = "Login with GitHub",
+                    modifier = Modifier.size(40.dp)
                 )
             }
+
+            Spacer(modifier = Modifier.weight(1f))
         }
     }
 } 
