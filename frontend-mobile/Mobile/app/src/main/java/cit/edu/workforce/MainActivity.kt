@@ -38,14 +38,23 @@ fun AppNavigation() {
         composable("login_signup") {
             LoginSignupScreen(
                 isLogin = true,
-                onNavigateToSignup = { /* Handle later */ },
+                onNavigateToSignup = { navController.navigate("sign_up") },
                 onNavigateToLogin = { navController.navigate("sign_in") }
             )
         }
         composable("sign_in") {
             SignInScreen(
-                onSignUpClick = { navController.navigate("login_signup") },
+                onSignUpClick = { navController.navigate("sign_up") },
                 onForgotPasswordClick = { /* Handle later */ }
+            )
+        }
+        composable("sign_up") {
+            SignUpScreen(
+                onNavigateBack = { navController.navigateUp() },
+                onSignUpClick = { firstName, lastName, email, password ->
+                    // Handle sign up logic here
+                    navController.navigate("sign_in")
+                }
             )
         }
     }

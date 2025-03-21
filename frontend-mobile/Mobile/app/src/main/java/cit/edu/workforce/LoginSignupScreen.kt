@@ -13,6 +13,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -24,6 +26,14 @@ import androidx.compose.foundation.clickable
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.graphicsLayer
 import cit.edu.workforce.R
+
+private val montserratFamily = FontFamily(
+    Font(R.font.montserrat_regular, FontWeight.Normal),
+    Font(R.font.montserrat_medium, FontWeight.Medium),
+    Font(R.font.montserrat_semibold, FontWeight.SemiBold),
+    Font(R.font.montserrat_bold, FontWeight.Bold),
+    Font(R.font.montserrat_black, FontWeight.Black)
+)
 
 @Composable
 fun AnimatedButton(
@@ -46,18 +56,25 @@ fun AnimatedButton(
     Button(
         onClick = onClick,
         modifier = modifier
-            .scale(scale),
+            .scale(scale)
+            .height(56.dp),
         shape = RoundedCornerShape(28.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = containerColor,
             contentColor = contentColor
         ),
-        interactionSource = interactionSource
+        interactionSource = interactionSource,
+        elevation = ButtonDefaults.buttonElevation(
+            defaultElevation = 6.dp,
+            pressedElevation = 8.dp
+        )
     ) {
         Text(
             text = text,
             fontSize = 16.sp,
-            fontWeight = FontWeight.Bold
+            fontFamily = montserratFamily,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 1.5.sp
         )
     }
 }
@@ -100,8 +117,8 @@ fun LoginSignupScreen(
     onNavigateToLogin: () -> Unit
 ) {
     val gradientColors = listOf(
-        Color(0xFF1F1F1F), // Dark gray
-        Color(0xFF312F2F)  // Almost black
+        Color(0xFF1F1F1F),
+        Color(0xFF312F2F)
     )
 
     Box(
@@ -122,12 +139,22 @@ fun LoginSignupScreen(
             // Logo
             Image(
                 painter = painterResource(id = R.drawable.logo_nowhitebg),
-                contentDescription = "Fitness Club Logo",
+                contentDescription = "WF Club Logo",
                 modifier = Modifier
                     .size(230.dp),
                 contentScale = ContentScale.Fit
             )
-            Spacer(modifier = Modifier.height(60.dp))
+
+            Text(
+                text = "Your complete HR management solution",
+                color = Color.White.copy(alpha = 0.7f),
+                fontSize = 16.sp,
+                fontFamily = montserratFamily,
+                fontWeight = FontWeight.Normal,
+                letterSpacing = 0.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(bottom = 40.dp)
+            )
 
             // Sign In Button
             AnimatedButton(
@@ -143,7 +170,7 @@ fun LoginSignupScreen(
 
             // Sign Up Button
             AnimatedButton(
-                onClick = { /* Handle sign up */ },
+                onClick = onNavigateToSignup,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
@@ -157,8 +184,11 @@ fun LoginSignupScreen(
             // Social Media Login Text
             Text(
                 text = "Or continue with",
-                color = Color.White,
+                color = Color.White.copy(alpha = 0.7f),
                 fontSize = 14.sp,
+                fontFamily = montserratFamily,
+                fontWeight = FontWeight.Medium,
+                letterSpacing = 0.25.sp,
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
