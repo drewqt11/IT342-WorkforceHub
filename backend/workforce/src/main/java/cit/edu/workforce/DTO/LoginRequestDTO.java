@@ -1,7 +1,13 @@
 package cit.edu.workforce.DTO;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "Login request payload")
 public class LoginRequestDTO {
+    @Schema(description = "Email for authentication", example = "john.doe@example.com", required = true)
     private String email;
+    
+    @Schema(description = "User password", example = "password123", required = true)
     private String password;
 
     public LoginRequestDTO() {

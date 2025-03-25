@@ -1,15 +1,21 @@
 package cit.edu.workforce.DTO;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "Login response containing JWT token and user information")
 public class LoginResponseDTO {
+    @Schema(description = "JWT authentication token", example = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...")
     private String token;
-    private UserDTO userInfo;
+    
+    @Schema(description = "User information")
+    private UserDTO user;
 
     public LoginResponseDTO() {
     }
 
-    public LoginResponseDTO(String token, UserDTO userInfo) {
+    public LoginResponseDTO(String token, UserDTO user) {
         this.token = token;
-        this.userInfo = userInfo;
+        this.user = user;
     }
 
     public String getToken() {
@@ -20,11 +26,11 @@ public class LoginResponseDTO {
         this.token = token;
     }
 
-    public UserDTO getUserInfo() {
-        return userInfo;
+    public UserDTO getUser() {
+        return user;
     }
 
-    public void setUserInfo(UserDTO userInfo) {
-        this.userInfo = userInfo;
+    public void setUser(UserDTO user) {
+        this.user = user;
     }
 } 
