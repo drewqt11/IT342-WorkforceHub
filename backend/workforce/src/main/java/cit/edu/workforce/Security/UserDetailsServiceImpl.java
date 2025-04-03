@@ -1,31 +1,50 @@
 package cit.edu.workforce.Security;
 
-import cit.edu.workforce.Entity.UserEntity;
-import cit.edu.workforce.Repository.UserRepository;
+import cit.edu.workforce.Entity.Employee;
+import cit.edu.workforce.Entity.UserAccount;
+import cit.edu.workforce.Repository.EmployeeRepository;
+import cit.edu.workforce.Repository.UserAccountRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class UserDetailsServiceImpl implements UserDetailsService {
 
-    private final UserRepository userRepository;
+    private final UserAccountRepository userAccountRepository;
+    private final EmployeeRepository employeeRepository;
 
     @Autowired
-    public UserDetailsServiceImpl(UserRepository userRepository) {
-        this.userRepository = userRepository;
+    public UserDetailsServiceImpl(UserAccountRepository userAccountRepository, EmployeeRepository employeeRepository) {
+        this.userAccountRepository = userAccountRepository;
+        this.employeeRepository = employeeRepository;
     }
 
     @Override
+    @Transactional
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        UserEntity user = userRepository.findByEmail(email)
+        UserAccount userAccount = userAccountRepository.findByEmailAddress(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
 
-        return new User(user.getEmail(), user.getPassword(), new ArrayList<>());
+        // Check if user is active
+        if (!userAccount.getIsActive()) {
+            throw new UsernameNotFoundException("User account is inactive: " + email);
+        }
+
+        // Find the employee associated with this user account to get the role
+        Employee employee = employeeRepository.findByUserAccountUserId(userAccount.getUserId())
+                .orElse(null);
+
+        // Default role for users without an employee record yet
+        String role = "PENDING";
+        
+        if (employee != null && employee.getRole() != null) {
+            role = employee.getRole().getRoleId();
+        }
+
+        return UserDetailsImpl.build(userAccount, role);
     }
 } 
