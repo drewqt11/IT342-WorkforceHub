@@ -150,7 +150,7 @@ Ensure you have the following:
 
 - [Functional Requirements Document](https://docs.google.com/document/d/1wRUX7TfamZ61ei4otYVEJMC07NCnUOh7NaZMVRlH61s/edit?tab=t.0)
 - [Updated Functional Requirements Document](https://cebuinstituteoftechnology-my.sharepoint.com/:w:/g/personal/katrina_amores_cit_edu/EcKCZX2rRKtHpAiAEIdhUQ0BC6tVMw66-Pq-vTHT5WyFwQ?e=hWRVH3)
-- [Software Requirements Specifications] (https://cebuinstituteoftechnology-my.sharepoint.com/:w:/g/personal/katrina_amores_cit_edu/EbhEGIjYnZZLuXWp3GFqGHsBVuWBVY9O9h7UmPx5BTm1RQ?e=IP44E5)
+- [Software Requirements Specifications](https://cebuinstituteoftechnology-my.sharepoint.com/:w:/g/personal/katrina_amores_cit_edu/EbhEGIjYnZZLuXWp3GFqGHsBVuWBVY9O9h7UmPx5BTm1RQ?e=IP44E5)
 - [Workforce Hub Structuring](???)
 
 
