@@ -13,8 +13,8 @@ public class DatabaseConfig {
     public DataSource dataSource() {
         DriverManagerDataSource dataSource = new DriverManagerDataSource();
         dataSource.setDriverClassName("org.postgresql.Driver");
-        dataSource.setUrl("jdbc:postgresql://db.rystiuryfkxbcqjtdplv.supabase.co:5432/postgres?user=postgres&password=[YOUR-PASSWORD]");
-        dataSource.setUsername("postgres");
+        dataSource.setUrl("jdbc:postgresql://aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres?user=postgres.rystiuryfkxbcqjtdplv&password=[YOUR-PASSWORD]");
+        dataSource.setUsername("postgres.rystiuryfkxbcqjtdplv");
         dataSource.setPassword("SupaBase_1234");
         return dataSource;
     }

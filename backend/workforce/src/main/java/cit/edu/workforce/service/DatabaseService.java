@@ -14,7 +14,7 @@ public class DatabaseService {
     private JdbcTemplate jdbcTemplate;
 
     public List<Map<String, Object>> getData() {
-        String sql = "SELECT * FROM your_table";
+        String sql = "SELECT * FROM user_account";
         return jdbcTemplate.queryForList(sql);
     }
 }
