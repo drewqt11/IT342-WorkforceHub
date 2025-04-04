@@ -149,7 +149,9 @@ Ensure you have the following:
 ## Additional Resources
 
 - [Functional Requirements Document](https://docs.google.com/document/d/1wRUX7TfamZ61ei4otYVEJMC07NCnUOh7NaZMVRlH61s/edit?tab=t.0)
-- 
+- [Updated Functional Requirements Document](https://cebuinstituteoftechnology-my.sharepoint.com/:w:/g/personal/katrina_amores_cit_edu/EcKCZX2rRKtHpAiAEIdhUQ0BC6tVMw66-Pq-vTHT5WyFwQ?e=hWRVH3)
+- [Software Requirements Specifications] (https://cebuinstituteoftechnology-my.sharepoint.com/:w:/g/personal/katrina_amores_cit_edu/EbhEGIjYnZZLuXWp3GFqGHsBVuWBVY9O9h7UmPx5BTm1RQ?e=IP44E5)
+- [Workforce Hub Structuring](???)
 
 
 
@@ -157,7 +159,9 @@ Ensure you have the following:
 
   
 - [Katrina Amores](https://github.com/katkatty21): katrina.amores@cit.edu
-
+- [Andri Apas](https://github.com/drewqt11): andri.apas@cit.edu
+- [Arnel Paden](https://github.com/padsssss): arnel.paden@cit.edu
+- [Levi Caaway](https://github.com/LiarsLiedLies): leviray.caaway@cit.edu
 
 
 
