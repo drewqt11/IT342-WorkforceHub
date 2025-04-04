@@ -3,12 +3,24 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import { RegisterData } from '../../types/auth';
 
+interface AdditionalUserData {
+  gender?: string;
+  dateOfBirth?: string;
+  phoneNumber?: string;
+  address?: string;
+  maritalStatus?: string;
+}
+
 const RegisterForm: React.FC = () => {
   const [formData, setFormData] = useState<RegisterData>({
     firstName: '',
     lastName: '',
     email: '',
     password: '',
+    confirmPassword: ''
+  });
+  
+  const [additionalData, setAdditionalData] = useState<AdditionalUserData>({
     gender: '',
     dateOfBirth: '',
     phoneNumber: '',
@@ -16,14 +28,20 @@ const RegisterForm: React.FC = () => {
     maritalStatus: ''
   });
   
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [formError, setFormError] = useState('');
   const { register, isLoading, isError, errorMessage } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    
+    // Check if the field is part of RegisterData
+    if (name in formData) {
+      setFormData({ ...formData, [name]: value });
+    } else {
+      // Otherwise, it belongs to additionalData
+      setAdditionalData({ ...additionalData, [name]: value });
+    }
   };
 
   const validateForm = (): boolean => {
@@ -48,7 +66,7 @@ const RegisterForm: React.FC = () => {
     }
 
     // Confirm password validation
-    if (formData.password !== confirmPassword) {
+    if (formData.password !== formData.confirmPassword) {
       setFormError('Passwords do not match');
       return false;
     }
@@ -65,6 +83,8 @@ const RegisterForm: React.FC = () => {
     }
 
     try {
+      // For now, we're only sending the RegisterData fields
+      // In a real app, you might want to send additionalData to a different endpoint
       await register(formData);
       navigate('/dashboard');
     } catch (error) {
@@ -168,14 +188,14 @@ const RegisterForm: React.FC = () => {
                   type="password"
                   autoComplete="new-password"
                   required
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
                   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
               </div>
             </div>
 
-            {/* Optional Details */}
+            {/* Optional Details - These are not part of RegisterData type */}
             <div className="border-t border-gray-200 pt-4 mt-4">
               <h3 className="text-md font-medium text-gray-700 mb-4">Additional Information (Optional)</h3>
               
@@ -187,7 +207,7 @@ const RegisterForm: React.FC = () => {
                   <select
                     id="gender"
                     name="gender"
-                    value={formData.gender}
+                    value={additionalData.gender}
                     onChange={handleChange}
                     className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   >
@@ -205,7 +225,7 @@ const RegisterForm: React.FC = () => {
                     id="dateOfBirth"
                     name="dateOfBirth"
                     type="date"
-                    value={formData.dateOfBirth}
+                    value={additionalData.dateOfBirth}
                     onChange={handleChange}
                     className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   />
@@ -220,7 +240,7 @@ const RegisterForm: React.FC = () => {
                   id="phoneNumber"
                   name="phoneNumber"
                   type="tel"
-                  value={formData.phoneNumber}
+                  value={additionalData.phoneNumber}
                   onChange={handleChange}
                   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
@@ -234,7 +254,7 @@ const RegisterForm: React.FC = () => {
                   id="address"
                   name="address"
                   type="text"
-                  value={formData.address}
+                  value={additionalData.address}
                   onChange={handleChange}
                   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
@@ -247,7 +267,7 @@ const RegisterForm: React.FC = () => {
                 <select
                   id="maritalStatus"
                   name="maritalStatus"
-                  value={formData.maritalStatus}
+                  value={additionalData.maritalStatus}
                   onChange={handleChange}
                   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 >
@@ -285,6 +305,5 @@ const RegisterForm: React.FC = () => {
     </div>
   );
 };
-
 
 export default RegisterForm; 
