@@ -5,7 +5,9 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -32,6 +34,23 @@ public class JwtTokenProvider {
     public String generateToken(String username) {
         Map<String, Object> claims = new HashMap<>();
         return createToken(claims, username);
+    }
+    
+    public String generateToken(Authentication authentication) {
+        Object principal = authentication.getPrincipal();
+        String username;
+        
+        if (principal instanceof UserDetails) {
+            username = ((UserDetails) principal).getUsername();
+        } else if (principal instanceof OidcUser) {
+            // Handle OAuth2 authentication
+            username = ((OidcUser) principal).getEmail();
+        } else {
+            // Fallback for other authentication types
+            username = principal.toString();
+        }
+        
+        return generateToken(username);
     }
 
     private String createToken(Map<String, Object> claims, String subject) {

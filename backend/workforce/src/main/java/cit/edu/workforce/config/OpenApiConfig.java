@@ -17,8 +17,8 @@ public class OpenApiConfig {
     public OpenAPI openAPI() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("WorkforceHub API")
-                        .description("API documentation for WorkforceHub application")
+                        .title("WorkforceHub HR Information System API")
+                        .description("API documentation for WorkforceHub HR Information System application")
                         .version("v1.0.0")
                         .contact(new Contact()
                                 .name("WorkforceHub Team")
@@ -26,12 +26,12 @@ public class OpenApiConfig {
                                 .url("https://workforcehub.com"))
                         .license(new License().name("MIT License").url("https://opensource.org/licenses/MIT")))
                 .components(new Components()
-                        .addSecuritySchemes("bearer-jwt", new SecurityScheme()
+                        .addSecuritySchemes("bearerAuth", new SecurityScheme()
                                 .type(SecurityScheme.Type.HTTP)
                                 .scheme("bearer")
                                 .bearerFormat("JWT")
                                 .in(SecurityScheme.In.HEADER)
                                 .name("Authorization")))
-                .addSecurityItem(new SecurityRequirement().addList("bearer-jwt"));
+                .addSecurityItem(new SecurityRequirement().addList("bearerAuth"));
     }
 } 

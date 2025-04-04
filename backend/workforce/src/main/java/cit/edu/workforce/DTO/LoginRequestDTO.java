@@ -1,36 +1,20 @@
 package cit.edu.workforce.DTO;
 
-import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-@Schema(description = "Login request payload")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class LoginRequestDTO {
-    @Schema(description = "Email for authentication", example = "john.doe@example.com", required = true)
+    
+    @NotBlank(message = "Email is required")
+    @Email(message = "Email should be valid")
     private String email;
     
-    @Schema(description = "User password", example = "password123", required = true)
+    @NotBlank(message = "Password is required")
     private String password;
-
-    public LoginRequestDTO() {
-    }
-
-    public LoginRequestDTO(String email, String password) {
-        this.email = email;
-        this.password = password;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
 } 
