@@ -1,14 +1,20 @@
 package cit.edu.workforce.entity;
 
-import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.util.UUID;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "employee")
 public class Employee {
+
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "employee_id")
     private UUID employeeId;
 
@@ -202,4 +208,4 @@ public class Employee {
     public void setUserAccount(UserAccount userAccount) {
         this.userAccount = userAccount;
     }
-} 
+}

@@ -34,14 +34,24 @@ public class UserService {
             Employee employee = userAccount.getEmployee();
             if (employee != null) {
                 updateEmployeeInfo(employee, idNumber, givenName, lastName);
+            } else {
+                // Create new employee for existing user
+                employee = new Employee();
+                employee.setEmployeeId(userAccount.getUserId());
+                employee.setUserAccount(userAccount);
+                updateEmployeeInfo(employee, idNumber, givenName, lastName);
+                employee = employeeRepository.save(employee);
+                userAccount.setEmployee(employee);
             }
         } else {
+            // Create new user account first
             userAccount = new UserAccount();
             userAccount.setEmailAddress(emailAddress);
             userAccount = userAccountRepository.save(userAccount);
 
             // Create new employee
             Employee employee = new Employee();
+            employee.setEmployeeId(userAccount.getUserId());
             employee.setUserAccount(userAccount);
             updateEmployeeInfo(employee, idNumber, givenName, lastName);
             employee = employeeRepository.save(employee);
@@ -55,6 +65,5 @@ public class UserService {
         employee.setIdNumber(idNumber);
         employee.setFirstName(givenName);
         employee.setLastName(lastName);
-        employee.setEmail(employee.getUserAccount().getEmailAddress());
     }
 }

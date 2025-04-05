@@ -7,9 +7,10 @@ CREATE TABLE IF NOT EXISTS user_account (
     is_active BOOLEAN DEFAULT TRUE
 );
 
--- Create employee table with foreign key reference to user_account
+-- Create employee table
 CREATE TABLE IF NOT EXISTS employee (
-    employee_id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    employee_id UUID PRIMARY KEY,
+    user_id UUID,
     id_number VARCHAR(50),
     first_name VARCHAR(150),
     middle_name VARCHAR(150),
