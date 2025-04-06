@@ -39,112 +39,95 @@
   </ol>
 </details>
 
-
-
 ## Product Description
 
 The **HR Management System** is a comprehensive platform designed to streamline and optimize the core functions of Human Resources. Built to simplify processes like employee data management, attendance tracking, payroll processing, performance evaluations, and recruitment, this system serves as an all-in-one solution for HR departments of any size. By centralizing data and automating repetitive tasks, it reduces administrative workload and helps HR teams focus on strategic activities, such as talent development and employee engagement.
 
+## Built With
 
-## Built With  
-
-- **Backend**: Django (Python) - A high-level web framework for efficient and scalable backend development.  
-- **Database**: PostgreSQL - A powerful and reliable database system for managing structured data.  
-- **Frontend**: Tailwind CSS - A utility-first CSS framework for designing responsive and customizable user interfaces.  
-
+- **Backend**: Spring Boot (Java) - A framework for building stand-alone, production-grade Spring-based applications.
+- **Frontend**: Next.js and React - JavaScript frameworks for building user interfaces, with server-side rendering for better performance.
+- **UI Design**: ShadCN UI - A UI component library for building modern and elegant user interfaces.
+- **Database**: SupaBase - An open-source Firebase alternative, offering a database, authentication, and real-time subscriptions out of the box.
+- **CSS Framework**: Tailwind CSS - A utility-first CSS framework for designing responsive and customizable user interfaces.
 
 ## List Of Features
+
 - **Employee Profiles**: Centralized database for managing employee records and personal information.
-- **Attendance Management**: Efficiently track attendance, leaves, and absences with real-time counts for absentees, leaves, and those present, while providing comprehensive records, with overtime and  regular hours record to ensure transparency and accountability.
-- **Payroll Management**: Automated calculations, deductions, and payments with secure storage and accessibility
-- **Performance Management**: Tools for peer feedback, self-assessment, supervisor feedback, and sanction reporting
+- **Attendance Management**: Efficiently track attendance, leaves, and absences with real-time counts for absentees, leaves, and those present, while providing comprehensive records, with overtime and regular hours record to ensure transparency and accountability.
+- **Payroll Management**: Automated calculations, deductions, and payments with secure storage and accessibility.
+- **Performance Management**: Tools for peer feedback, self-assessment, supervisor feedback, and sanction reporting.
 - **Recruitment Tools**: Simplifies the hiring process with applicant tracking, resume management, and scheduling capabilities.
 - **Analytics Dashboard**: Real-time insights into HR data to support decision-making and compliance.
 
 ## Getting Started
 
 ### Prerequisites
+
 Ensure you have the following:
-- Python 3.x
-- Django installed in a virtual environment
-- PostgreSQL with `pgAdmin`
-- Basic understanding of Django ORM and SQL
+
+- Java 8 or later installed
+- Maven or Gradle for dependency management
+- Node.js and npm/yarn for frontend development
+- SupaBase account for managing database and authentication
 
 ### Installation
 
-**Tailwind CSS Framework Setup** 
+**Tailwind CSS Framework Setup**
 
-
-1. **Modify `INSTALLED_APPS` in `settings.py`**
-   - Add `'tailwind'` to the list of installed apps.
-
-2. **Install dependencies and initialize Tailwind**
-   - In Powershell (inside the virtual environment `myenv`), run:
+1. **Install Tailwind CSS for Next.js**
+   - In the root directory of your Next.js project, run:
      ```bash
-     python -m pip install django-tailwind
+     npm install -D tailwindcss postcss autoprefixer
+     npx tailwindcss init
      ```
-   - Navigate to your project directory:
+   - In `tailwind.config.js`, configure the content array:
+     ```js
+     module.exports = {
+       content: [
+         "./pages/**/*.{js,ts,jsx,tsx}",
+         "./components/**/*.{js,ts,jsx,tsx}",
+       ],
+       theme: {
+         extend: {},
+       },
+       plugins: [],
+     };
+     ```
+   - Add the following lines to `globals.css`:
+     ```css
+     @tailwind base;
+     @tailwind components;
+     @tailwind utilities;
+     ```
+
+**Spring Boot Setup**
+
+1. **Install Spring Boot**
+
+   - Download and install the Spring Boot CLI or set up Spring Boot with Maven or Gradle.
+   - Add the necessary dependencies for the backend application in `pom.xml` (Maven) or `build.gradle` (Gradle).
+
+2. **Configure Database (SupaBase)**
+
+   - Create an account on [SupaBase](https://supabase.io).
+   - Create a new project and configure the database.
+   - Use SupaBase’s SDK or API to connect your Spring Boot backend to SupaBase for database operations and authentication.
+
+3. **Run the Backend**
+
+   - Run the Spring Boot application using Maven or Gradle:
      ```bash
-     cd projectname
+     ./mvnw spring-boot:run  # For Maven
+     ./gradlew bootRun       # For Gradle
      ```
-   - Initialize Tailwind:
+
+4. **Run the Frontend**
+   - Navigate to the Next.js frontend project directory:
      ```bash
-     python manage.py tailwind init
+     cd frontend
+     npm run dev
      ```
-   - When prompted for `app_name[theme]`, type `theme`.
-   - Add `'theme'` and `'django_browser_reload'` to `INSTALLED_APPS` in `settings.py`.
-   - Install the browser reload package:
-     ```bash
-     pip install django-browser-reload
-     ```
-
-3. **Update `settings.py`**
-   - Add the following lines:
-     ```python
-     TAILWIND_APP_NAME = 'theme'
-     INTERNAL_IPS = ["127.0.0.1",]
-     ```
-
-4. **Add middleware**
-   - Append the following line to the `MIDDLEWARE` list in `settings.py`:
-     ```python
-     "django_browser_reload.middleware.BrowserReloadMiddleware",
-     ```
-
-5. **Update `urls.py`**
-   - Add the following line to the project's `urls.py` file:
-     ```python
-     path("reload/", include("django_browser_reload.urls")),
-     ```
-
-6. **Start Tailwind**
-   - Run:
-     ```bash
-     python manage.py tailwind start
-
-
-**PostgreSQL Installation** 
-
-
-1. **Download PostgreSQL Installer**
-   - Download the PostgreSQL `.exe` from the following link:
-     [PostgreSQL Download](https://www.postgresql.org/ftp/pgadmin/pgadmin4/v8.12/windows/)
-
-2. **Install Required Components**
-   - During installation, ensure that `pgAdmin` is selected as a component.
-
-3. **Create the Database**
-   - Open `pgAdmin`.
-   - Create a new database:
-     - Right-click on `Databases` > `Create` > `Database`.
-     - Name the database `dbhrmanagement`.
-     - In the **General Tab**, set the **Owner** to `postgres`.
-   - Check the database files in `pgAdmin` for additional settings or configurations.
-   - Use the **Definition Tab** for further configuration if necessary.
-
-4. **Execute Commands in pgAdmin**
-   - To run SQL commands, right-click on the database and select `Query Tool`.
-
 
 ## Additional Resources
 
@@ -153,18 +136,9 @@ Ensure you have the following:
 - [Software Requirements Specifications](https://cebuinstituteoftechnology-my.sharepoint.com/:w:/g/personal/katrina_amores_cit_edu/EbhEGIjYnZZLuXWp3GFqGHsBVuWBVY9O9h7UmPx5BTm1RQ?e=IP44E5)
 - [Workforce Hub Structuring](???)
 
-
-
 ## Developers Profile
 
-  
 - [Katrina Amores](https://github.com/katkatty21): katrina.amores@cit.edu
 - [Andri Apas](https://github.com/drewqt11): andri.apas@cit.edu
 - [Arnel Paden](https://github.com/padsssss): arnel.paden@cit.edu
 - [Levi Caaway](https://github.com/LiarsLiedLies): leviray.caaway@cit.edu
-
-
-
-
-
-
