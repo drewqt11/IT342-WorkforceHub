@@ -1,14 +1,15 @@
 package cit.edu.workforce.Repository;
 
-import cit.edu.workforce.Entity.RefreshTokenEntity;
-import cit.edu.workforce.Entity.UserAccountEntity;
+import java.util.Optional;
+import java.util.UUID;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import java.util.Optional;
-import java.util.UUID;
+import cit.edu.workforce.Entity.RefreshTokenEntity;
+import cit.edu.workforce.Entity.UserAccountEntity;
 
 @Repository
 public interface RefreshTokenRepository extends JpaRepository<RefreshTokenEntity, UUID> {

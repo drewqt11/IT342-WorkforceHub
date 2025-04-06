@@ -1,18 +1,10 @@
 package cit.edu.workforce.Service;
 
-import cit.edu.workforce.DTO.AuthResponseDTO;
-import cit.edu.workforce.DTO.EmployeeRegistrationDTO;
-import cit.edu.workforce.DTO.LoginRequestDTO;
-import cit.edu.workforce.DTO.TokenRefreshResponseDTO;
-import cit.edu.workforce.Entity.EmailDomainListEntity;
-import cit.edu.workforce.Entity.EmployeeEntity;
-import cit.edu.workforce.Entity.RefreshTokenEntity;
-import cit.edu.workforce.Entity.RoleEntity;
-import cit.edu.workforce.Entity.UserAccountEntity;
-import cit.edu.workforce.Repository.EmployeeRepository;
-import cit.edu.workforce.Repository.RoleRepository;
-import cit.edu.workforce.Repository.UserAccountRepository;
-import cit.edu.workforce.Security.JwtTokenProvider;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Optional;
+import java.util.UUID;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -26,10 +18,18 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.Optional;
-import java.util.UUID;
+import cit.edu.workforce.DTO.AuthResponseDTO;
+import cit.edu.workforce.DTO.EmployeeRegistrationDTO;
+import cit.edu.workforce.DTO.LoginRequestDTO;
+import cit.edu.workforce.DTO.TokenRefreshResponseDTO;
+import cit.edu.workforce.Entity.EmployeeEntity;
+import cit.edu.workforce.Entity.RefreshTokenEntity;
+import cit.edu.workforce.Entity.RoleEntity;
+import cit.edu.workforce.Entity.UserAccountEntity;
+import cit.edu.workforce.Repository.EmployeeRepository;
+import cit.edu.workforce.Repository.RoleRepository;
+import cit.edu.workforce.Repository.UserAccountRepository;
+import cit.edu.workforce.Security.JwtTokenProvider;
 
 @Service
 public class AuthService {

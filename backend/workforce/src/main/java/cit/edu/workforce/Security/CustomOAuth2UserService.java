@@ -1,12 +1,12 @@
 package cit.edu.workforce.Security;
 
-import cit.edu.workforce.Entity.EmployeeEntity;
-import cit.edu.workforce.Entity.RoleEntity;
-import cit.edu.workforce.Entity.UserAccountEntity;
-import cit.edu.workforce.Repository.EmployeeRepository;
-import cit.edu.workforce.Repository.RoleRepository;
-import cit.edu.workforce.Repository.UserAccountRepository;
-import cit.edu.workforce.Service.EmailDomainListService;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Optional;
+import java.util.UUID;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -18,9 +18,13 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.*;
+import cit.edu.workforce.Entity.EmployeeEntity;
+import cit.edu.workforce.Entity.RoleEntity;
+import cit.edu.workforce.Entity.UserAccountEntity;
+import cit.edu.workforce.Repository.EmployeeRepository;
+import cit.edu.workforce.Repository.RoleRepository;
+import cit.edu.workforce.Repository.UserAccountRepository;
+import cit.edu.workforce.Service.EmailDomainListService;
 
 @Service
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
