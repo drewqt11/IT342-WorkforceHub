@@ -91,7 +91,18 @@ public class EmailDomainListService {
 
     @Transactional(readOnly = true)
     public boolean isValidDomain(String email) {
+        // Get all active domains
+        List<EmailDomainListEntity> activeDomains = emailDomainListRepository.findByIsActive(true);
+        
+        // If no domains are configured, allow all domains
+        if (activeDomains.isEmpty()) {
+            return true;
+        }
+        
+        // Extract domain from email
         String domain = email.substring(email.indexOf("@") + 1).toLowerCase();
+        
+        // Check if the domain is in the active list
         Optional<EmailDomainListEntity> domainEntity = emailDomainListRepository.findByDomainName(domain);
         return domainEntity.isPresent() && domainEntity.get().isActive();
     }

@@ -5,10 +5,14 @@ import cit.edu.workforce.DTO.EmployeeRegistrationDTO;
 import cit.edu.workforce.Entity.*;
 import cit.edu.workforce.Repository.EmployeeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -48,12 +52,51 @@ public class EmployeeService {
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
+    
+    @Transactional(readOnly = true)
+    public Page<EmployeeDTO> getAllEmployeesPaged(Pageable pageable) {
+        return employeeRepository.findAll(pageable)
+                .map(this::convertToDTO);
+    }
+    
+    @Transactional(readOnly = true)
+    public Page<EmployeeDTO> searchEmployees(String name, String employeeId, String department, String status, Pageable pageable) {
+        // Using a simplified approach for demo purposes
+        // In a real implementation, you would use a more sophisticated query builder
+        if (name != null && !name.isEmpty()) {
+            return employeeRepository.findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(name, name, pageable)
+                    .map(this::convertToDTO);
+        } else if (employeeId != null && !employeeId.isEmpty()) {
+            try {
+                UUID empId = UUID.fromString(employeeId);
+                return employeeRepository.findByEmployeeId(empId, pageable)
+                        .map(this::convertToDTO);
+            } catch (IllegalArgumentException e) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid employee ID format");
+            }
+        } else if (department != null && !department.isEmpty()) {
+            return employeeRepository.findByDepartmentDepartmentNameContainingIgnoreCase(department, pageable)
+                    .map(this::convertToDTO);
+        } else if (status != null && !status.isEmpty()) {
+            return employeeRepository.findByStatus(status, pageable)
+                    .map(this::convertToDTO);
+        } else {
+            return employeeRepository.findAll(pageable)
+                    .map(this::convertToDTO);
+        }
+    }
 
     @Transactional(readOnly = true)
     public List<EmployeeDTO> getAllActiveEmployees() {
         return employeeRepository.findByStatus("ACTIVE").stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
+    }
+    
+    @Transactional(readOnly = true)
+    public Page<EmployeeDTO> getAllActiveEmployeesPaged(Pageable pageable) {
+        return employeeRepository.findByStatus("ACTIVE", pageable)
+                .map(this::convertToDTO);
     }
 
     @Transactional(readOnly = true)
@@ -72,12 +115,12 @@ public class EmployeeService {
     public EmployeeDTO registerEmployee(EmployeeRegistrationDTO registrationDTO) {
         // Validate email domain
         if (!emailDomainListService.isValidDomain(registrationDTO.getEmail())) {
-            throw new RuntimeException("Invalid email domain");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid email domain");
         }
 
         // Check if email already exists
         if (employeeRepository.existsByEmail(registrationDTO.getEmail())) {
-            throw new RuntimeException("Email already registered");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already registered");
         }
 
         // Create user account
@@ -88,7 +131,7 @@ public class EmployeeService {
 
         // Get default role (EMPLOYEE)
         RoleEntity role = roleService.getRoleById("ROLE_EMPLOYEE")
-                .orElseThrow(() -> new RuntimeException("Default role not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Default role not found"));
 
         // Create employee
         EmployeeEntity employee = new EmployeeEntity();
@@ -102,6 +145,7 @@ public class EmployeeService {
         employee.setMaritalStatus(registrationDTO.getMaritalStatus());
         employee.setHireDate(LocalDate.now());
         employee.setStatus("ACTIVE");
+        employee.setEmploymentStatus("PENDING"); // New employees start as pending until approved
         employee.setRole(role);
         employee.setUserAccount(userAccount);
 
@@ -113,30 +157,30 @@ public class EmployeeService {
     public EmployeeDTO createEmployee(EmployeeDTO employeeDTO) {
         // Validate email domain
         if (!emailDomainListService.isValidDomain(employeeDTO.getEmail())) {
-            throw new RuntimeException("Invalid email domain");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid email domain");
         }
 
         // Check if email already exists
         if (employeeRepository.existsByEmail(employeeDTO.getEmail())) {
-            throw new RuntimeException("Email already registered");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already registered");
         }
 
         // Get role
         RoleEntity role = roleService.getRoleById(employeeDTO.getRoleId())
-                .orElseThrow(() -> new RuntimeException("Role not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Role not found"));
 
         // Get department if specified
         DepartmentEntity department = null;
         if (employeeDTO.getDepartmentId() != null) {
             department = departmentService.getDepartmentById(employeeDTO.getDepartmentId())
-                    .orElseThrow(() -> new RuntimeException("Department not found"));
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Department not found"));
         }
 
         // Get job title if specified
         JobTitleEntity jobTitle = null;
         if (employeeDTO.getJobId() != null) {
             jobTitle = jobTitleService.getJobTitleById(employeeDTO.getJobId())
-                    .orElseThrow(() -> new RuntimeException("Job title not found"));
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Job title not found"));
         }
 
         // Create employee
@@ -151,6 +195,7 @@ public class EmployeeService {
         employee.setPhoneNumber(employeeDTO.getPhoneNumber());
         employee.setMaritalStatus(employeeDTO.getMaritalStatus());
         employee.setStatus(employeeDTO.getStatus() != null ? employeeDTO.getStatus() : "ACTIVE");
+        employee.setEmploymentStatus(employeeDTO.getEmploymentStatus() != null ? employeeDTO.getEmploymentStatus() : "FULL_TIME");
         employee.setRole(role);
         employee.setDepartment(department);
         employee.setJobTitle(jobTitle);
@@ -162,13 +207,19 @@ public class EmployeeService {
     @Transactional
     public EmployeeDTO updateEmployee(UUID employeeId, EmployeeDTO employeeDTO) {
         EmployeeEntity employee = employeeRepository.findById(employeeId)
-                .orElseThrow(() -> new RuntimeException("Employee not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee not found"));
 
         // Update email if changed and not already taken
         if (!employee.getEmail().equals(employeeDTO.getEmail())) {
             if (employeeRepository.existsByEmail(employeeDTO.getEmail())) {
-                throw new RuntimeException("Email already registered");
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already registered");
             }
+            
+            // Validate new email domain
+            if (!emailDomainListService.isValidDomain(employeeDTO.getEmail())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid email domain");
+            }
+            
             employee.setEmail(employeeDTO.getEmail());
         }
 
@@ -182,26 +233,90 @@ public class EmployeeService {
         employee.setPhoneNumber(employeeDTO.getPhoneNumber());
         employee.setMaritalStatus(employeeDTO.getMaritalStatus());
         employee.setStatus(employeeDTO.getStatus());
+        employee.setEmploymentStatus(employeeDTO.getEmploymentStatus());
 
         // Update role if specified
         if (employeeDTO.getRoleId() != null) {
             RoleEntity role = roleService.getRoleById(employeeDTO.getRoleId())
-                    .orElseThrow(() -> new RuntimeException("Role not found"));
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Role not found"));
             employee.setRole(role);
         }
 
         // Update department if specified
         if (employeeDTO.getDepartmentId() != null) {
             DepartmentEntity department = departmentService.getDepartmentById(employeeDTO.getDepartmentId())
-                    .orElseThrow(() -> new RuntimeException("Department not found"));
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Department not found"));
             employee.setDepartment(department);
         }
 
         // Update job title if specified
         if (employeeDTO.getJobId() != null) {
             JobTitleEntity jobTitle = jobTitleService.getJobTitleById(employeeDTO.getJobId())
-                    .orElseThrow(() -> new RuntimeException("Job title not found"));
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Job title not found"));
             employee.setJobTitle(jobTitle);
+        }
+
+        EmployeeEntity updatedEmployee = employeeRepository.save(employee);
+        return convertToDTO(updatedEmployee);
+    }
+
+    @Transactional
+    public EmployeeDTO updateEmployeePartially(UUID employeeId, EmployeeDTO employeeDTO) {
+        EmployeeEntity employee = employeeRepository.findById(employeeId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee not found"));
+
+        // Only update fields that are not null
+        if (employeeDTO.getFirstName() != null) {
+            employee.setFirstName(employeeDTO.getFirstName());
+        }
+        
+        if (employeeDTO.getLastName() != null) {
+            employee.setLastName(employeeDTO.getLastName());
+        }
+        
+        if (employeeDTO.getEmail() != null && !employee.getEmail().equals(employeeDTO.getEmail())) {
+            if (employeeRepository.existsByEmail(employeeDTO.getEmail())) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already registered");
+            }
+            
+            // Validate new email domain
+            if (!emailDomainListService.isValidDomain(employeeDTO.getEmail())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid email domain");
+            }
+            
+            employee.setEmail(employeeDTO.getEmail());
+        }
+        
+        if (employeeDTO.getGender() != null) {
+            employee.setGender(employeeDTO.getGender());
+        }
+        
+        if (employeeDTO.getHireDate() != null) {
+            employee.setHireDate(employeeDTO.getHireDate());
+        }
+        
+        if (employeeDTO.getDateOfBirth() != null) {
+            employee.setDateOfBirth(employeeDTO.getDateOfBirth());
+        }
+        
+        if (employeeDTO.getAddress() != null) {
+            employee.setAddress(employeeDTO.getAddress());
+        }
+        
+        if (employeeDTO.getPhoneNumber() != null) {
+            employee.setPhoneNumber(employeeDTO.getPhoneNumber());
+        }
+        
+        if (employeeDTO.getMaritalStatus() != null) {
+            employee.setMaritalStatus(employeeDTO.getMaritalStatus());
+        }
+        
+        if (employeeDTO.getStatus() != null) {
+            employee.setStatus(employeeDTO.getStatus());
+        }
+        
+        if (employeeDTO.getEmploymentStatus() != null) {
+            employee.setEmploymentStatus(employeeDTO.getEmploymentStatus());
         }
 
         EmployeeEntity updatedEmployee = employeeRepository.save(employee);
@@ -211,55 +326,48 @@ public class EmployeeService {
     @Transactional
     public EmployeeDTO deactivateEmployee(UUID employeeId) {
         EmployeeEntity employee = employeeRepository.findById(employeeId)
-                .orElseThrow(() -> new RuntimeException("Employee not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee not found"));
 
         employee.setStatus("INACTIVE");
-
-        // Deactivate associated user account
+        employee.setEmploymentStatus("INACTIVE");
+        
+        // Also deactivate the user account if it exists
         if (employee.getUserAccount() != null) {
-            userAccountService.deactivateUser(employee.getUserAccount());
+            UserAccountEntity userAccount = employee.getUserAccount();
+            userAccount.setActive(false);
+            // The UserAccountEntity will be automatically saved by cascade
         }
 
-        EmployeeEntity deactivatedEmployee = employeeRepository.save(employee);
-        return convertToDTO(deactivatedEmployee);
+        EmployeeEntity updatedEmployee = employeeRepository.save(employee);
+        return convertToDTO(updatedEmployee);
     }
 
     @Transactional
     public EmployeeDTO activateEmployee(UUID employeeId) {
         EmployeeEntity employee = employeeRepository.findById(employeeId)
-                .orElseThrow(() -> new RuntimeException("Employee not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee not found"));
 
         employee.setStatus("ACTIVE");
-
-        // Activate associated user account
+        employee.setEmploymentStatus("ACTIVE");
+        
+        // Also activate the user account if it exists
         if (employee.getUserAccount() != null) {
-            userAccountService.activateUser(employee.getUserAccount());
+            UserAccountEntity userAccount = employee.getUserAccount();
+            userAccount.setActive(true);
+            // The UserAccountEntity will be automatically saved by cascade
         }
 
-        EmployeeEntity activatedEmployee = employeeRepository.save(employee);
-        return convertToDTO(activatedEmployee);
-    }
-
-    @Transactional
-    public void deleteEmployee(UUID employeeId) {
-        EmployeeEntity employee = employeeRepository.findById(employeeId)
-                .orElseThrow(() -> new RuntimeException("Employee not found"));
-
-        // Delete associated user account
-        if (employee.getUserAccount() != null) {
-            userAccountService.deleteUser(employee.getUserAccount().getUserId());
-        }
-
-        employeeRepository.delete(employee);
+        EmployeeEntity updatedEmployee = employeeRepository.save(employee);
+        return convertToDTO(updatedEmployee);
     }
 
     @Transactional
     public EmployeeDTO assignRole(UUID employeeId, String roleId) {
         EmployeeEntity employee = employeeRepository.findById(employeeId)
-                .orElseThrow(() -> new RuntimeException("Employee not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee not found"));
 
         RoleEntity role = roleService.getRoleById(roleId)
-                .orElseThrow(() -> new RuntimeException("Role not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Role not found"));
 
         employee.setRole(role);
         EmployeeEntity updatedEmployee = employeeRepository.save(employee);
@@ -269,10 +377,10 @@ public class EmployeeService {
     @Transactional
     public EmployeeDTO assignDepartment(UUID employeeId, UUID departmentId) {
         EmployeeEntity employee = employeeRepository.findById(employeeId)
-                .orElseThrow(() -> new RuntimeException("Employee not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee not found"));
 
         DepartmentEntity department = departmentService.getDepartmentById(departmentId)
-                .orElseThrow(() -> new RuntimeException("Department not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Department not found"));
 
         employee.setDepartment(department);
         EmployeeEntity updatedEmployee = employeeRepository.save(employee);
@@ -282,10 +390,10 @@ public class EmployeeService {
     @Transactional
     public EmployeeDTO assignJobTitle(UUID employeeId, UUID jobId) {
         EmployeeEntity employee = employeeRepository.findById(employeeId)
-                .orElseThrow(() -> new RuntimeException("Employee not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee not found"));
 
         JobTitleEntity jobTitle = jobTitleService.getJobTitleById(jobId)
-                .orElseThrow(() -> new RuntimeException("Job title not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Job title not found"));
 
         employee.setJobTitle(jobTitle);
         EmployeeEntity updatedEmployee = employeeRepository.save(employee);
@@ -305,6 +413,7 @@ public class EmployeeService {
         dto.setPhoneNumber(employee.getPhoneNumber());
         dto.setMaritalStatus(employee.getMaritalStatus());
         dto.setStatus(employee.getStatus());
+        dto.setEmploymentStatus(employee.getEmploymentStatus());
 
         if (employee.getDepartment() != null) {
             dto.setDepartmentId(employee.getDepartment().getDepartmentId());
@@ -323,40 +432,29 @@ public class EmployeeService {
 
         return dto;
     }
-    
-    /**
-     * Check if the provided employee ID matches the currently authenticated user's employee ID
-     * Used for authorization checks in controllers
-     *
-     * @param employeeId The employee ID to check
-     * @return true if the ID matches the current user's employee ID, false otherwise
-     */
+
     @Transactional(readOnly = true)
     public boolean isCurrentEmployee(UUID employeeId) {
+        // Get current authenticated user
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated()) {
+        if (authentication == null) {
             return false;
         }
 
         String email = authentication.getName();
-        Optional<EmployeeEntity> employeeOptional = employeeRepository.findByEmail(email);
-        
-        if (employeeOptional.isEmpty()) {
+        Optional<EmployeeEntity> employeeOpt = employeeRepository.findByEmail(email);
+        if (employeeOpt.isEmpty()) {
             return false;
         }
 
-        return employeeOptional.get().getEmployeeId().equals(employeeId);
+        return employeeOpt.get().getEmployeeId().equals(employeeId);
     }
 
-    /**
-     * Get the current authenticated employee
-     *
-     * @return Optional containing the current employee DTO if found
-     */
     @Transactional(readOnly = true)
     public Optional<EmployeeDTO> getCurrentEmployee() {
+        // Get current authenticated user
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated()) {
+        if (authentication == null) {
             return Optional.empty();
         }
 

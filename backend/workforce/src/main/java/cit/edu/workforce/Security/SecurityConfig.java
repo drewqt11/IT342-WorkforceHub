@@ -2,6 +2,7 @@ package cit.edu.workforce.Security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -45,13 +46,29 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(authorize -> authorize
-                .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/api/public/**").permitAll()
-                .requestMatchers("/oauth2/**").permitAll()
+                // Public endpoints
+                .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/refresh-token").permitAll()
+                .requestMatchers("/api/auth/oauth2/token-info/**").permitAll()
+                .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
+                
+                // Swagger/OpenAPI endpoints
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                
+                // Admin endpoints
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                
+                // HR endpoints
                 .requestMatchers("/api/hr/**").hasAnyRole("ADMIN", "HR")
-                .requestMatchers("/api/employee/**").hasAnyRole("ADMIN", "HR", "EMPLOYEE")
+                
+                // Employee endpoints - using method security for fine-grained control
+                .requestMatchers(HttpMethod.GET, "/api/employee/**").hasAnyRole("ADMIN", "HR", "EMPLOYEE")
+                .requestMatchers(HttpMethod.PATCH, "/api/employee/profile").hasAnyRole("ADMIN", "HR", "EMPLOYEE")
+                
+                // Dashboard endpoints
+                .requestMatchers("/api/auth/dashboard/admin").hasRole("ADMIN")
+                .requestMatchers("/api/auth/dashboard/employee").hasAnyRole("ADMIN", "HR", "EMPLOYEE")
+                
+                // Other endpoints need authentication, with method-level security for fine-grained control
                 .anyRequest().authenticated()
             )
             .oauth2Login(oauth2 -> oauth2
@@ -69,7 +86,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("*"));
+        configuration.setAllowedOriginPatterns(Arrays.asList("http://localhost:*", "http://127.0.0.1:*", "https://*.workforcehub.com"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("authorization", "content-type", "x-auth-token"));
         configuration.setExposedHeaders(Arrays.asList("x-auth-token"));

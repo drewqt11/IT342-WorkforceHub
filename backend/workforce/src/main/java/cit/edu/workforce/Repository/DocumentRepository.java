@@ -13,4 +13,5 @@ public interface DocumentRepository extends JpaRepository<DocumentEntity, UUID> 
     List<DocumentEntity> findByEmployee(EmployeeEntity employee);
     List<DocumentEntity> findByEmployeeAndDocumentType(EmployeeEntity employee, String documentType);
     List<DocumentEntity> findByEmployeeAndStatus(EmployeeEntity employee, String status);
+    List<DocumentEntity> findByEmployeeEmployeeId(UUID employeeId);
 } 

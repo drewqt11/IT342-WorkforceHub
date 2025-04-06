@@ -6,6 +6,7 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Component;
@@ -15,7 +16,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Component
 public class JwtTokenProvider {
@@ -25,6 +28,9 @@ public class JwtTokenProvider {
 
     @Value("${jwt.expiration:86400000}") // 24 hours in milliseconds
     private long jwtExpirationInMs;
+    
+    @Value("${jwt.refresh-expiration:604800000}") // 7 days in milliseconds
+    private long refreshExpirationInMs;
 
     private SecretKey getSigningKey() {
         byte[] keyBytes = jwtSecret.getBytes(StandardCharsets.UTF_8);
@@ -33,29 +39,54 @@ public class JwtTokenProvider {
 
     public String generateToken(String username) {
         Map<String, Object> claims = new HashMap<>();
-        return createToken(claims, username);
+        return createToken(claims, username, jwtExpirationInMs);
+    }
+    
+    public String generateRefreshToken(String username) {
+        Map<String, Object> claims = new HashMap<>();
+        return createToken(claims, username, refreshExpirationInMs);
     }
     
     public String generateToken(Authentication authentication) {
         Object principal = authentication.getPrincipal();
         String username;
+        Map<String, Object> claims = new HashMap<>();
         
         if (principal instanceof UserDetails) {
-            username = ((UserDetails) principal).getUsername();
+            UserDetails userDetails = (UserDetails) principal;
+            username = userDetails.getUsername();
+            
+            // Add roles to claims
+            String roles = userDetails.getAuthorities().stream()
+                    .map(GrantedAuthority::getAuthority)
+                    .collect(Collectors.joining(","));
+            claims.put("roles", roles);
+            
         } else if (principal instanceof OidcUser) {
             // Handle OAuth2 authentication
-            username = ((OidcUser) principal).getEmail();
+            OidcUser oidcUser = (OidcUser) principal;
+            username = oidcUser.getEmail();
+            claims.put("name", oidcUser.getFullName());
+            claims.put("email", oidcUser.getEmail());
         } else {
             // Fallback for other authentication types
             username = principal.toString();
         }
         
-        return generateToken(username);
+        return createToken(claims, username, jwtExpirationInMs);
+    }
+    
+    public String generateTokenWithClaims(String username, UUID userId, String email, String role) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("userId", userId.toString());
+        claims.put("email", email);
+        claims.put("roles", role);
+        return createToken(claims, username, jwtExpirationInMs);
     }
 
-    private String createToken(Map<String, Object> claims, String subject) {
+    private String createToken(Map<String, Object> claims, String subject, long expiration) {
         Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + jwtExpirationInMs);
+        Date expiryDate = new Date(now.getTime() + expiration);
 
         return Jwts.builder()
                 .setClaims(claims)

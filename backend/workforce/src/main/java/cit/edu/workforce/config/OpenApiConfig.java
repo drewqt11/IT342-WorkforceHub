@@ -7,8 +7,12 @@ import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
+import io.swagger.v3.oas.models.tags.Tag;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 public class OpenApiConfig {
@@ -17,8 +21,10 @@ public class OpenApiConfig {
     public OpenAPI openAPI() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("WorkforceHub HR Information System API")
-                        .description("API documentation for WorkforceHub HR Information System application")
+                        .title("WorkforceHub HR Management System API")
+                        .description("API documentation for WorkforceHub HR Management System application. " +
+                                "This API provides endpoints for authentication, employee management, certification tracking, " +
+                                "and document management.")
                         .version("v1.0.0")
                         .contact(new Contact()
                                 .name("WorkforceHub Team")
@@ -32,6 +38,20 @@ public class OpenApiConfig {
                                 .bearerFormat("JWT")
                                 .in(SecurityScheme.In.HEADER)
                                 .name("Authorization")))
-                .addSecurityItem(new SecurityRequirement().addList("bearerAuth"));
+                .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
+                .tags(createTagList());
+    }
+    
+    private List<Tag> createTagList() {
+        return Arrays.asList(
+            new Tag().name("Authentication").description("Authentication operations including login, registration, and token refresh"),
+            new Tag().name("Employee Management").description("Operations for managing employees, including CRUD operations"),
+            new Tag().name("Document Management").description("Operations for managing employee documents and certifications"),
+            new Tag().name("Certification Management").description("Operations for managing employee certifications"),
+            new Tag().name("Role Management").description("Operations for managing roles and permissions"),
+            new Tag().name("Department Management").description("Operations for managing departments"),
+            new Tag().name("Job Title Management").description("Operations for managing job titles"),
+            new Tag().name("Email Domain Management").description("Operations for managing allowed email domains")
+        );
     }
 } 

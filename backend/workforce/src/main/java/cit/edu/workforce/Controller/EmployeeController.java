@@ -3,10 +3,15 @@ package cit.edu.workforce.Controller;
 import cit.edu.workforce.DTO.EmployeeDTO;
 import cit.edu.workforce.Service.EmployeeService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -47,17 +52,47 @@ public class EmployeeController {
     }
 
     @GetMapping("/hr/employees")
-    @Operation(summary = "Get all employees", description = "Get a list of all employees")
+    @Operation(summary = "Get all employees", description = "Get a paginated list of all employees")
     @PreAuthorize("hasAnyRole('ROLE_HR', 'ROLE_ADMIN')")
-    public ResponseEntity<List<EmployeeDTO>> getAllEmployees() {
-        return ResponseEntity.ok(employeeService.getAllEmployees());
+    public ResponseEntity<Page<EmployeeDTO>> getAllEmployees(
+            @Parameter(description = "Page number (0-based)") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Page size") @RequestParam(defaultValue = "10") int size,
+            @Parameter(description = "Sort field") @RequestParam(defaultValue = "lastName") String sortBy,
+            @Parameter(description = "Sort direction") @RequestParam(defaultValue = "asc") String direction,
+            @Parameter(description = "Filter by name") @RequestParam(required = false) String name,
+            @Parameter(description = "Filter by employee ID") @RequestParam(required = false) String employeeId,
+            @Parameter(description = "Filter by department") @RequestParam(required = false) String department,
+            @Parameter(description = "Filter by status") @RequestParam(required = false) String status) {
+        
+        Sort sort = "desc".equalsIgnoreCase(direction) ? 
+                Sort.by(sortBy).descending() : 
+                Sort.by(sortBy).ascending();
+        
+        Pageable pageable = PageRequest.of(page, size, sort);
+        
+        if (name != null || employeeId != null || department != null || status != null) {
+            return ResponseEntity.ok(employeeService.searchEmployees(name, employeeId, department, status, pageable));
+        } else {
+            return ResponseEntity.ok(employeeService.getAllEmployeesPaged(pageable));
+        }
     }
 
     @GetMapping("/hr/employees/active")
-    @Operation(summary = "Get all active employees", description = "Get a list of all active employees")
+    @Operation(summary = "Get all active employees", description = "Get a paginated list of all active employees")
     @PreAuthorize("hasAnyRole('ROLE_HR', 'ROLE_ADMIN')")
-    public ResponseEntity<List<EmployeeDTO>> getAllActiveEmployees() {
-        return ResponseEntity.ok(employeeService.getAllActiveEmployees());
+    public ResponseEntity<Page<EmployeeDTO>> getAllActiveEmployees(
+            @Parameter(description = "Page number (0-based)") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Page size") @RequestParam(defaultValue = "10") int size,
+            @Parameter(description = "Sort field") @RequestParam(defaultValue = "lastName") String sortBy,
+            @Parameter(description = "Sort direction") @RequestParam(defaultValue = "asc") String direction) {
+        
+        Sort sort = "desc".equalsIgnoreCase(direction) ? 
+                Sort.by(sortBy).descending() : 
+                Sort.by(sortBy).ascending();
+        
+        Pageable pageable = PageRequest.of(page, size, sort);
+        
+        return ResponseEntity.ok(employeeService.getAllActiveEmployeesPaged(pageable));
     }
 
     @PostMapping("/hr/employees")
@@ -73,29 +108,61 @@ public class EmployeeController {
     public ResponseEntity<EmployeeDTO> updateEmployee(@PathVariable UUID id, @Valid @RequestBody EmployeeDTO employeeDTO) {
         return ResponseEntity.ok(employeeService.updateEmployee(id, employeeDTO));
     }
+    
+    @PatchMapping("/hr/employees/{id}")
+    @Operation(summary = "Partially update employee", description = "Update specific fields of an existing employee")
+    @PreAuthorize("hasAnyRole('ROLE_HR', 'ROLE_ADMIN')")
+    public ResponseEntity<EmployeeDTO> partialUpdateEmployee(@PathVariable UUID id, @RequestBody EmployeeDTO employeeDTO) {
+        return ResponseEntity.ok(employeeService.updateEmployeePartially(id, employeeDTO));
+    }
+    
+    @PatchMapping("/employee/profile")
+    @Operation(summary = "Update own profile", description = "Allow employee to update specific fields of their own profile")
+    @PreAuthorize("hasAnyRole('ROLE_EMPLOYEE', 'ROLE_HR', 'ROLE_ADMIN')")
+    public ResponseEntity<EmployeeDTO> updateOwnProfile(@RequestBody EmployeeDTO employeeDTO) {
+        return employeeService.getCurrentEmployee()
+                .map(currentEmployee -> {
+                    // Only allow updating non-sensitive fields
+                    EmployeeDTO limitedUpdate = new EmployeeDTO();
+                    limitedUpdate.setAddress(employeeDTO.getAddress());
+                    limitedUpdate.setPhoneNumber(employeeDTO.getPhoneNumber());
+                    limitedUpdate.setMaritalStatus(employeeDTO.getMaritalStatus());
+                    
+                    return ResponseEntity.ok(employeeService.updateEmployeePartially(
+                            currentEmployee.getEmployeeId(), limitedUpdate));
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
 
-    @DeleteMapping("/hr/employees/{id}")
-    @Operation(summary = "Deactivate employee", description = "Deactivate an employee")
+    @PatchMapping("/hr/employees/{id}/deactivate")
+    @Operation(summary = "Deactivate employee", description = "Deactivate an employee (soft delete)")
     @PreAuthorize("hasAnyRole('ROLE_HR', 'ROLE_ADMIN')")
     public ResponseEntity<EmployeeDTO> deactivateEmployee(@PathVariable UUID id) {
         return ResponseEntity.ok(employeeService.deactivateEmployee(id));
     }
+    
+    @PatchMapping("/hr/employees/{id}/activate")
+    @Operation(summary = "Activate employee", description = "Activate a previously deactivated employee")
+    @PreAuthorize("hasAnyRole('ROLE_HR', 'ROLE_ADMIN')")
+    public ResponseEntity<EmployeeDTO> activateEmployee(@PathVariable UUID id) {
+        return ResponseEntity.ok(employeeService.activateEmployee(id));
+    }
 
-    @PutMapping("/admin/employees/{id}/role")
+    @PatchMapping("/hr/employees/{id}/role")
     @Operation(summary = "Assign role to employee", description = "Assign a role to an employee")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasAnyRole('ROLE_HR', 'ROLE_ADMIN')")
     public ResponseEntity<EmployeeDTO> assignRoleToEmployee(@PathVariable UUID id, @RequestParam String roleId) {
         return ResponseEntity.ok(employeeService.assignRole(id, roleId));
     }
 
-    @PutMapping("/hr/employees/{id}/department")
+    @PatchMapping("/hr/employees/{id}/department")
     @Operation(summary = "Assign department to employee", description = "Assign a department to an employee")
     @PreAuthorize("hasAnyRole('ROLE_HR', 'ROLE_ADMIN')")
     public ResponseEntity<EmployeeDTO> assignDepartmentToEmployee(@PathVariable UUID id, @RequestParam UUID departmentId) {
         return ResponseEntity.ok(employeeService.assignDepartment(id, departmentId));
     }
 
-    @PutMapping("/hr/employees/{id}/job")
+    @PatchMapping("/hr/employees/{id}/job")
     @Operation(summary = "Assign job title to employee", description = "Assign a job title to an employee")
     @PreAuthorize("hasAnyRole('ROLE_HR', 'ROLE_ADMIN')")
     public ResponseEntity<EmployeeDTO> assignJobTitleToEmployee(@PathVariable UUID id, @RequestParam UUID jobId) {
