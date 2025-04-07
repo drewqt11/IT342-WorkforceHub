@@ -8,17 +8,16 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
-import java.util.UUID;
 
 @Repository
-public interface RefreshTokenRepository extends JpaRepository<RefreshTokenEntity, UUID> {
+public interface RefreshTokenRepository extends JpaRepository<RefreshTokenEntity, String> {
     Optional<RefreshTokenEntity> findByToken(String token);
-    
+
     Optional<RefreshTokenEntity> findByUserAccount(UserAccountEntity userAccount);
-    
+
     @Modifying
     @Query("UPDATE RefreshTokenEntity r SET r.revoked = true WHERE r.userAccount.userId = :userId")
-    void revokeAllTokensByUser(UUID userId);
-    
+    void revokeAllTokensByUser(String userId);
+
     void deleteByUserAccount(UserAccountEntity userAccount);
-} 
+}

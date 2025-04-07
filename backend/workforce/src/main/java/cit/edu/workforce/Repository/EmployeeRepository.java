@@ -9,20 +9,19 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 @Repository
-public interface EmployeeRepository extends JpaRepository<EmployeeEntity, UUID> {
+public interface EmployeeRepository extends JpaRepository<EmployeeEntity, String> {
     Optional<EmployeeEntity> findByEmail(String email);
     Optional<EmployeeEntity> findByUserAccount(UserAccountEntity userAccount);
     List<EmployeeEntity> findByStatus(String status);
     Page<EmployeeEntity> findByStatus(String status, Pageable pageable);
     Boolean existsByEmail(String email);
-    
+
     Page<EmployeeEntity> findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(
             String firstName, String lastName, Pageable pageable);
-    
-    Page<EmployeeEntity> findByEmployeeId(UUID employeeId, Pageable pageable);
-    
+
+    Page<EmployeeEntity> findByEmployeeId(String employeeId, Pageable pageable);
+
     Page<EmployeeEntity> findByDepartmentDepartmentNameContainingIgnoreCase(String departmentName, Pageable pageable);
-} 
+}

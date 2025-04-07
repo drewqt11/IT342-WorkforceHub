@@ -9,7 +9,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
-import java.util.UUID;
 
 @Service
 public class UserAccountService {
@@ -44,7 +43,7 @@ public class UserAccountService {
     }
 
     @Transactional(readOnly = true)
-    public Optional<UserAccountEntity> findById(UUID userId) {
+    public Optional<UserAccountEntity> findById(String userId) {
         return userAccountRepository.findById(userId);
     }
 
@@ -67,16 +66,20 @@ public class UserAccountService {
     }
 
     @Transactional
-    public void deleteUser(UUID userId) {
+    public void deleteUser(String userId) {
         userAccountRepository.deleteById(userId);
     }
 
     @Transactional(readOnly = true)
     public boolean checkEmailDomain(String email) {
-        // In a real application, you would check the domain against the email_domain_list table
-        // This is a simplified version
-        String domain = email.substring(email.indexOf("@") + 1);
-        // Check if the domain is in the whitelist
-        return true; // This should be replaced with actual domain verification
+        // Extract domain from email
+        if (email == null || !email.contains("@")) {
+            return false;
+        }
+
+        String domain = email.substring(email.indexOf("@") + 1).toLowerCase();
+
+        // Check if the domain is @cit.edu as required
+        return "cit.edu".equals(domain);
     }
-} 
+}

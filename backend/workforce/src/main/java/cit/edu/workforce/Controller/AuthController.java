@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.util.Optional;
-import java.util.UUID;
+
 
 @RestController
 @RequestMapping("/api/auth")
@@ -35,7 +35,7 @@ public class AuthController {
 
     @Autowired
     public AuthController(
-            AuthService authService, 
+            AuthService authService,
             UserAccountRepository userAccountRepository,
             EmployeeRepository employeeRepository) {
         this.authService = authService;
@@ -56,30 +56,30 @@ public class AuthController {
         AuthResponseDTO authResponse = authService.register(registrationDTO);
         return new ResponseEntity<>(authResponse, HttpStatus.CREATED);
     }
-    
+
     @PostMapping("/refresh-token")
     @Operation(summary = "Refresh token", description = "Refresh an access token using a refresh token")
     public ResponseEntity<TokenRefreshResponseDTO> refreshToken(@Valid @RequestBody TokenRefreshRequestDTO request) {
         TokenRefreshResponseDTO tokenRefreshResponse = authService.refreshToken(request.getRefreshToken());
         return ResponseEntity.ok(tokenRefreshResponse);
     }
-    
+
     @PostMapping("/logout")
     @PreAuthorize("isAuthenticated()")
     @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Logout", description = "Logout a user by revoking their refresh tokens")
-    public ResponseEntity<Void> logout(@RequestParam UUID userId) {
+    public ResponseEntity<Void> logout(@RequestParam String userId) {
         authService.logout(userId);
         return ResponseEntity.ok().build();
     }
-    
+
     @GetMapping("/oauth2/token-info/{email}")
     @Operation(summary = "Get token info", description = "Retrieves information about a user from email after OAuth2 login")
     public ResponseEntity<AuthResponseDTO> getOAuth2TokenInfo(@PathVariable String email) {
         AuthResponseDTO authResponse = authService.getOAuth2TokenInfo(email);
         return ResponseEntity.ok(authResponse);
     }
-    
+
     @GetMapping("/dashboard/admin")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     @SecurityRequirement(name = "bearerAuth")
@@ -87,7 +87,7 @@ public class AuthController {
     public ResponseEntity<String> adminDashboard(Principal principal) {
         return ResponseEntity.ok("Hello, Admin " + principal.getName());
     }
-    
+
     @GetMapping("/dashboard/employee")
     @PreAuthorize("hasAnyRole('ROLE_EMPLOYEE', 'ROLE_HR', 'ROLE_ADMIN')")
     @SecurityRequirement(name = "bearerAuth")
@@ -95,4 +95,4 @@ public class AuthController {
     public ResponseEntity<String> employeeDashboard(Principal principal) {
         return ResponseEntity.ok("Hello, " + principal.getName());
     }
-} 
+}

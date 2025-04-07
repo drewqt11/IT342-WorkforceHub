@@ -7,7 +7,6 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Entity
 @Table(name = "user_account")
@@ -17,10 +16,10 @@ import java.util.UUID;
 public class UserAccountEntity {
 
     @Id
-    @GeneratedValue(generator = "UUID")
-    @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
-    @Column(name = "user_id", updatable = false, nullable = false)
-    private UUID userId;
+    @GeneratedValue(generator = "custom-user-id")
+    @GenericGenerator(name = "custom-user-id", strategy = "cit.edu.workforce.Utils.UserIdGenerator")
+    @Column(name = "user_id", updatable = false, nullable = false, length = 16)
+    private String userId;
 
     @Column(name = "email_address", unique = true, nullable = false)
     private String emailAddress;
@@ -42,4 +41,4 @@ public class UserAccountEntity {
         createdAt = LocalDateTime.now();
         isActive = true;
     }
-} 
+}

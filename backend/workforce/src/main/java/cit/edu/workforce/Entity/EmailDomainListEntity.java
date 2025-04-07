@@ -7,7 +7,6 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Entity
 @Table(name = "email_domain_list")
@@ -19,8 +18,8 @@ public class EmailDomainListEntity {
     @Id
     @GeneratedValue(generator = "UUID")
     @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
-    @Column(name = "domain_id", updatable = false, nullable = false)
-    private UUID domainId;
+    @Column(name = "domain_id", updatable = false, nullable = false, length = 36)
+    private String domainId;
 
     @Column(name = "domain_name", nullable = false, unique = true)
     private String domainName;
@@ -35,4 +34,4 @@ public class EmailDomainListEntity {
     protected void onCreate() {
         addedAt = LocalDateTime.now();
     }
-} 
+}

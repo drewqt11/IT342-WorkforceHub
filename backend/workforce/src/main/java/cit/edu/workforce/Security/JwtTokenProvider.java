@@ -28,7 +28,7 @@ public class JwtTokenProvider {
 
     @Value("${jwt.expiration:86400000}") // 24 hours in milliseconds
     private long jwtExpirationInMs;
-    
+
     @Value("${jwt.refresh-expiration:604800000}") // 7 days in milliseconds
     private long refreshExpirationInMs;
 
@@ -41,27 +41,27 @@ public class JwtTokenProvider {
         Map<String, Object> claims = new HashMap<>();
         return createToken(claims, username, jwtExpirationInMs);
     }
-    
+
     public String generateRefreshToken(String username) {
         Map<String, Object> claims = new HashMap<>();
         return createToken(claims, username, refreshExpirationInMs);
     }
-    
+
     public String generateToken(Authentication authentication) {
         Object principal = authentication.getPrincipal();
         String username;
         Map<String, Object> claims = new HashMap<>();
-        
+
         if (principal instanceof UserDetails) {
             UserDetails userDetails = (UserDetails) principal;
             username = userDetails.getUsername();
-            
+
             // Add roles to claims
             String roles = userDetails.getAuthorities().stream()
                     .map(GrantedAuthority::getAuthority)
                     .collect(Collectors.joining(","));
             claims.put("roles", roles);
-            
+
         } else if (principal instanceof OidcUser) {
             // Handle OAuth2 authentication
             OidcUser oidcUser = (OidcUser) principal;
@@ -72,13 +72,13 @@ public class JwtTokenProvider {
             // Fallback for other authentication types
             username = principal.toString();
         }
-        
+
         return createToken(claims, username, jwtExpirationInMs);
     }
-    
-    public String generateTokenWithClaims(String username, UUID userId, String email, String role) {
+
+    public String generateTokenWithClaims(String username, String userId, String email, String role) {
         Map<String, Object> claims = new HashMap<>();
-        claims.put("userId", userId.toString());
+        claims.put("userId", userId);
         claims.put("email", email);
         claims.put("roles", role);
         return createToken(claims, username, jwtExpirationInMs);
@@ -127,4 +127,4 @@ public class JwtTokenProvider {
         final String username = extractUsername(token);
         return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
     }
-} 
+}

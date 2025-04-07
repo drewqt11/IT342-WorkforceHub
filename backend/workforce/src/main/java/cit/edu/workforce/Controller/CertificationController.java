@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/api")
@@ -32,7 +31,7 @@ public class CertificationController {
     @GetMapping("/employees/{employeeId}/certifications")
     @Operation(summary = "Get employee certifications", description = "Get all certifications for an employee")
     @PreAuthorize("hasAnyRole('ROLE_HR', 'ROLE_ADMIN') or @employeeService.isCurrentEmployee(#employeeId)")
-    public ResponseEntity<List<CertificationEntity>> getEmployeeCertifications(@PathVariable UUID employeeId) {
+    public ResponseEntity<List<CertificationEntity>> getEmployeeCertifications(@PathVariable String employeeId) {
         List<CertificationEntity> certifications = certificationService.getCertificationsByEmployeeId(employeeId);
         return ResponseEntity.ok(certifications);
     }
@@ -40,7 +39,7 @@ public class CertificationController {
     @GetMapping("/certifications/{certificationId}")
     @Operation(summary = "Get certification by ID", description = "Get a certification by its ID")
     @PreAuthorize("hasAnyRole('ROLE_HR', 'ROLE_ADMIN') or @certificationService.hasAccessToCertification(#certificationId)")
-    public ResponseEntity<CertificationEntity> getCertificationById(@PathVariable UUID certificationId) {
+    public ResponseEntity<CertificationEntity> getCertificationById(@PathVariable String certificationId) {
         CertificationEntity certification = certificationService.getCertificationById(certificationId);
         return ResponseEntity.ok(certification);
     }
@@ -49,15 +48,15 @@ public class CertificationController {
     @Operation(summary = "Create certification", description = "Create a new certification for an employee")
     @PreAuthorize("hasAnyRole('ROLE_HR', 'ROLE_ADMIN') or @employeeService.isCurrentEmployee(#employeeId)")
     public ResponseEntity<CertificationEntity> createCertification(
-            @PathVariable UUID employeeId,
+            @PathVariable String employeeId,
             @RequestParam String certificateName,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate issueDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate expiryDate,
-            @RequestParam(required = false) UUID documentId) {
-        
+            @RequestParam(required = false) String documentId) {
+
         CertificationEntity certification = certificationService.createCertification(
                 employeeId, certificateName, issueDate, expiryDate, documentId);
-        
+
         return new ResponseEntity<>(certification, HttpStatus.CREATED);
     }
 
@@ -65,21 +64,21 @@ public class CertificationController {
     @Operation(summary = "Update certification", description = "Update an existing certification")
     @PreAuthorize("hasAnyRole('ROLE_HR', 'ROLE_ADMIN') or @certificationService.hasAccessToCertification(#certificationId)")
     public ResponseEntity<CertificationEntity> updateCertification(
-            @PathVariable UUID certificationId,
+            @PathVariable String certificationId,
             @RequestParam(required = false) String certificateName,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate issueDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate expiryDate) {
-        
+
         CertificationEntity certification = certificationService.updateCertification(
                 certificationId, certificateName, issueDate, expiryDate);
-        
+
         return ResponseEntity.ok(certification);
     }
 
     @PatchMapping("/hr/certifications/{certificationId}/approve")
     @Operation(summary = "Approve certification", description = "Approve a certification (HR or Admin only)")
     @PreAuthorize("hasAnyRole('ROLE_HR', 'ROLE_ADMIN')")
-    public ResponseEntity<CertificationEntity> approveCertification(@PathVariable UUID certificationId) {
+    public ResponseEntity<CertificationEntity> approveCertification(@PathVariable String certificationId) {
         CertificationEntity certification = certificationService.approveCertification(certificationId);
         return ResponseEntity.ok(certification);
     }
@@ -87,8 +86,8 @@ public class CertificationController {
     @PatchMapping("/hr/certifications/{certificationId}/reject")
     @Operation(summary = "Reject certification", description = "Reject a certification (HR or Admin only)")
     @PreAuthorize("hasAnyRole('ROLE_HR', 'ROLE_ADMIN')")
-    public ResponseEntity<CertificationEntity> rejectCertification(@PathVariable UUID certificationId) {
+    public ResponseEntity<CertificationEntity> rejectCertification(@PathVariable String certificationId) {
         CertificationEntity certification = certificationService.rejectCertification(certificationId);
         return ResponseEntity.ok(certification);
     }
-} 
+}

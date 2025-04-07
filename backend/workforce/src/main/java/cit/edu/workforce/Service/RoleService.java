@@ -30,6 +30,11 @@ public class RoleService {
     }
 
     @Transactional(readOnly = true)
+    public Optional<RoleEntity> findById(String roleId) {
+        return roleRepository.findById(roleId);
+    }
+
+    @Transactional(readOnly = true)
     public Optional<RoleEntity> getRoleByName(String roleName) {
         return roleRepository.findByRoleName(roleName);
     }
@@ -74,4 +79,4 @@ public class RoleService {
             createRole("ROLE_EMPLOYEE", "Employee");
         }
     }
-} 
+}

@@ -8,7 +8,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 @Service
 public class DepartmentService {
@@ -26,7 +25,12 @@ public class DepartmentService {
     }
 
     @Transactional(readOnly = true)
-    public Optional<DepartmentEntity> getDepartmentById(UUID departmentId) {
+    public Optional<DepartmentEntity> getDepartmentById(String departmentId) {
+        return departmentRepository.findById(departmentId);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<DepartmentEntity> findById(String departmentId) {
         return departmentRepository.findById(departmentId);
     }
 
@@ -43,7 +47,7 @@ public class DepartmentService {
     }
 
     @Transactional
-    public DepartmentEntity updateDepartment(UUID departmentId, String departmentName) {
+    public DepartmentEntity updateDepartment(String departmentId, String departmentName) {
         DepartmentEntity department = departmentRepository.findById(departmentId)
                 .orElseThrow(() -> new RuntimeException("Department not found"));
 
@@ -52,7 +56,7 @@ public class DepartmentService {
     }
 
     @Transactional
-    public void deleteDepartment(UUID departmentId) {
+    public void deleteDepartment(String departmentId) {
         departmentRepository.deleteById(departmentId);
     }
-} 
+}

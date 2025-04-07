@@ -6,11 +6,10 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 @Repository
-public interface EmailDomainListRepository extends JpaRepository<EmailDomainListEntity, UUID> {
+public interface EmailDomainListRepository extends JpaRepository<EmailDomainListEntity, String> {
     Optional<EmailDomainListEntity> findByDomainName(String domainName);
     List<EmailDomainListEntity> findByIsActive(boolean isActive);
     Boolean existsByDomainName(String domainName);
-} 
+}

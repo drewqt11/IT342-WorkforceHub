@@ -29,7 +29,6 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Optional;
-import java.util.UUID;
 
 @Service
 public class AuthService {
@@ -72,7 +71,7 @@ public class AuthService {
         if (!emailDomainListService.isValidDomain(loginRequest.getEmail())) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid email domain. Please use a valid domain.");
         }
-        
+
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         loginRequest.getEmail(),
@@ -97,7 +96,7 @@ public class AuthService {
 
         EmployeeEntity employee = employeeOptional.get();
         String roleName = employee.getRole() != null ? employee.getRole().getRoleName() : "Unknown";
-        
+
         // Generate refresh token
         RefreshTokenEntity refreshToken = refreshTokenService.createRefreshToken(userAccount.getUserId());
 
@@ -121,7 +120,7 @@ public class AuthService {
         }
 
         // Check if email already exists
-        if (userAccountRepository.existsByEmailAddress(registrationDTO.getEmail()) || 
+        if (userAccountRepository.existsByEmailAddress(registrationDTO.getEmail()) ||
             employeeRepository.existsByEmail(registrationDTO.getEmail())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already registered");
         }
@@ -165,7 +164,7 @@ public class AuthService {
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String jwt = jwtTokenProvider.generateToken(authentication);
-        
+
         // Generate refresh token
         RefreshTokenEntity refreshToken = refreshTokenService.createRefreshToken(userAccount.getUserId());
 
@@ -180,13 +179,13 @@ public class AuthService {
                 employee.getLastName()
         );
     }
-    
+
     @Transactional
     public String generateTokenForEmail(String email) {
         UserDetails userDetails = userDetailsService.loadUserByUsername(email);
         return jwtTokenProvider.generateToken(userDetails.getUsername());
     }
-    
+
     @Transactional
     public TokenRefreshResponseDTO refreshToken(String refreshToken) {
         return refreshTokenService.findByToken(refreshToken)
@@ -195,65 +194,65 @@ public class AuthService {
                 .map(userAccount -> {
                     // Mark current refresh token as used
                     refreshTokenService.markTokenAsUsed(refreshToken);
-                    
+
                     // Create new refresh token
                     RefreshTokenEntity newRefreshToken = refreshTokenService.createRefreshToken(userAccount.getUserId());
-                    
+
                     // Generate new access token
                     String token = jwtTokenProvider.generateToken(userAccount.getEmailAddress());
-                    
+
                     return new TokenRefreshResponseDTO(token, newRefreshToken.getToken(), "Bearer");
                 })
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.FORBIDDEN, "Invalid refresh token"));
     }
-    
+
     @Transactional
-    public void logout(UUID userId) {
+    public void logout(String userId) {
         refreshTokenService.revokeAllByUser(userId);
     }
-    
+
     @Transactional
     public AuthResponseDTO getOAuth2TokenInfo(String email) {
         // Validate email domain first
         if (!emailDomainListService.isValidDomain(email)) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid email domain. Only approved domains are allowed.");
         }
-    
+
         // Find user account by email
         Optional<UserAccountEntity> userAccountOptional = userAccountRepository.findByEmailAddress(email);
-        
+
         if (userAccountOptional.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
         }
-        
+
         UserAccountEntity userAccount = userAccountOptional.get();
-        
+
         // Update last login time
         userAccount.setLastLogin(LocalDateTime.now());
         userAccountRepository.save(userAccount);
-        
+
         // Find employee
         Optional<EmployeeEntity> employeeOptional = employeeRepository.findByUserAccount(userAccount);
         if (employeeOptional.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee profile not found");
         }
-        
+
         EmployeeEntity employee = employeeOptional.get();
-        
+
         // Generate JWT token
         String token = jwtTokenProvider.generateTokenWithClaims(
-            email, 
-            userAccount.getUserId(), 
-            email, 
+            email,
+            userAccount.getUserId(),
+            email,
             employee.getRole() != null ? employee.getRole().getRoleName() : "ROLE_EMPLOYEE"
         );
-        
+
         // Generate refresh token
         RefreshTokenEntity refreshToken = refreshTokenService.createRefreshToken(userAccount.getUserId());
-        
+
         String roleName = employee.getRole() != null ? employee.getRole().getRoleName() : "ROLE_EMPLOYEE";
-        
+
         return new AuthResponseDTO(
                 token,
                 refreshToken.getToken(),
@@ -265,4 +264,4 @@ public class AuthService {
                 employee.getLastName()
         );
     }
-} 
+}

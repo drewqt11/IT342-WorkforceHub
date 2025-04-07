@@ -7,7 +7,6 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Entity
 @Table(name = "document")
@@ -19,8 +18,8 @@ public class DocumentEntity {
     @Id
     @GeneratedValue(generator = "UUID")
     @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
-    @Column(name = "document_id", updatable = false, nullable = false)
-    private UUID documentId;
+    @Column(name = "document_id", updatable = false, nullable = false, length = 36)
+    private String documentId;
 
     @Column(name = "document_type", nullable = false)
     private String documentType;
@@ -48,4 +47,4 @@ public class DocumentEntity {
     protected void onCreate() {
         uploadedAt = LocalDateTime.now();
     }
-} 
+}

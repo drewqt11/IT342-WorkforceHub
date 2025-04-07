@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.UUID;
+
 
 @Data
 @NoArgsConstructor
@@ -13,15 +13,15 @@ public class AuthResponseDTO {
     private String accessToken;
     private String refreshToken;
     private String tokenType = "Bearer";
-    private UUID userId;
+    private String userId;
     private String email;
     private String role;
-    private UUID employeeId;
+    private String employeeId;
     private String firstName;
     private String lastName;
-    
-    public AuthResponseDTO(String accessToken, String refreshToken, UUID userId, String email, String role, 
-                          UUID employeeId, String firstName, String lastName) {
+
+    public AuthResponseDTO(String accessToken, String refreshToken, String userId, String email, String role,
+                          String employeeId, String firstName, String lastName) {
         this.accessToken = accessToken;
         this.refreshToken = refreshToken;
         this.userId = userId;
@@ -31,9 +31,9 @@ public class AuthResponseDTO {
         this.firstName = firstName;
         this.lastName = lastName;
     }
-    
-    public AuthResponseDTO(String accessToken, UUID userId, String email, String role, 
-                          UUID employeeId, String firstName, String lastName) {
+
+    public AuthResponseDTO(String accessToken, String userId, String email, String role,
+                          String employeeId, String firstName, String lastName) {
         this.accessToken = accessToken;
         this.userId = userId;
         this.email = email;
@@ -42,4 +42,4 @@ public class AuthResponseDTO {
         this.firstName = firstName;
         this.lastName = lastName;
     }
-} 
+}

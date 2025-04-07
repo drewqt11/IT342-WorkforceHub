@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/api")
@@ -33,10 +32,10 @@ public class DocumentController {
     @Operation(summary = "Upload document", description = "Upload a document for an employee")
     @PreAuthorize("hasAnyRole('ROLE_HR', 'ROLE_ADMIN') or @employeeService.isCurrentEmployee(#employeeId)")
     public ResponseEntity<DocumentEntity> uploadDocument(
-            @PathVariable UUID employeeId,
+            @PathVariable String employeeId,
             @RequestParam("file") MultipartFile file,
             @RequestParam("documentType") String documentType) {
-        
+
         DocumentEntity document = documentService.uploadDocument(employeeId, file, documentType);
         return new ResponseEntity<>(document, HttpStatus.CREATED);
     }
@@ -44,7 +43,7 @@ public class DocumentController {
     @GetMapping("/employees/{employeeId}/documents")
     @Operation(summary = "Get employee documents", description = "Get all documents for an employee")
     @PreAuthorize("hasAnyRole('ROLE_HR', 'ROLE_ADMIN') or @employeeService.isCurrentEmployee(#employeeId)")
-    public ResponseEntity<List<DocumentEntity>> getEmployeeDocuments(@PathVariable UUID employeeId) {
+    public ResponseEntity<List<DocumentEntity>> getEmployeeDocuments(@PathVariable String employeeId) {
         List<DocumentEntity> documents = documentService.getDocumentsByEmployeeId(employeeId);
         return ResponseEntity.ok(documents);
     }
@@ -52,7 +51,7 @@ public class DocumentController {
     @GetMapping("/documents/{documentId}")
     @Operation(summary = "Get document by ID", description = "Get a document by its ID")
     @PreAuthorize("hasAnyRole('ROLE_HR', 'ROLE_ADMIN') or @documentService.hasAccessToDocument(#documentId)")
-    public ResponseEntity<DocumentEntity> getDocumentById(@PathVariable UUID documentId) {
+    public ResponseEntity<DocumentEntity> getDocumentById(@PathVariable String documentId) {
         DocumentEntity document = documentService.getDocumentById(documentId);
         return ResponseEntity.ok(document);
     }
@@ -60,7 +59,7 @@ public class DocumentController {
     @PatchMapping("/hr/documents/{documentId}/approve")
     @Operation(summary = "Approve document", description = "Approve a document (HR or Admin only)")
     @PreAuthorize("hasAnyRole('ROLE_HR', 'ROLE_ADMIN')")
-    public ResponseEntity<DocumentEntity> approveDocument(@PathVariable UUID documentId) {
+    public ResponseEntity<DocumentEntity> approveDocument(@PathVariable String documentId) {
         DocumentEntity document = documentService.approveDocument(documentId);
         return ResponseEntity.ok(document);
     }
@@ -68,8 +67,8 @@ public class DocumentController {
     @PatchMapping("/hr/documents/{documentId}/reject")
     @Operation(summary = "Reject document", description = "Reject a document (HR or Admin only)")
     @PreAuthorize("hasAnyRole('ROLE_HR', 'ROLE_ADMIN')")
-    public ResponseEntity<DocumentEntity> rejectDocument(@PathVariable UUID documentId) {
+    public ResponseEntity<DocumentEntity> rejectDocument(@PathVariable String documentId) {
         DocumentEntity document = documentService.rejectDocument(documentId);
         return ResponseEntity.ok(document);
     }
-} 
+}

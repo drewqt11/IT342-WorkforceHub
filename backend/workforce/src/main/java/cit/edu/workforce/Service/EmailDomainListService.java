@@ -9,7 +9,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 @Service
 public class EmailDomainListService {
@@ -32,7 +31,7 @@ public class EmailDomainListService {
     }
 
     @Transactional(readOnly = true)
-    public Optional<EmailDomainListEntity> getDomainById(UUID domainId) {
+    public Optional<EmailDomainListEntity> getDomainById(String domainId) {
         return emailDomainListRepository.findById(domainId);
     }
 
@@ -56,7 +55,7 @@ public class EmailDomainListService {
     }
 
     @Transactional
-    public EmailDomainListEntity updateDomain(UUID domainId, String domainName, boolean isActive) {
+    public EmailDomainListEntity updateDomain(String domainId, String domainName, boolean isActive) {
         EmailDomainListEntity domain = emailDomainListRepository.findById(domainId)
                 .orElseThrow(() -> new RuntimeException("Domain not found"));
 
@@ -67,12 +66,12 @@ public class EmailDomainListService {
     }
 
     @Transactional
-    public void deleteDomain(UUID domainId) {
+    public void deleteDomain(String domainId) {
         emailDomainListRepository.deleteById(domainId);
     }
 
     @Transactional
-    public EmailDomainListEntity activateDomain(UUID domainId) {
+    public EmailDomainListEntity activateDomain(String domainId) {
         EmailDomainListEntity domain = emailDomainListRepository.findById(domainId)
                 .orElseThrow(() -> new RuntimeException("Domain not found"));
 
@@ -81,7 +80,7 @@ public class EmailDomainListService {
     }
 
     @Transactional
-    public EmailDomainListEntity deactivateDomain(UUID domainId) {
+    public EmailDomainListEntity deactivateDomain(String domainId) {
         EmailDomainListEntity domain = emailDomainListRepository.findById(domainId)
                 .orElseThrow(() -> new RuntimeException("Domain not found"));
 
@@ -91,17 +90,26 @@ public class EmailDomainListService {
 
     @Transactional(readOnly = true)
     public boolean isValidDomain(String email) {
-        // Get all active domains
-        List<EmailDomainListEntity> activeDomains = emailDomainListRepository.findByIsActive(true);
-        
-        // If no domains are configured, allow all domains
-        if (activeDomains.isEmpty()) {
-            return true;
+        if (email == null || !email.contains("@")) {
+            return false;
         }
-        
+
         // Extract domain from email
         String domain = email.substring(email.indexOf("@") + 1).toLowerCase();
-        
+
+        // Check if the domain is @cit.edu as required
+        if ("cit.edu".equals(domain)) {
+            return true;
+        }
+
+        // If not cit.edu, check against the database
+        List<EmailDomainListEntity> activeDomains = emailDomainListRepository.findByIsActive(true);
+
+        // If no domains are configured in the database, only allow cit.edu
+        if (activeDomains.isEmpty()) {
+            return false;
+        }
+
         // Check if the domain is in the active list
         Optional<EmailDomainListEntity> domainEntity = emailDomainListRepository.findByDomainName(domain);
         return domainEntity.isPresent() && domainEntity.get().isActive();

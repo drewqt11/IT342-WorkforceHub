@@ -6,7 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
 
-import java.util.UUID;
+
 
 @Entity
 @Table(name = "department")
@@ -16,11 +16,11 @@ import java.util.UUID;
 public class DepartmentEntity {
 
     @Id
-    @GeneratedValue(generator = "UUID")
-    @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
-    @Column(name = "deparment_id", updatable = false, nullable = false)
-    private UUID departmentId;
+    @GeneratedValue(generator = "custom-department-id")
+    @GenericGenerator(name = "custom-department-id", strategy = "org.hibernate.id.UUIDGenerator")
+    @Column(name = "deparment_id", updatable = false, nullable = false, length = 36)
+    private String departmentId;
 
     @Column(name = "department_name", nullable = false)
     private String departmentName;
-} 
+}
