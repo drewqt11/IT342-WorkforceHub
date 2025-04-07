@@ -10,7 +10,9 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
@@ -23,9 +25,13 @@ import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Component
 public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
+
+    private static final Logger logger = LoggerFactory.getLogger(OAuth2AuthenticationSuccessHandler.class);
 
     @Autowired
     private JwtTokenProvider tokenProvider;
@@ -39,7 +45,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     @Autowired
     private RoleRepository roleRepository;
 
-    private static final String FRONTEND_REDIRECT_URI = "http://localhost:5173/oauth2/redirect";
+    @Value("${app.oauth2.redirect-uri:http://localhost:5173/oauth2/redirect}")
+    private String frontendRedirectUri;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) 
@@ -59,7 +66,35 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     protected String determineTargetUrl(HttpServletRequest request, HttpServletResponse response, Authentication authentication) {
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
         Map<String, Object> attributes = oAuth2User.getAttributes();
-        String email = (String) attributes.get("email");
+        
+        // Get the registration ID (e.g., "microsoft", "google")
+        String registrationId = null;
+        if (authentication instanceof OAuth2AuthenticationToken) {
+            registrationId = ((OAuth2AuthenticationToken) authentication).getAuthorizedClientRegistrationId();
+            logger.info("OAuth2 authentication success with registration ID: {}", registrationId);
+        }
+        
+        // Create OAuth2UserInfo with the registrationId to handle provider-specific attributes
+        OAuth2UserInfo userInfo = new OAuth2UserInfo(attributes, registrationId);
+        String email = userInfo.getEmail();
+        
+        if (email == null || email.isEmpty()) {
+            logger.error("Email not found in OAuth2 user attributes: {}", attributes);
+            // Fallback for Microsoft-specific fields
+            if ("microsoft".equals(registrationId)) {
+                if (attributes.containsKey("userPrincipalName")) {
+                    email = (String) attributes.get("userPrincipalName");
+                } else if (attributes.containsKey("mail")) {
+                    email = (String) attributes.get("mail");
+                }
+            }
+            
+            if (email == null || email.isEmpty()) {
+                throw new RuntimeException("Email not found in OAuth2 user attributes");
+            }
+        }
+        
+        logger.info("Processing OAuth2 login for email: {}", email);
         
         // Find the user account associated with this email
         Optional<UserAccountEntity> userAccountOptional = userAccountRepository.findByEmailAddress(email);
@@ -67,7 +102,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         EmployeeEntity employee;
         
         if (userAccountOptional.isEmpty()) {
-            logger.info("Auto-registering new user with email: " + email);
+            logger.info("Auto-registering new user with email: {}", email);
             
             // Auto-register the user if not found
             userAccount = new UserAccountEntity();
@@ -78,28 +113,30 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             userAccount.setPassword(UUID.randomUUID().toString()); // Generate random password (won't be used)
             userAccountRepository.save(userAccount);
             
-            // Get default employee role
+            // Get default role (EMPLOYEE)
             RoleEntity role = roleRepository.findById("ROLE_EMPLOYEE")
                     .orElseThrow(() -> new RuntimeException("Default role not found"));
             
             // Create employee
             employee = new EmployeeEntity();
-            employee.setFirstName((String) attributes.get("given_name") != null ? (String) attributes.get("given_name") : "");
-            employee.setLastName((String) attributes.get("family_name") != null ? (String) attributes.get("family_name") : "");
+            employee.setFirstName(userInfo.getFirstName() != null ? userInfo.getFirstName() : "");
+            employee.setLastName(userInfo.getLastName() != null ? userInfo.getLastName() : "");
             employee.setEmail(email);
             employee.setHireDate(LocalDate.now());
             employee.setStatus("ACTIVE");
-            employee.setEmploymentStatus("FULL_TIME");
+            employee.setEmploymentStatus("PENDING");
             employee.setRole(role);
             employee.setUserAccount(userAccount);
             employeeRepository.save(employee);
+            
+            logger.info("Created new employee record with ID: {}", employee.getEmployeeId());
         } else {
             userAccount = userAccountOptional.get();
             
             // Find the employee associated with this user account
             Optional<EmployeeEntity> employeeOptional = employeeRepository.findByUserAccount(userAccount);
             if (employeeOptional.isEmpty()) {
-                logger.info("User account exists but no employee record found. Creating employee record for user: " + userAccount.getUserId());
+                logger.info("User account exists but no employee record found. Creating employee record for user: {}", userAccount.getUserId());
                 
                 // Get default employee role
                 RoleEntity role = roleRepository.findById("ROLE_EMPLOYEE")
@@ -107,15 +144,17 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                 
                 // Create employee for existing user account
                 employee = new EmployeeEntity();
-                employee.setFirstName((String) attributes.get("given_name") != null ? (String) attributes.get("given_name") : "");
-                employee.setLastName((String) attributes.get("family_name") != null ? (String) attributes.get("family_name") : "");
+                employee.setFirstName(userInfo.getFirstName() != null ? userInfo.getFirstName() : "");
+                employee.setLastName(userInfo.getLastName() != null ? userInfo.getLastName() : "");
                 employee.setEmail(email);
                 employee.setHireDate(LocalDate.now());
                 employee.setStatus("ACTIVE");
-                employee.setEmploymentStatus("FULL_TIME");
+                employee.setEmploymentStatus("PENDING");
                 employee.setRole(role);
                 employee.setUserAccount(userAccount);
                 employeeRepository.save(employee);
+                
+                logger.info("Created new employee record with ID: {}", employee.getEmployeeId());
             } else {
                 employee = employeeOptional.get();
             }
@@ -131,7 +170,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         // Add employee details to redirect URL
         String roleName = employee.getRole() != null ? employee.getRole().getRoleName() : "Unknown";
         
-        return UriComponentsBuilder.fromUriString(FRONTEND_REDIRECT_URI)
+        String targetUrl = UriComponentsBuilder.fromUriString(frontendRedirectUri)
                 .queryParam("token", token)
                 .queryParam("userId", userAccount.getUserId())
                 .queryParam("email", userAccount.getEmailAddress())
@@ -140,5 +179,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                 .queryParam("firstName", employee.getFirstName())
                 .queryParam("lastName", employee.getLastName())
                 .build().toUriString();
+                
+        logger.info("Redirecting to: {}", targetUrl);
+        return targetUrl;
     }
 } 

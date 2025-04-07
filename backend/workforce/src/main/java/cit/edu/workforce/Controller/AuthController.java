@@ -18,9 +18,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Optional;
 
 
@@ -78,6 +83,38 @@ public class AuthController {
     public ResponseEntity<AuthResponseDTO> getOAuth2TokenInfo(@PathVariable String email) {
         AuthResponseDTO authResponse = authService.getOAuth2TokenInfo(email);
         return ResponseEntity.ok(authResponse);
+    }
+    
+    @GetMapping("/oauth2/user-info")
+    @PreAuthorize("isAuthenticated()")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Get OAuth2 user info", description = "Get information about the authenticated OAuth2 user")
+    public ResponseEntity<Map<String, Object>> getOAuth2UserInfo(@AuthenticationPrincipal OAuth2User principal) {
+        Map<String, Object> userInfo = new LinkedHashMap<>();
+        
+        if (principal != null) {
+            userInfo.put("name", principal.getAttribute("name"));
+            userInfo.put("email", principal.getAttribute("email"));
+            
+            // Add Microsoft-specific attributes if they exist
+            if (principal.getAttribute("userPrincipalName") != null) {
+                userInfo.put("userPrincipalName", principal.getAttribute("userPrincipalName"));
+            }
+            if (principal.getAttribute("mail") != null) {
+                userInfo.put("mail", principal.getAttribute("mail"));
+            }
+            if (principal.getAttribute("givenName") != null) {
+                userInfo.put("givenName", principal.getAttribute("givenName"));
+            }
+            if (principal.getAttribute("surname") != null) {
+                userInfo.put("surname", principal.getAttribute("surname"));
+            }
+            
+            // Add authorities
+            userInfo.put("authorities", principal.getAuthorities());
+        }
+        
+        return ResponseEntity.ok(userInfo);
     }
 
     @GetMapping("/dashboard/admin")
