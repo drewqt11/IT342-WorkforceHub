@@ -1,15 +1,13 @@
 package cit.edu.workforce.Service;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
+import cit.edu.workforce.Entity.JobTitleEntity;
+import cit.edu.workforce.Repository.JobTitleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import cit.edu.workforce.Entity.JobTitleEntity;
-import cit.edu.workforce.Repository.JobTitleRepository;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 public class JobTitleService {
@@ -27,7 +25,12 @@ public class JobTitleService {
     }
 
     @Transactional(readOnly = true)
-    public Optional<JobTitleEntity> getJobTitleById(UUID jobId) {
+    public Optional<JobTitleEntity> getJobTitleById(String jobId) {
+        return jobTitleRepository.findById(jobId);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<JobTitleEntity> findById(String jobId) {
         return jobTitleRepository.findById(jobId);
     }
 
@@ -46,7 +49,7 @@ public class JobTitleService {
     }
 
     @Transactional
-    public JobTitleEntity updateJobTitle(UUID jobId, String jobName, String jobDescription, String payGrade) {
+    public JobTitleEntity updateJobTitle(String jobId, String jobName, String jobDescription, String payGrade) {
         JobTitleEntity jobTitle = jobTitleRepository.findById(jobId)
                 .orElseThrow(() -> new RuntimeException("Job title not found"));
 
@@ -57,7 +60,7 @@ public class JobTitleService {
     }
 
     @Transactional
-    public void deleteJobTitle(UUID jobId) {
+    public void deleteJobTitle(String jobId) {
         jobTitleRepository.deleteById(jobId);
     }
-} 
+}

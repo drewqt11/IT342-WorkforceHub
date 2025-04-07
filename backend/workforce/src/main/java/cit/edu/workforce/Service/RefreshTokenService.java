@@ -19,7 +19,7 @@ public class RefreshTokenService {
 
     @Value("${jwt.refresh-expiration:604800000}")
     private long refreshTokenDurationMs; // 7 days
-    
+
     private final RefreshTokenRepository refreshTokenRepository;
     private final UserAccountRepository userAccountRepository;
     private final JwtTokenProvider jwtTokenProvider;
@@ -40,20 +40,20 @@ public class RefreshTokenService {
     }
 
     @Transactional
-    public RefreshTokenEntity createRefreshToken(UUID userId) {
+    public RefreshTokenEntity createRefreshToken(String userId) {
         UserAccountEntity userAccount = userAccountRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
-        
+
         // Delete existing refresh tokens for the user
         refreshTokenRepository.findByUserAccount(userAccount)
                 .ifPresent(token -> refreshTokenRepository.delete(token));
-        
+
         // Create new refresh token
         RefreshTokenEntity refreshToken = new RefreshTokenEntity();
         refreshToken.setUserAccount(userAccount);
         refreshToken.setExpiryDate(Instant.now().plusMillis(refreshTokenDurationMs));
         refreshToken.setToken(UUID.randomUUID().toString());
-        
+
         return refreshTokenRepository.save(refreshToken);
     }
 
@@ -67,10 +67,10 @@ public class RefreshTokenService {
     }
 
     @Transactional
-    public void revokeAllByUser(UUID userId) {
+    public void revokeAllByUser(String userId) {
         refreshTokenRepository.revokeAllTokensByUser(userId);
     }
-    
+
     @Transactional
     public void markTokenAsUsed(String token) {
         refreshTokenRepository.findByToken(token).ifPresent(refreshToken -> {
@@ -78,4 +78,4 @@ public class RefreshTokenService {
             refreshTokenRepository.save(refreshToken);
         });
     }
-} 
+}

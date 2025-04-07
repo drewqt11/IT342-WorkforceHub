@@ -1,14 +1,12 @@
 package cit.edu.workforce.Repository;
 
-import java.util.Optional;
-import java.util.UUID;
-
+import cit.edu.workforce.Entity.JobTitleEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import cit.edu.workforce.Entity.JobTitleEntity;
+import java.util.Optional;
 
 @Repository
-public interface JobTitleRepository extends JpaRepository<JobTitleEntity, UUID> {
+public interface JobTitleRepository extends JpaRepository<JobTitleEntity, String> {
     Optional<JobTitleEntity> findByJobName(String jobName);
-} 
+}

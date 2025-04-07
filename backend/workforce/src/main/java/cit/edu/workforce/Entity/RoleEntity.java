@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 public class RoleEntity {
 
     @Id
-    @Column(name = "role_id", updatable = false, nullable = false, length = 20)
+    @Column(name = "role_id", updatable = false, nullable = false)
     private String roleId;
 
     @Column(name = "role_name", nullable = false)

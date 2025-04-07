@@ -1,15 +1,13 @@
 package cit.edu.workforce.Service;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
+import cit.edu.workforce.Entity.DepartmentEntity;
+import cit.edu.workforce.Repository.DepartmentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import cit.edu.workforce.Entity.DepartmentEntity;
-import cit.edu.workforce.Repository.DepartmentRepository;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 public class DepartmentService {
@@ -27,7 +25,12 @@ public class DepartmentService {
     }
 
     @Transactional(readOnly = true)
-    public Optional<DepartmentEntity> getDepartmentById(UUID departmentId) {
+    public Optional<DepartmentEntity> getDepartmentById(String departmentId) {
+        return departmentRepository.findById(departmentId);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<DepartmentEntity> findById(String departmentId) {
         return departmentRepository.findById(departmentId);
     }
 
@@ -44,7 +47,7 @@ public class DepartmentService {
     }
 
     @Transactional
-    public DepartmentEntity updateDepartment(UUID departmentId, String departmentName) {
+    public DepartmentEntity updateDepartment(String departmentId, String departmentName) {
         DepartmentEntity department = departmentRepository.findById(departmentId)
                 .orElseThrow(() -> new RuntimeException("Department not found"));
 
@@ -53,7 +56,7 @@ public class DepartmentService {
     }
 
     @Transactional
-    public void deleteDepartment(UUID departmentId) {
+    public void deleteDepartment(String departmentId) {
         departmentRepository.deleteById(departmentId);
     }
-} 
+}

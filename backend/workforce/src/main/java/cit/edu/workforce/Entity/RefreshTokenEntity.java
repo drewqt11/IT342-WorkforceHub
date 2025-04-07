@@ -7,7 +7,6 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
 
 import java.time.Instant;
-import java.util.UUID;
 
 @Entity
 @Table(name = "refresh_token")
@@ -19,8 +18,8 @@ public class RefreshTokenEntity {
     @Id
     @GeneratedValue(generator = "UUID")
     @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
-    @Column(name = "id", updatable = false, nullable = false)
-    private UUID id;
+    @Column(name = "id", updatable = false, nullable = false, length = 36)
+    private String id;
 
     @Column(name = "token", nullable = false, unique = true)
     private String token;
@@ -37,4 +36,4 @@ public class RefreshTokenEntity {
 
     @Column(name = "is_used", nullable = false)
     private boolean used = false;
-} 
+}

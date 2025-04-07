@@ -7,7 +7,6 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
 
 import java.time.LocalDate;
-import java.util.UUID;
 
 @Entity
 @Table(name = "employee")
@@ -17,10 +16,10 @@ import java.util.UUID;
 public class EmployeeEntity {
 
     @Id
-    @GeneratedValue(generator = "UUID")
-    @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
-    @Column(name = "employee_id", updatable = false, nullable = false)
-    private UUID employeeId;
+    @GeneratedValue(generator = "custom-employee-id")
+    @GenericGenerator(name = "custom-employee-id", strategy = "cit.edu.workforce.Utils.EmployeeIdGenerator")
+    @Column(name = "employee_id", updatable = false, nullable = false, length = 16)
+    private String employeeId;
 
     @Column(name = "first_name", nullable = false)
     private String firstName;
@@ -70,4 +69,4 @@ public class EmployeeEntity {
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private UserAccountEntity userAccount;
-} 
+}

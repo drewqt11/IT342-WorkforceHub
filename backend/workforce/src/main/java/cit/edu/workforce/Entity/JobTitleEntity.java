@@ -6,7 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
 
-import java.util.UUID;
+
 
 @Entity
 @Table(name = "job_title")
@@ -16,10 +16,10 @@ import java.util.UUID;
 public class JobTitleEntity {
 
     @Id
-    @GeneratedValue(generator = "UUID")
-    @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
-    @Column(name = "job_id", updatable = false, nullable = false)
-    private UUID jobId;
+    @GeneratedValue(generator = "custom-job-id")
+    @GenericGenerator(name = "custom-job-id", strategy = "org.hibernate.id.UUIDGenerator")
+    @Column(name = "job_id", updatable = false, nullable = false, length = 36)
+    private String jobId;
 
     @Column(name = "job_name", nullable = false)
     private String jobName;
@@ -29,4 +29,4 @@ public class JobTitleEntity {
 
     @Column(name = "pay_grade")
     private String payGrade;
-} 
+}
