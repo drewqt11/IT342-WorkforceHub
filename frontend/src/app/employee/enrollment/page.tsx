@@ -46,7 +46,7 @@ export default function EnrollmentForm() {
   const [startDate, setStartDate] = useState<Date>();
 
   // Progress tracking
-  const tabOrder = ["personal", "address", "account"];
+  const tabOrder = ["personal", "address"];
   const currentTabIndex = tabOrder.indexOf(activeTab);
   const progressPercentage = ((currentTabIndex + 1) / tabOrder.length) * 100;
 
@@ -203,17 +203,8 @@ export default function EnrollmentForm() {
                       {tab === "personal" && (
                         <User className="h-4 w-4 md:hidden" />
                       )}
-                      {tab === "employment" && (
-                        <Building2 className="h-4 w-4 md:hidden" />
-                      )}
                       {tab === "address" && (
                         <MapPin className="h-4 w-4 md:hidden" />
-                      )}
-                      {tab === "account" && (
-                        <Lock className="h-4 w-4 md:hidden" />
-                      )}
-                      {tab === "documents" && (
-                        <FileText className="h-4 w-4 md:hidden" />
                       )}
                     </div>
                   </TabsTrigger>
@@ -487,104 +478,6 @@ export default function EnrollmentForm() {
                       className="border-[#E5E7EB] focus:border-[#3B82F6] focus:ring-[#3B82F6]"
                       disabled
                     />
-                  </div>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="account" className="p-6 md:p-8">
-                <div className="mb-6">
-                  <h3 className="text-xl font-semibold text-[#1F2937] mb-2">
-                    Account Security
-                  </h3>
-                  <p className="text-[#6B7280]">
-                    Set up your login credentials
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 gap-6 max-w-md mx-auto">
-                  <div className="space-y-2">
-                    <Label htmlFor="email" className="text-[#1F2937]">
-                      Email Address
-                    </Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="your.email@company.com"
-                      disabled
-                      className="bg-gray-50 border-[#E5E7EB] text-[#6B7280]"
-                    />
-                    <p className="text-xs text-[#6B7280]">
-                      Your email address cannot be changed
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="password" className="text-[#1F2937]">
-                      Password <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      placeholder="••••••••"
-                      className="border-[#E5E7EB] focus:border-[#3B82F6] focus:ring-[#3B82F6]"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="confirmPassword" className="text-[#1F2937]">
-                      Confirm Password <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
-                      id="confirmPassword"
-                      type="password"
-                      placeholder="••••••••"
-                      className="border-[#E5E7EB] focus:border-[#3B82F6] focus:ring-[#3B82F6]"
-                      required
-                    />
-                  </div>
-                  <div className="bg-gradient-to-r from-[#EFF6FF] to-[#F0FDFA] p-4 rounded-lg border border-[#E5E7EB] mt-2">
-                    <h4 className="font-medium text-[#1F2937] mb-2 flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-[#14B8A6]" />
-                      Password Requirements
-                    </h4>
-                    <ul className="text-sm text-[#6B7280] space-y-2">
-                      <li className="flex items-center gap-2">
-                        <div className="h-1.5 w-1.5 rounded-full bg-[#3B82F6]"></div>
-                        <span>At least 8 characters long</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <div className="h-1.5 w-1.5 rounded-full bg-[#3B82F6]"></div>
-                        <span>Contains at least one uppercase letter</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <div className="h-1.5 w-1.5 rounded-full bg-[#3B82F6]"></div>
-                        <span>Contains at least one number</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <div className="h-1.5 w-1.5 rounded-full bg-[#3B82F6]"></div>
-                        <span>Contains at least one special character</span>
-                      </li>
-                    </ul>
-                  </div>
-                  <div className="flex items-center space-x-2 mt-4">
-                    <input
-                      type="checkbox"
-                      id="termsAgree"
-                      className="h-4 w-4 rounded border-[#E5E7EB] text-[#3B82F6] focus:ring-[#3B82F6]"
-                      required
-                    />
-                    <Label
-                      htmlFor="termsAgree"
-                      className="text-[#6B7280] text-sm"
-                    >
-                      I agree to the{" "}
-                      <a href="#" className="text-[#3B82F6] hover:underline">
-                        Terms of Service
-                      </a>{" "}
-                      and{" "}
-                      <a href="#" className="text-[#3B82F6] hover:underline">
-                        Privacy Policy
-                      </a>
-                    </Label>
                   </div>
                 </div>
               </TabsContent>

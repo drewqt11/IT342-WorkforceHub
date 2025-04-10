@@ -211,19 +211,37 @@ export const authService = {
         // Store tokens in cookies with secure flags
         document.cookie = `token=${token}; path=/; secure; samesite=strict`;
         document.cookie = `refreshToken=${refreshToken}; path=/; secure; samesite=strict`;
+
+        // Only store token in localStorage as backup
+        localStorage.setItem('token', token);
     },
 
     getToken(): string | null {
+        // First try to get from localStorage
+        const localToken = localStorage.getItem('token');
+        if (localToken) {
+            return localToken;
+        }
+
+        // Fallback to cookies
         return document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1] || null;
     },
 
     getRefreshToken(): string | null {
+        // Only get from cookies, not localStorage
         return document.cookie.split('; ').find(row => row.startsWith('refreshToken='))?.split('=')[1] || null;
     },
 
     clearTokens() {
-        document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-        document.cookie = 'refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+        // Clear all cookies
+        const cookies = document.cookie.split(';');
+        cookies.forEach(cookie => {
+            const cookieName = cookie.split('=')[0].trim();
+            document.cookie = `${cookieName}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+        });
+
+        // Only clear token from localStorage
+        localStorage.removeItem('token');
     },
 
     async logout() {
@@ -242,5 +260,24 @@ export const authService = {
         }
         this.clearTokens();
         window.location.href = '/';
+    },
+
+    // End session without redirecting (for when tab/window is closed)
+    endSession() {
+        const token = this.getToken();
+        if (token) {
+            // Try to notify the server about session end, but don't wait for response
+            fetch(`${API_URL}/auth/logout`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+            }).catch(error => {
+                console.error('Session end error:', error);
+            });
+        }
+
+        // Clear tokens from localStorage and cookies
+        this.clearTokens();
     },
 }; 
