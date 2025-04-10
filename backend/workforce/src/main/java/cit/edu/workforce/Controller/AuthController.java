@@ -3,6 +3,7 @@ package cit.edu.workforce.Controller;
 import cit.edu.workforce.DTO.AuthResponseDTO;
 import cit.edu.workforce.DTO.EmployeeRegistrationDTO;
 import cit.edu.workforce.DTO.LoginRequestDTO;
+import cit.edu.workforce.DTO.PasswordCreationDTO;
 import cit.edu.workforce.DTO.TokenRefreshRequestDTO;
 import cit.edu.workforce.DTO.TokenRefreshResponseDTO;
 import cit.edu.workforce.Entity.EmployeeEntity;
@@ -131,5 +132,12 @@ public class AuthController {
     @Operation(summary = "Employee dashboard", description = "Employee dashboard endpoint")
     public ResponseEntity<String> employeeDashboard(Principal principal) {
         return ResponseEntity.ok("Hello, " + principal.getName());
+    }
+
+    @PostMapping("/create-password")
+    @Operation(summary = "Create password", description = "Creates a password for a user after OAuth2 authentication")
+    public ResponseEntity<AuthResponseDTO> createPassword(@Valid @RequestBody PasswordCreationDTO passwordCreationDTO) {
+        AuthResponseDTO authResponse = authService.createPassword(passwordCreationDTO);
+        return ResponseEntity.ok(authResponse);
     }
 }

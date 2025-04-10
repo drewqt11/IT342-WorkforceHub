@@ -3,6 +3,7 @@ package cit.edu.workforce.Service;
 import cit.edu.workforce.DTO.AuthResponseDTO;
 import cit.edu.workforce.DTO.EmployeeRegistrationDTO;
 import cit.edu.workforce.DTO.LoginRequestDTO;
+import cit.edu.workforce.DTO.PasswordCreationDTO;
 import cit.edu.workforce.DTO.TokenRefreshResponseDTO;
 import cit.edu.workforce.Entity.EmailDomainListEntity;
 import cit.edu.workforce.Entity.EmployeeEntity;
@@ -255,6 +256,53 @@ public class AuthService {
 
         return new AuthResponseDTO(
                 token,
+                refreshToken.getToken(),
+                userAccount.getUserId(),
+                userAccount.getEmailAddress(),
+                roleName,
+                employee.getEmployeeId(),
+                employee.getFirstName(),
+                employee.getLastName()
+        );
+    }
+
+    @Transactional
+    public AuthResponseDTO createPassword(PasswordCreationDTO passwordCreationDTO) {
+        // Validate email domain
+        if (!emailDomainListService.isValidDomain(passwordCreationDTO.getEmail())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid email domain. Only approved domains are allowed.");
+        }
+
+        // Find user account by email
+        UserAccountEntity userAccount = userAccountRepository.findByEmailAddress(passwordCreationDTO.getEmail())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
+        // Update the password
+        userAccount.setPassword(passwordEncoder.encode(passwordCreationDTO.getPassword()));
+        userAccountRepository.save(userAccount);
+
+        // Find employee
+        EmployeeEntity employee = employeeRepository.findByUserAccount(userAccount)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee profile not found"));
+
+        String roleName = employee.getRole() != null ? employee.getRole().getRoleName() : "Unknown";
+
+        // Generate JWT token
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        passwordCreationDTO.getEmail(),
+                        passwordCreationDTO.getPassword()
+                )
+        );
+
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        String jwt = jwtTokenProvider.generateToken(authentication);
+
+        // Generate refresh token
+        RefreshTokenEntity refreshToken = refreshTokenService.createRefreshToken(userAccount.getUserId());
+
+        return new AuthResponseDTO(
+                jwt,
                 refreshToken.getToken(),
                 userAccount.getUserId(),
                 userAccount.getEmailAddress(),

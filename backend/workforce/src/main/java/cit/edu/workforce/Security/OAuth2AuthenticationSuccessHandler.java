@@ -48,6 +48,9 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     @Value("${app.oauth2.redirect-uri:http://localhost:5173/oauth2/redirect}")
     private String frontendRedirectUri;
 
+    @Value("${app.oauth2.signup-redirect-uri:http://localhost:5173/oauth2/signup}")
+    private String frontendSignupRedirectUri;
+
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) 
             throws IOException, ServletException {
@@ -101,6 +104,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         UserAccountEntity userAccount;
         EmployeeEntity employee;
         
+        boolean isNewUser = false;
+        
         if (userAccountOptional.isEmpty()) {
             logger.info("Auto-registering new user with email: {}", email);
             
@@ -110,7 +115,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             userAccount.setCreatedAt(LocalDateTime.now());
             userAccount.setLastLogin(LocalDateTime.now());
             userAccount.setActive(true);
-            userAccount.setPassword(UUID.randomUUID().toString()); // Generate random password (won't be used)
+            String tempPassword = UUID.randomUUID().toString(); // Temporary password, to be replaced by the user
+            userAccount.setPassword(tempPassword);
             userAccountRepository.save(userAccount);
             
             // Get default role (EMPLOYEE)
@@ -130,8 +136,19 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             employeeRepository.save(employee);
             
             logger.info("Created new employee record with ID: {}", employee.getEmployeeId());
+            
+            isNewUser = true;
         } else {
             userAccount = userAccountOptional.get();
+            
+            // Instead of using passwordEncoder, just check if this account needs to complete signup
+            // Check if password looks like a UUID (placeholder)
+            String password = userAccount.getPassword();
+            if (password == null || password.isEmpty() || 
+                password.length() < 20 || // Definitely not a hashed password
+                password.matches("[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}")) {
+                isNewUser = true;
+            }
             
             // Find the employee associated with this user account
             Optional<EmployeeEntity> employeeOptional = employeeRepository.findByUserAccount(userAccount);
@@ -170,15 +187,27 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         // Add employee details to redirect URL
         String roleName = employee.getRole() != null ? employee.getRole().getRoleName() : "Unknown";
         
-        String targetUrl = UriComponentsBuilder.fromUriString(frontendRedirectUri)
-                .queryParam("token", token)
-                .queryParam("userId", userAccount.getUserId())
-                .queryParam("email", userAccount.getEmailAddress())
-                .queryParam("role", roleName)
-                .queryParam("employeeId", employee.getEmployeeId())
-                .queryParam("firstName", employee.getFirstName())
-                .queryParam("lastName", employee.getLastName())
-                .build().toUriString();
+        // Determine which redirect URL to use based on whether this is a new user
+        String targetUrl;
+        if (isNewUser) {
+            // Redirect to sign-up form for password creation
+            targetUrl = UriComponentsBuilder.fromUriString(frontendSignupRedirectUri)
+                    .queryParam("token", token)
+                    .queryParam("userId", userAccount.getUserId())
+                    .queryParam("email", userAccount.getEmailAddress())
+                    .build().toUriString();
+        } else {
+            // Redirect to dashboard for existing users
+            targetUrl = UriComponentsBuilder.fromUriString(frontendRedirectUri)
+                    .queryParam("token", token)
+                    .queryParam("userId", userAccount.getUserId())
+                    .queryParam("email", userAccount.getEmailAddress())
+                    .queryParam("role", roleName)
+                    .queryParam("employeeId", employee.getEmployeeId())
+                    .queryParam("firstName", employee.getFirstName())
+                    .queryParam("lastName", employee.getLastName())
+                    .build().toUriString();
+        }
                 
         logger.info("Redirecting to: {}", targetUrl);
         return targetUrl;

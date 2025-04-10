@@ -2,6 +2,7 @@ package cit.edu.workforce.Security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -28,6 +29,16 @@ public class SecurityConfig {
     private final UserDetailsServiceImpl userDetailsService;
     private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
+    
+    // Define PasswordEncoder bean in a separate configuration class to break circular dependency
+    @Configuration
+    public static class PasswordEncoderConfig {
+        @Bean
+        @Primary
+        public PasswordEncoder passwordEncoder() {
+            return new BCryptPasswordEncoder();
+        }
+    }
 
     public SecurityConfig(
             JwtAuthenticationFilter jwtAuthenticationFilter, 
@@ -49,6 +60,7 @@ public class SecurityConfig {
                 // Public endpoints
                 .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/refresh-token").permitAll()
                 .requestMatchers("/api/auth/oauth2/token-info/**").permitAll()
+                .requestMatchers("/api/auth/create-password").permitAll()
                 .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                 
                 // Swagger/OpenAPI endpoints
@@ -94,11 +106,6 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
-    }
-
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
     }
 
     @Bean
