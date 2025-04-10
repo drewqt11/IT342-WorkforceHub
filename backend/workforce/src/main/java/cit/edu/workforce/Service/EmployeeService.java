@@ -59,11 +59,13 @@ public class EmployeeService {
     }
 
     @Transactional(readOnly = true)
-    public Page<EmployeeDTO> searchEmployees(String name, String employeeId, String department, String status, Pageable pageable) {
+    public Page<EmployeeDTO> searchEmployees(String name, String employeeId, String department, String status,
+            Pageable pageable) {
         // Using a simplified approach for demo purposes
         // In a real implementation, you would use a more sophisticated query builder
         if (name != null && !name.isEmpty()) {
-            return employeeRepository.findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(name, name, pageable)
+            return employeeRepository
+                    .findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(name, name, pageable)
                     .map(this::convertToDTO);
         } else if (employeeId != null && !employeeId.isEmpty()) {
             return employeeRepository.findByEmployeeId(employeeId, pageable)
@@ -97,13 +99,14 @@ public class EmployeeService {
      * Update an employee's role
      *
      * @param employeeId The ID of the employee to update
-     * @param role The new role to assign
+     * @param role       The new role to assign
      * @return The updated employee DTO
      */
     @Transactional
     public EmployeeDTO updateEmployeeRole(String employeeId, RoleEntity role) {
         EmployeeEntity employee = employeeRepository.findById(employeeId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee not found with ID: " + employeeId));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Employee not found with ID: " + employeeId));
 
         // Validate that the role exists in the predefined list
         if (role == null) {
@@ -121,13 +124,14 @@ public class EmployeeService {
      * Update an employee's job title
      *
      * @param employeeId The ID of the employee to update
-     * @param jobTitle The new job title to assign
+     * @param jobTitle   The new job title to assign
      * @return The updated employee DTO
      */
     @Transactional
     public EmployeeDTO updateEmployeeJobTitle(String employeeId, JobTitleEntity jobTitle) {
         EmployeeEntity employee = employeeRepository.findById(employeeId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee not found with ID: " + employeeId));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Employee not found with ID: " + employeeId));
 
         // Validate that the job title exists in the predefined list
         if (jobTitle == null) {
@@ -151,7 +155,8 @@ public class EmployeeService {
     @Transactional
     public EmployeeDTO updateEmployeeDepartment(String employeeId, DepartmentEntity department) {
         EmployeeEntity employee = employeeRepository.findById(employeeId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee not found with ID: " + employeeId));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Employee not found with ID: " + employeeId));
 
         // Validate that the department exists in the predefined list
         if (department == null) {
@@ -192,16 +197,27 @@ public class EmployeeService {
         // Create user account
         UserAccountEntity userAccount = userAccountService.createUserAccount(
                 registrationDTO.getEmail(),
-                registrationDTO.getPassword()
-        );
+                registrationDTO.getPassword());
 
         // Get default role (EMPLOYEE)
         RoleEntity role = roleService.getRoleById("ROLE_EMPLOYEE")
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Default role not found"));
+                .orElseThrow(
+                        () -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Default role not found"));
+
+        // Extract ID number and first name if the first name contains an ID number
+        String idNumber = "";
+        String firstName = registrationDTO.getFirstName();
+
+        if (firstName != null && firstName.matches(".*\\d+.*")) {
+            String[] parts = extractIdNumberAndName(firstName);
+            idNumber = parts[0];
+            firstName = parts[1];
+        }
 
         // Create employee
         EmployeeEntity employee = new EmployeeEntity();
-        employee.setFirstName(registrationDTO.getFirstName());
+        employee.setFirstName(firstName);
+        employee.setIdNumber(idNumber);
         employee.setLastName(registrationDTO.getLastName());
         employee.setEmail(registrationDTO.getEmail());
         employee.setGender(registrationDTO.getGender());
@@ -221,6 +237,13 @@ public class EmployeeService {
 
     @Transactional
     public EmployeeDTO createEmployee(EmployeeDTO employeeDTO) {
+        // Extract ID number and first name if the first name contains an ID number
+        if (employeeDTO.getFirstName() != null && employeeDTO.getFirstName().matches(".*\\d+.*")) {
+            String[] parts = extractIdNumberAndName(employeeDTO.getFirstName());
+            employeeDTO.setIdNumber(parts[0]);
+            employeeDTO.setFirstName(parts[1]);
+        }
+
         // Validate email domain
         if (!emailDomainListService.isValidDomain(employeeDTO.getEmail())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid email domain");
@@ -252,6 +275,7 @@ public class EmployeeService {
         // Create employee
         EmployeeEntity employee = new EmployeeEntity();
         employee.setFirstName(employeeDTO.getFirstName());
+        employee.setIdNumber(employeeDTO.getIdNumber());
         employee.setLastName(employeeDTO.getLastName());
         employee.setEmail(employeeDTO.getEmail());
         employee.setGender(employeeDTO.getGender());
@@ -261,7 +285,8 @@ public class EmployeeService {
         employee.setPhoneNumber(employeeDTO.getPhoneNumber());
         employee.setMaritalStatus(employeeDTO.getMaritalStatus());
         employee.setStatus(employeeDTO.getStatus() != null ? employeeDTO.getStatus() : "ACTIVE");
-        employee.setEmploymentStatus(employeeDTO.getEmploymentStatus() != null ? employeeDTO.getEmploymentStatus() : "FULL_TIME");
+        employee.setEmploymentStatus(
+                employeeDTO.getEmploymentStatus() != null ? employeeDTO.getEmploymentStatus() : "FULL_TIME");
         employee.setRole(role);
         employee.setDepartment(department);
         employee.setJobTitle(jobTitle);
@@ -274,6 +299,13 @@ public class EmployeeService {
     public EmployeeDTO updateEmployee(String employeeId, EmployeeDTO employeeDTO) {
         EmployeeEntity employee = employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee not found"));
+
+        // Extract ID number and first name if the first name contains an ID number
+        if (employeeDTO.getFirstName() != null && employeeDTO.getFirstName().matches(".*\\d+.*")) {
+            String[] parts = extractIdNumberAndName(employeeDTO.getFirstName());
+            employeeDTO.setIdNumber(parts[0]);
+            employeeDTO.setFirstName(parts[1]);
+        }
 
         // Update email if changed and not already taken
         if (!employee.getEmail().equals(employeeDTO.getEmail())) {
@@ -291,6 +323,7 @@ public class EmployeeService {
 
         // Update other fields
         employee.setFirstName(employeeDTO.getFirstName());
+        employee.setIdNumber(employeeDTO.getIdNumber());
         employee.setLastName(employeeDTO.getLastName());
         employee.setGender(employeeDTO.getGender());
         employee.setHireDate(employeeDTO.getHireDate());
@@ -331,9 +364,20 @@ public class EmployeeService {
         EmployeeEntity employee = employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee not found"));
 
+        // Extract ID number and first name if the first name contains an ID number
+        if (employeeDTO.getFirstName() != null && employeeDTO.getFirstName().matches(".*\\d+.*")) {
+            String[] parts = extractIdNumberAndName(employeeDTO.getFirstName());
+            employeeDTO.setIdNumber(parts[0]);
+            employeeDTO.setFirstName(parts[1]);
+        }
+
         // Only update fields that are not null
         if (employeeDTO.getFirstName() != null) {
             employee.setFirstName(employeeDTO.getFirstName());
+        }
+
+        if (employeeDTO.getIdNumber() != null) {
+            employee.setIdNumber(employeeDTO.getIdNumber());
         }
 
         if (employeeDTO.getLastName() != null) {
@@ -469,6 +513,7 @@ public class EmployeeService {
     private EmployeeDTO convertToDTO(EmployeeEntity employee) {
         EmployeeDTO dto = new EmployeeDTO();
         dto.setEmployeeId(employee.getEmployeeId());
+        dto.setIdNumber(employee.getIdNumber());
         dto.setFirstName(employee.getFirstName());
         dto.setLastName(employee.getLastName());
         dto.setEmail(employee.getEmail());
@@ -527,5 +572,36 @@ public class EmployeeService {
         String email = authentication.getName();
         return employeeRepository.findByEmail(email)
                 .map(this::convertToDTO);
+    }
+
+    /**
+     * Extracts ID number and name from a string containing both
+     * 
+     * @param input String containing ID number and name (e.g., "22-3326-574
+     *              Katrina")
+     * @return String array where [0] is the ID number and [1] is the name
+     */
+    private String[] extractIdNumberAndName(String input) {
+        if (input == null || input.trim().isEmpty()) {
+            return new String[] { "", "" };
+        }
+
+        input = input.trim();
+
+        // Split by whitespace
+        String[] parts = input.split("\\s+", 2);
+
+        if (parts.length == 2) {
+            String potentialIdNumber = parts[0];
+            String name = parts[1];
+
+            // Check if the first part matches ID number format (numbers and dashes)
+            if (potentialIdNumber.matches("\\d+(-\\d+)+")) {
+                return new String[] { potentialIdNumber, name };
+            }
+        }
+
+        // If no valid ID number found, return the original input as the name
+        return new String[] { "", input };
     }
 }

@@ -21,6 +21,9 @@ public class EmployeeEntity {
     @Column(name = "employee_id", updatable = false, nullable = false, length = 16)
     private String employeeId;
 
+    @Column(name = "id_number", unique = true)
+    private String idNumber;
+
     @Column(name = "first_name", nullable = false)
     private String firstName;
 

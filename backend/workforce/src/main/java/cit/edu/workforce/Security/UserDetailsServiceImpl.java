@@ -41,7 +41,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         }
 
         List<GrantedAuthority> authorities = new ArrayList<>();
-        
+
         // Get the employee's role
         Optional<EmployeeEntity> employeeOptional = employeeRepository.findByUserAccount(userAccount);
         if (employeeOptional.isPresent()) {
@@ -57,4 +57,4 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
         return new User(userAccount.getEmailAddress(), userAccount.getPassword(), authorities);
     }
-} 
+}

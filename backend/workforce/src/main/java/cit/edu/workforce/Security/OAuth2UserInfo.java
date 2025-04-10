@@ -40,12 +40,22 @@ public class OAuth2UserInfo {
     }
 
     public String getFirstName() {
+        String givenName = null;
         if ("microsoft".equals(registrationId)) {
-            if (attributes.containsKey("givenName")) {
-                return (String) attributes.get("givenName");
+            if (attributes.containsKey("given_name")) {
+                givenName = (String) attributes.get("given_name");
             }
         }
-        return (String) attributes.get("given_name");
+        if (givenName == null) {
+            givenName = (String) attributes.get("given_name");
+        }
+        
+        if (givenName != null && givenName.matches(".*\\d+.*")) {
+            String[] parts = extractIdNumberAndName(givenName);
+            return parts[1]; // Return only the name part
+        }
+        
+        return givenName;
     }
 
     public String getLastName() {
@@ -59,5 +69,48 @@ public class OAuth2UserInfo {
 
     public String getImageUrl() {
         return (String) attributes.get("picture");
+    }
+
+    public String getIdNumber() {
+        String givenName = null;
+        if ("microsoft".equals(registrationId)) {
+            if (attributes.containsKey("given_name")) {
+                givenName = (String) attributes.get("given_name");
+            }
+        }
+        if (givenName == null) {
+            givenName = (String) attributes.get("given_name");
+        }
+        
+        if (givenName != null && givenName.matches(".*\\d+.*")) {
+            String[] parts = extractIdNumberAndName(givenName);
+            return parts[0]; // Return only the ID number part
+        }
+        
+        return "";
+    }
+
+    private String[] extractIdNumberAndName(String input) {
+        if (input == null || input.trim().isEmpty()) {
+            return new String[]{"", ""};
+        }
+
+        input = input.trim();
+        
+        // Split by whitespace
+        String[] parts = input.split("\\s+", 2);
+        
+        if (parts.length == 2) {
+            String potentialIdNumber = parts[0];
+            String name = parts[1];
+            
+            // Check if the first part matches ID number format (numbers and dashes)
+            if (potentialIdNumber.matches("\\d+(-\\d+)+")) {
+                return new String[]{potentialIdNumber, name};
+            }
+        }
+        
+        // If no valid ID number found, return the original input as the name
+        return new String[]{"", input};
     }
 } 

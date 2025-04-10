@@ -49,4 +49,4 @@ public class EmailDomainController {
     public ResponseEntity<EmailDomainListEntity> addDomain(@RequestParam String domainName) {
         return ResponseEntity.ok(emailDomainListService.addDomain(domainName));
     }
-} 
+}

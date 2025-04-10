@@ -63,9 +63,7 @@ public class EmployeeController {
             @Parameter(description = "Filter by department") @RequestParam(required = false) String department,
             @Parameter(description = "Filter by status") @RequestParam(required = false) String status) {
 
-        Sort sort = "desc".equalsIgnoreCase(direction) ?
-                Sort.by(sortBy).descending() :
-                Sort.by(sortBy).ascending();
+        Sort sort = "desc".equalsIgnoreCase(direction) ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
 
         Pageable pageable = PageRequest.of(page, size, sort);
 
@@ -85,9 +83,7 @@ public class EmployeeController {
             @Parameter(description = "Sort field") @RequestParam(defaultValue = "lastName") String sortBy,
             @Parameter(description = "Sort direction") @RequestParam(defaultValue = "asc") String direction) {
 
-        Sort sort = "desc".equalsIgnoreCase(direction) ?
-                Sort.by(sortBy).descending() :
-                Sort.by(sortBy).ascending();
+        Sort sort = "desc".equalsIgnoreCase(direction) ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
 
         Pageable pageable = PageRequest.of(page, size, sort);
 
@@ -104,14 +100,16 @@ public class EmployeeController {
     @PutMapping("/hr/employees/{id}")
     @Operation(summary = "Update employee", description = "Update an existing employee")
     @PreAuthorize("hasAnyRole('ROLE_HR', 'ROLE_ADMIN')")
-    public ResponseEntity<EmployeeDTO> updateEmployee(@PathVariable String id, @Valid @RequestBody EmployeeDTO employeeDTO) {
+    public ResponseEntity<EmployeeDTO> updateEmployee(@PathVariable String id,
+            @Valid @RequestBody EmployeeDTO employeeDTO) {
         return ResponseEntity.ok(employeeService.updateEmployee(id, employeeDTO));
     }
 
     @PatchMapping("/hr/employees/{id}")
     @Operation(summary = "Partially update employee", description = "Update specific fields of an existing employee")
     @PreAuthorize("hasAnyRole('ROLE_HR', 'ROLE_ADMIN')")
-    public ResponseEntity<EmployeeDTO> partialUpdateEmployee(@PathVariable String id, @RequestBody EmployeeDTO employeeDTO) {
+    public ResponseEntity<EmployeeDTO> partialUpdateEmployee(@PathVariable String id,
+            @RequestBody EmployeeDTO employeeDTO) {
         return ResponseEntity.ok(employeeService.updateEmployeePartially(id, employeeDTO));
     }
 
@@ -157,7 +155,8 @@ public class EmployeeController {
     @PatchMapping("/hr/employees/{id}/department")
     @Operation(summary = "Assign department to employee", description = "Assign a department to an employee")
     @PreAuthorize("hasAnyRole('ROLE_HR', 'ROLE_ADMIN')")
-    public ResponseEntity<EmployeeDTO> assignDepartmentToEmployee(@PathVariable String id, @RequestParam String departmentId) {
+    public ResponseEntity<EmployeeDTO> assignDepartmentToEmployee(@PathVariable String id,
+            @RequestParam String departmentId) {
         return ResponseEntity.ok(employeeService.assignDepartment(id, departmentId));
     }
 

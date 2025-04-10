@@ -1,12 +1,15 @@
 package cit.edu.workforce.Security;
 
-import cit.edu.workforce.Entity.EmployeeEntity;
-import cit.edu.workforce.Entity.RoleEntity;
-import cit.edu.workforce.Entity.UserAccountEntity;
-import cit.edu.workforce.Repository.EmployeeRepository;
-import cit.edu.workforce.Repository.RoleRepository;
-import cit.edu.workforce.Repository.UserAccountRepository;
-import cit.edu.workforce.Service.EmailDomainListService;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -18,11 +21,13 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import cit.edu.workforce.Entity.EmployeeEntity;
+import cit.edu.workforce.Entity.RoleEntity;
+import cit.edu.workforce.Entity.UserAccountEntity;
+import cit.edu.workforce.Repository.EmployeeRepository;
+import cit.edu.workforce.Repository.RoleRepository;
+import cit.edu.workforce.Repository.UserAccountRepository;
+import cit.edu.workforce.Service.EmailDomainListService;
 
 @Service
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
@@ -49,11 +54,11 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             // Get registration ID (microsoft, google, etc.)
             String registrationId = userRequest.getClientRegistration().getRegistrationId();
             logger.info("Processing OAuth2 user with registration ID: {}", registrationId);
-            
+
             // Log attributes for debugging
             Map<String, Object> attributes = oAuth2User.getAttributes();
             logger.debug("OAuth2 user attributes: {}", attributes);
-            
+
             return processOAuth2User(userRequest, oAuth2User, registrationId);
         } catch (Exception ex) {
             logger.error("Error processing OAuth2 user", ex);
@@ -61,7 +66,8 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         }
     }
 
-    private OAuth2User processOAuth2User(OAuth2UserRequest oAuth2UserRequest, OAuth2User oAuth2User, String registrationId) {
+    private OAuth2User processOAuth2User(OAuth2UserRequest oAuth2UserRequest, OAuth2User oAuth2User,
+            String registrationId) {
         OAuth2UserInfo oAuth2UserInfo = new OAuth2UserInfo(oAuth2User.getAttributes(), registrationId);
 
         if (oAuth2UserInfo.getEmail() == null || oAuth2UserInfo.getEmail().isEmpty()) {
@@ -70,7 +76,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         }
 
         logger.info("Processing user with email: {}", oAuth2UserInfo.getEmail());
-        
+
         // Validate email domain
         if (!emailDomainListService.isValidDomain(oAuth2UserInfo.getEmail())) {
             logger.error("Email domain not allowed: {}", oAuth2UserInfo.getEmail());
@@ -111,14 +117,13 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         return new DefaultOAuth2User(
                 authorities,
                 oAuth2User.getAttributes(),
-                userNameAttributeName
-        );
+                userNameAttributeName);
     }
 
     @Transactional
     private UserAccountEntity registerNewUser(OAuth2UserInfo oAuth2UserInfo) {
         logger.info("Registering new user with email: {}", oAuth2UserInfo.getEmail());
-        
+
         // Create new user account
         UserAccountEntity userAccount = new UserAccountEntity();
         userAccount.setEmailAddress(oAuth2UserInfo.getEmail());
@@ -142,7 +147,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         employee.setRole(role);
         employee.setUserAccount(userAccount);
         employeeRepository.save(employee);
-        
+
         logger.info("Successfully registered new user with ID: {}", userAccount.getUserId());
 
         return userAccount;
@@ -154,4 +159,4 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         userAccount.setLastLogin(LocalDateTime.now());
         return userAccountRepository.save(userAccount);
     }
-} 
+}
