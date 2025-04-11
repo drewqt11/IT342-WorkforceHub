@@ -18,9 +18,9 @@ public interface EmployeeRepository extends JpaRepository<EmployeeEntity, String
 
     Optional<EmployeeEntity> findByUserAccount(UserAccountEntity userAccount);
 
-    List<EmployeeEntity> findByStatus(String status);
+    List<EmployeeEntity> findByStatus(Boolean status);
 
-    Page<EmployeeEntity> findByStatus(String status, Pageable pageable);
+    Page<EmployeeEntity> findByStatus(Boolean status, Pageable pageable);
 
     Boolean existsByEmail(String email);
 

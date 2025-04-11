@@ -1,6 +1,8 @@
 package cit.edu.workforce.Controller;
 
 import cit.edu.workforce.DTO.EmployeeDTO;
+import cit.edu.workforce.Entity.DepartmentEntity;
+import cit.edu.workforce.Service.DepartmentService;
 import cit.edu.workforce.Service.EmployeeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -16,8 +18,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
@@ -26,10 +30,12 @@ import java.util.List;
 public class EmployeeController {
 
     private final EmployeeService employeeService;
+    private final DepartmentService departmentService;
 
     @Autowired
-    public EmployeeController(EmployeeService employeeService) {
+    public EmployeeController(EmployeeService employeeService, DepartmentService departmentService) {
         this.employeeService = employeeService;
+        this.departmentService = departmentService;
     }
 
     @GetMapping("/employee/profile")
@@ -145,13 +151,6 @@ public class EmployeeController {
         return ResponseEntity.ok(employeeService.activateEmployee(id));
     }
 
-    @PatchMapping("/hr/employees/{id}/role")
-    @Operation(summary = "Assign role to employee", description = "Assign a role to an employee")
-    @PreAuthorize("hasAnyRole('ROLE_HR', 'ROLE_ADMIN')")
-    public ResponseEntity<EmployeeDTO> assignRoleToEmployee(@PathVariable String id, @RequestParam String roleId) {
-        return ResponseEntity.ok(employeeService.assignRole(id, roleId));
-    }
-
     @PatchMapping("/hr/employees/{id}/department")
     @Operation(summary = "Assign department to employee", description = "Assign a department to an employee")
     @PreAuthorize("hasAnyRole('ROLE_HR', 'ROLE_ADMIN')")
@@ -165,5 +164,53 @@ public class EmployeeController {
     @PreAuthorize("hasAnyRole('ROLE_HR', 'ROLE_ADMIN')")
     public ResponseEntity<EmployeeDTO> assignJobTitleToEmployee(@PathVariable String id, @RequestParam String jobId) {
         return ResponseEntity.ok(employeeService.assignJobTitle(id, jobId));
+    }
+
+    @PutMapping("/hr/employees/{id}/role")
+    @Operation(summary = "Update employee role", description = "Update an employee's role")
+    @PreAuthorize("hasAnyRole('ROLE_HR', 'ROLE_ADMIN')")
+    public ResponseEntity<EmployeeDTO> updateEmployeeRole(
+            @PathVariable String id,
+            @RequestBody Map<String, String> request) {
+        
+        String roleId = request.get("roleId");
+        if (roleId == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Role ID is required");
+        }
+        
+        // Normalize the role ID
+        roleId = roleId.toUpperCase();
+        
+        try {
+            EmployeeDTO updatedEmployee = employeeService.assignRole(id, roleId);
+            return ResponseEntity.ok(updatedEmployee);
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    @PutMapping("/hr/employees/{id}/department")
+    @Operation(summary = "Update employee department", description = "Update an employee's department by department ID")
+    @PreAuthorize("hasAnyRole('ROLE_HR', 'ROLE_ADMIN')")
+    public ResponseEntity<EmployeeDTO> updateEmployeeDepartmentById(
+            @PathVariable String id,
+            @RequestParam String departmentId) {
+        
+        if (departmentId == null || departmentId.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Department ID is required");
+        }
+        
+        try {
+            // Find the department by ID
+            DepartmentEntity department = departmentService.getDepartmentById(departmentId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, 
+                            "Department not found with ID: " + departmentId));
+            
+            // Update the employee's department
+            EmployeeDTO updatedEmployee = employeeService.updateEmployeeDepartment(id, department);
+            return ResponseEntity.ok(updatedEmployee);
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
     }
 }

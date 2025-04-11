@@ -13,16 +13,7 @@ export async function GET(request: NextRequest) {
     const lastName = searchParams.get('lastName');
 
     if (!token || !email) {
-        // Create a response that redirects to the home page
-        const response = NextResponse.redirect(new URL('/', request.url));
-
-        // Clear all cookies
-        const cookies = request.cookies.getAll();
-        cookies.forEach(cookie => {
-            response.cookies.delete(cookie.name);
-        });
-
-        return response;
+        return NextResponse.redirect(new URL('/login?error=missing_params', request.url));
     }
 
     // Determine the redirect URL based on role
@@ -31,30 +22,54 @@ export async function GET(request: NextRequest) {
         redirectUrl = '/hr/admin/dashboard';
     }
 
-    // Create a response with HTML that sets localStorage and then redirects
-    const html = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Redirecting...</title>
-            <script>
-                // Only store token in localStorage
-                localStorage.setItem('token', '${token}');
-                
-                // Redirect after setting localStorage
-                window.location.href = '${redirectUrl}';
-            </script>
-        </head>
-        <body>
-            <p>Redirecting...</p>
-        </body>
-        </html>
-    `;
+    // Create a cookie with the token
+    const response = NextResponse.redirect(
+        new URL(redirectUrl, request.url)
+    );
 
-    // Return HTML response
-    return new NextResponse(html, {
-        headers: {
-            'Content-Type': 'text/html',
-        },
+    // Set the token in a secure HTTP-only cookie
+    response.cookies.set({
+        name: 'token',
+        value: token,
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        path: '/',
     });
+
+    // Set user info in cookies if needed
+    if (userId) {
+        response.cookies.set({
+            name: 'userId',
+            value: userId,
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            path: '/',
+        });
+    }
+
+    if (email) {
+        response.cookies.set({
+            name: 'email',
+            value: email,
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            path: '/',
+        });
+    }
+
+    if (role) {
+        response.cookies.set({
+            name: 'role',
+            value: role,
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            path: '/',
+        });
+    }
+
+    return response;
 } 

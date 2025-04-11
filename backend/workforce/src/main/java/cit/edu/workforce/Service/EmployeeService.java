@@ -74,7 +74,7 @@ public class EmployeeService {
             return employeeRepository.findByDepartmentDepartmentNameContainingIgnoreCase(department, pageable)
                     .map(this::convertToDTO);
         } else if (status != null && !status.isEmpty()) {
-            return employeeRepository.findByStatus(status, pageable)
+            return employeeRepository.findByStatus(Boolean.parseBoolean(status), pageable)
                     .map(this::convertToDTO);
         } else {
             return employeeRepository.findAll(pageable)
@@ -84,14 +84,14 @@ public class EmployeeService {
 
     @Transactional(readOnly = true)
     public List<EmployeeDTO> getAllActiveEmployees() {
-        return employeeRepository.findByStatus("ACTIVE").stream()
+        return employeeRepository.findByStatus(true).stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public Page<EmployeeDTO> getAllActiveEmployeesPaged(Pageable pageable) {
-        return employeeRepository.findByStatus("ACTIVE", pageable)
+        return employeeRepository.findByStatus(true, pageable)
                 .map(this::convertToDTO);
     }
 
@@ -226,7 +226,7 @@ public class EmployeeService {
         employee.setPhoneNumber(registrationDTO.getPhoneNumber());
         employee.setMaritalStatus(registrationDTO.getMaritalStatus());
         employee.setHireDate(LocalDate.now());
-        employee.setStatus("ACTIVE");
+        employee.setStatus(false);
         employee.setEmploymentStatus("PENDING"); // New employees start as pending until approved
         employee.setRole(role);
         employee.setUserAccount(userAccount);
@@ -284,7 +284,7 @@ public class EmployeeService {
         employee.setAddress(employeeDTO.getAddress());
         employee.setPhoneNumber(employeeDTO.getPhoneNumber());
         employee.setMaritalStatus(employeeDTO.getMaritalStatus());
-        employee.setStatus(employeeDTO.getStatus() != null ? employeeDTO.getStatus() : "ACTIVE");
+        employee.setStatus(employeeDTO.getStatus() != null ? employeeDTO.getStatus() : true);
         employee.setEmploymentStatus(
                 employeeDTO.getEmploymentStatus() != null ? employeeDTO.getEmploymentStatus() : "FULL_TIME");
         employee.setRole(role);
@@ -331,8 +331,9 @@ public class EmployeeService {
         employee.setAddress(employeeDTO.getAddress());
         employee.setPhoneNumber(employeeDTO.getPhoneNumber());
         employee.setMaritalStatus(employeeDTO.getMaritalStatus());
-        employee.setStatus(employeeDTO.getStatus());
-        employee.setEmploymentStatus(employeeDTO.getEmploymentStatus());
+        employee.setStatus(employeeDTO.getStatus() != null ? employeeDTO.getStatus() : true);
+        employee.setEmploymentStatus(
+                employeeDTO.getEmploymentStatus() != null ? employeeDTO.getEmploymentStatus() : "FULL_TIME");
 
         // Update role if specified
         if (employeeDTO.getRoleId() != null) {
@@ -422,11 +423,12 @@ public class EmployeeService {
         }
 
         if (employeeDTO.getStatus() != null) {
-            employee.setStatus(employeeDTO.getStatus());
+            employee.setStatus(employeeDTO.getStatus() != null ? employeeDTO.getStatus() : true);
         }
 
         if (employeeDTO.getEmploymentStatus() != null) {
-            employee.setEmploymentStatus(employeeDTO.getEmploymentStatus());
+            employee.setEmploymentStatus(
+                    employeeDTO.getEmploymentStatus() != null ? employeeDTO.getEmploymentStatus() : "FULL_TIME");
         }
 
         EmployeeEntity updatedEmployee = employeeRepository.save(employee);
@@ -438,7 +440,7 @@ public class EmployeeService {
         EmployeeEntity employee = employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee not found"));
 
-        employee.setStatus("INACTIVE");
+        employee.setStatus(false);
         employee.setEmploymentStatus("INACTIVE");
 
         // Also deactivate the user account if it exists
@@ -457,7 +459,7 @@ public class EmployeeService {
         EmployeeEntity employee = employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee not found"));
 
-        employee.setStatus("ACTIVE");
+        employee.setStatus(true);
         employee.setEmploymentStatus("ACTIVE");
 
         // Also activate the user account if it exists
@@ -476,12 +478,15 @@ public class EmployeeService {
         EmployeeEntity employee = employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee not found"));
 
-        RoleEntity role = roleService.getRoleById(roleId)
+        RoleEntity role = roleService.findById(roleId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Role not found"));
 
+        // Update the employee's role
         employee.setRole(role);
-        EmployeeEntity updatedEmployee = employeeRepository.save(employee);
-        return convertToDTO(updatedEmployee);
+        employee = employeeRepository.save(employee);
+
+        // Convert to DTO and return
+        return convertToDTO(employee);
     }
 
     @Transactional
@@ -525,6 +530,7 @@ public class EmployeeService {
         dto.setMaritalStatus(employee.getMaritalStatus());
         dto.setStatus(employee.getStatus());
         dto.setEmploymentStatus(employee.getEmploymentStatus());
+        dto.setCreatedAt(employee.getCreatedAt());
 
         if (employee.getDepartment() != null) {
             dto.setDepartmentId(employee.getDepartment().getDepartmentId());

@@ -9,6 +9,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
@@ -41,7 +42,7 @@ public class EmployeeDTO {
 
     private String maritalStatus;
 
-    private String status = "ACTIVE";
+    private Boolean status = false;
 
     private String employmentStatus = "FULL_TIME";
 
@@ -56,4 +57,6 @@ public class EmployeeDTO {
     private String roleId;
 
     private String roleName;
+
+    private LocalDateTime createdAt;
 }

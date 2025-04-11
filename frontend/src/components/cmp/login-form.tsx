@@ -31,10 +31,10 @@ export default function MicrosoftLoginForm() {
 
         {/* Logo and Header */}
         <div className="relative mb-8 text-center">
-          <div className="mx-auto mb-3 h-20 w-20 overflow-hidden rounded-full bg-gradient-to-r from-[#3B82F6] to-[#14B8A6] p-[3px] shadow-lg">
+          <div className="mx-auto mb-3 h-20 w-20 overflow-hidden rounded-full bg-white p-[3px] shadow-lg">
             <div className="flex h-full w-full items-center justify-center rounded-full bg-white">
               <img
-                src="/Logo with no Text.png/?height=80&width=80"
+                src="/Logo with no Text.png"
                 alt="Workforce Hub Logo"
                 className="h-16 w-16 align-middle"
               />
@@ -143,6 +143,46 @@ export default function MicrosoftLoginForm() {
                 </div>
               </div>
 
+            {/* Terms and Conditions Section */}
+            <div className="space-y-6 mt-6">
+              <div className="p-4 rounded-lg border border-[#E5E7EB]/60 dark:border-[#374151]/60 bg-white dark:bg-[#1F2937]/60 shadow-sm">
+                <h4 className="font-medium text-[#1F2937] dark:text-white mb-2">Terms and Conditions</h4>
+                <div className="space-y-3">
+                  <div className="flex items-start">
+                    <input
+                      type="checkbox"
+                      id="termsAgree"
+                      className="h-4 w-4 mt-1 rounded border-[#3B82F6]/70 dark:border-[#3B82F6]/70 text-[#3B82F6] dark:text-[#3B82F6] focus:ring-1 focus:ring-[#3B82F6] dark:focus:ring-[#3B82F6]"
+                      required
+                    />
+                    <label htmlFor="termsAgree" className="ml-2 text-sm text-[#1F2937] dark:text-white">
+                      I agree to the{" "}
+                      <a href="#" className="text-[#3B82F6] dark:text-[#3B82F6] hover:underline">
+                        Terms of Service
+                      </a>{" "}
+                      and{" "}
+                      <a href="#" className="text-[#3B82F6] dark:text-[#3B82F6] hover:underline">
+                        Privacy Policy
+                      </a>
+                    </label>
+                  </div>
+                  <div className="flex items-start">
+                    <input
+                      type="checkbox"
+                      id="dataConsent"
+                      className="h-4 w-4 mt-1 rounded border-[#3B82F6]/70 dark:border-[#3B82F6]/70 text-[#3B82F6] dark:text-[#3B82F6] focus:ring-1 focus:ring-[#3B82F6] dark:focus:ring-[#3B82F6]"
+                      required
+                    />
+                    <label htmlFor="dataConsent" className="ml-2 text-sm text-[#1F2937] dark:text-white">
+                      I consent to the collection and processing of my personal information as described in the Privacy Policy
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+
+
               {/* Benefits Section */}
               <div className="rounded-lg border border-[#E5E7EB] bg-[#F9FAFB] p-4">
                 <h4 className="mb-3 font-medium text-[#1F2937]">
@@ -213,6 +253,8 @@ export default function MicrosoftLoginForm() {
               </div>
             </div>
           </div>
+
+          
 
           {/* Card Footer */}
           <div className="border-t border-[#E5E7EB] bg-gradient-to-r from-[#F9FAFB] to-white px-6 py-3 text-center">

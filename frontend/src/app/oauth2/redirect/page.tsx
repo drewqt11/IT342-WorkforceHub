@@ -2,7 +2,6 @@
 
 import { useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { authService } from '@/lib/auth';
 
 export default function OAuth2Redirect() {
     const router = useRouter();
@@ -21,17 +20,13 @@ export default function OAuth2Redirect() {
                 const lastName = searchParams.get('lastName');
 
                 if (!token || !email) {
-                    // Clear all cookies and redirect to home page
-                    authService.clearTokens();
-                    router.push('/');
                     throw new Error('Missing required parameters');
                 }
 
-                // Store the token in both cookies and localStorage
+                // Store the token in a cookie
                 document.cookie = `token=${token}; path=/; secure; samesite=strict`;
-                localStorage.setItem('token', token);
 
-                // Store user info in cookies only
+                // Store user info in cookies if needed
                 if (userId) {
                     document.cookie = `userId=${userId}; path=/; secure; samesite=strict`;
                 }
@@ -55,9 +50,7 @@ export default function OAuth2Redirect() {
                 }
             } catch (error) {
                 console.error('OAuth2 redirect error:', error);
-                // Clear all cookies and redirect to home page
-                authService.clearTokens();
-                router.push('/');
+                router.push('/?error=oauth_failed');
             }
         };
 
@@ -65,10 +58,10 @@ export default function OAuth2Redirect() {
     }, [router, searchParams]);
 
     return (
-        <div className="flex items-center justify-center min-h-screen">
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
             <div className="text-center">
-                <h1 className="text-2xl font-bold mb-4">Processing authentication...</h1>
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 dark:border-white mx-auto"></div>
+                <p className="mt-4 text-gray-600 dark:text-gray-300">Completing authentication...</p>
             </div>
         </div>
     );

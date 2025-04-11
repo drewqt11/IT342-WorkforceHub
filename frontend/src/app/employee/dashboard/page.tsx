@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Clock, User, Calendar, FileText } from 'lucide-react';
 import { ProfileCompletion } from '@/components/cmp/employee/profile-completion';
 import { ClockInOut } from '@/components/cmp/clock-in-out';
+import { useUser } from '@/contexts/UserContext';
+import { useRouter } from 'next/navigation';
 
 interface EmployeeProfile {
   id: number;
@@ -18,18 +20,28 @@ interface EmployeeProfile {
   position: string;
   hireDate: string;
   profileCompletion: number;
+  status: boolean;
 }
 
 export default function EmployeeDashboard() {
   const [profile, setProfile] = useState<EmployeeProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { userStatus } = useUser();
+  const isActive = userStatus === "Active";
+  const router = useRouter();
 
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         const data = await authService.getEmployeeProfile();
         setProfile(data);
+        
+        // Redirect HR Administrators to the HR admin dashboard without any status check
+        if (data.role === "HR ADMINISTRATOR") {
+          router.push('/hr/admin/dashboard');
+          return; // Exit early to prevent rendering employee dashboard
+        }
       } catch (err) {
         setError('Failed to load profile data');
         console.error('Error fetching profile:', err);
@@ -39,7 +51,7 @@ export default function EmployeeDashboard() {
     };
 
     fetchProfile();
-  }, []);
+  }, [router]);
 
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
@@ -50,18 +62,21 @@ export default function EmployeeDashboard() {
   }
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="container mx-auto p-6 h-full">
       <h1 className="text-3xl font-bold mb-8">
         Welcome, {profile?.firstName}!
       </h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className="h-full">
-          <ClockInOut />
-        </div>
-        <div className="h-full">
-          <ProfileCompletion />
-        </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 h-[calc(100vh-12rem)]">
+        {isActive ? (
+          <div className="h-full lg:col-span-3">
+            <ClockInOut />
+          </div>
+        ) : (
+          <div className="h-full lg:col-span-3">
+            <ProfileCompletion />
+          </div>
+        )}
       </div>
     </div>
   );

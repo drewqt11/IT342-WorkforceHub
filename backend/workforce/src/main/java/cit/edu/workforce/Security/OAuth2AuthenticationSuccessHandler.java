@@ -127,7 +127,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             employee.setLastName(userInfo.getLastName() != null ? userInfo.getLastName() : "");
             employee.setEmail(email);
             employee.setHireDate(LocalDate.now());
-            employee.setStatus("ACTIVE");
+            employee.setStatus(false);
             employee.setEmploymentStatus("PENDING");
             employee.setRole(role);
             employee.setUserAccount(userAccount);
@@ -154,7 +154,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                 employee.setLastName(userInfo.getLastName() != null ? userInfo.getLastName() : "");
                 employee.setEmail(email);
                 employee.setHireDate(LocalDate.now());
-                employee.setStatus("ACTIVE");
+                employee.setStatus(false);
                 employee.setEmploymentStatus("PENDING");
                 employee.setRole(role);
                 employee.setUserAccount(userAccount);

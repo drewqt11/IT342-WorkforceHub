@@ -12,6 +12,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.context.annotation.Primary;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -19,6 +20,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
+@Primary
 public class UserDetailsServiceImpl implements UserDetailsService {
 
     private final UserAccountRepository userAccountRepository;
@@ -34,11 +36,6 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         UserAccountEntity userAccount = userAccountRepository.findByEmailAddress(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
-
-        // Check if user is active
-        if (!userAccount.isActive()) {
-            throw new UsernameNotFoundException("User account is not active");
-        }
 
         List<GrantedAuthority> authorities = new ArrayList<>();
 

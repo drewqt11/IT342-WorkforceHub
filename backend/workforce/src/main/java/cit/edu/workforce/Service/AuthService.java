@@ -148,7 +148,7 @@ public class AuthService {
         employee.setPhoneNumber(registrationDTO.getPhoneNumber());
         employee.setMaritalStatus(registrationDTO.getMaritalStatus());
         employee.setHireDate(LocalDate.now());
-        employee.setStatus("ACTIVE");
+        employee.setStatus(false);
         employee.setEmploymentStatus("PENDING"); // New employees start as pending until approved
         employee.setRole(role);
         employee.setUserAccount(userAccount);

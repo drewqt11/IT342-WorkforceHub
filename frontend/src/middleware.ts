@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export function middleware(request: NextRequest) {
-    // Check for token in cookies
     const token = request.cookies.get('token')?.value
     const userRole = request.cookies.get('role')?.value
 
@@ -22,16 +21,7 @@ export function middleware(request: NextRequest) {
 
     // Check if user is authenticated
     if (!token) {
-        // Clear all cookies and redirect to home page
-        const response = NextResponse.redirect(new URL('/', request.url))
-
-        // Clear all cookies
-        const cookies = request.cookies.getAll()
-        cookies.forEach(cookie => {
-            response.cookies.delete(cookie.name)
-        })
-
-        return response
+        return NextResponse.redirect(new URL('/', request.url))
     }
 
     // Role-based access control

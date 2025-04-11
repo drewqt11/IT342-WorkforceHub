@@ -143,7 +143,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         employee.setLastName(oAuth2UserInfo.getLastName() != null ? oAuth2UserInfo.getLastName() : "");
         employee.setEmail(oAuth2UserInfo.getEmail());
         employee.setHireDate(LocalDate.now());
-        employee.setStatus("ACTIVE");
+        employee.setStatus(false);
         employee.setRole(role);
         employee.setUserAccount(userAccount);
         employeeRepository.save(employee);

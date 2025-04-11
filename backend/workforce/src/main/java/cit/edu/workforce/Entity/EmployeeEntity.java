@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "employee")
@@ -52,10 +53,13 @@ public class EmployeeEntity {
     private String maritalStatus;
 
     @Column(name = "status", nullable = false)
-    private String status = "ACTIVE";
+    private Boolean status = false;
 
     @Column(name = "employment_status", nullable = false)
     private String employmentStatus = "FULL_TIME";
+
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "department_id")
@@ -72,4 +76,9 @@ public class EmployeeEntity {
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private UserAccountEntity userAccount;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+    }
 }

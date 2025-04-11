@@ -40,18 +40,20 @@ public class DepartmentService {
     }
 
     @Transactional
-    public DepartmentEntity createDepartment(String departmentName) {
+    public DepartmentEntity createDepartment(String departmentName, String description) {
         DepartmentEntity department = new DepartmentEntity();
         department.setDepartmentName(departmentName);
+        department.setDescription(description);
         return departmentRepository.save(department);
     }
 
     @Transactional
-    public DepartmentEntity updateDepartment(String departmentId, String departmentName) {
+    public DepartmentEntity updateDepartment(String departmentId, String departmentName, String description) {
         DepartmentEntity department = departmentRepository.findById(departmentId)
                 .orElseThrow(() -> new RuntimeException("Department not found"));
 
         department.setDepartmentName(departmentName);
+        department.setDescription(description);
         return departmentRepository.save(department);
     }
 

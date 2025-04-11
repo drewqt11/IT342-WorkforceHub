@@ -45,20 +45,25 @@ public class DepartmentController {
     @PostMapping
     @Operation(summary = "Create department", description = "Create a new department")
     @PreAuthorize("hasAnyRole('ROLE_HR', 'ROLE_ADMIN')")
-    public ResponseEntity<DepartmentEntity> createDepartment(@RequestParam String departmentName) {
-        return new ResponseEntity<>(departmentService.createDepartment(departmentName), HttpStatus.CREATED);
+    public ResponseEntity<DepartmentEntity> createDepartment(
+            @RequestParam String departmentName,
+            @RequestParam(required = false) String description) {
+        return new ResponseEntity<>(departmentService.createDepartment(departmentName, description), HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "Update department", description = "Update an existing department")
     @PreAuthorize("hasAnyRole('ROLE_HR', 'ROLE_ADMIN')")
-    public ResponseEntity<DepartmentEntity> updateDepartment(@PathVariable String id, @RequestParam String departmentName) {
-        return ResponseEntity.ok(departmentService.updateDepartment(id, departmentName));
+    public ResponseEntity<DepartmentEntity> updateDepartment(
+            @PathVariable String id, 
+            @RequestParam String departmentName,
+            @RequestParam(required = false) String description) {
+        return ResponseEntity.ok(departmentService.updateDepartment(id, departmentName, description));
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete department", description = "Delete a department")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasAnyRole('ROLE_HR', 'ROLE_ADMIN')")
     public ResponseEntity<Void> deleteDepartment(@PathVariable String id) {
         departmentService.deleteDepartment(id);
         return ResponseEntity.noContent().build();

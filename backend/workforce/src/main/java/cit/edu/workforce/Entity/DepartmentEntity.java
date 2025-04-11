@@ -23,4 +23,7 @@ public class DepartmentEntity {
 
     @Column(name = "department_name", nullable = false)
     private String departmentName;
+    
+    @Column(name = "description", nullable = true, length = 500)
+    private String description;
 }
