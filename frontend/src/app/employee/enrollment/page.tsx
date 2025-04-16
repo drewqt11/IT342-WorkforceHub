@@ -212,14 +212,91 @@ export default function EnrollmentForm() {
 
       console.log('Submitting payload:', payload)
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hr/employees/${profile.employeeId}`, {
+      const token = localStorage.getItem('token')
+      if (!token) {
+        setErrorDetails({
+          title: "Authentication Error",
+          message: "Your session has expired. Please log in again.",
+        })
+        setShowErrorDialog(true)
+        router.push('/login')
+        return
+      }
+
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL
+      if (!apiUrl) {
+        setErrorDetails({
+          title: "Configuration Error",
+          message: "API URL is not configured. Please contact support.",
+        })
+        setShowErrorDialog(true)
+        return
+      }
+
+      console.log('Making request to:', `${apiUrl}/hr/employees/${profile.employeeId}`)
+
+      // Add timeout to fetch request
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+
+      const response = await fetch(`${apiUrl}/hr/employees/${profile.employeeId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify(payload),
+        signal: controller.signal,
+        credentials: 'include', // Include cookies in the request
+        redirect: 'manual', // Prevent automatic redirects
+      }).catch(error => {
+        clearTimeout(timeoutId)
+        console.error('Network error details:', {
+          name: error.name,
+          message: error.message,
+          stack: error.stack,
+          type: error.type,
+          cause: error.cause
+        })
+        
+        if (error.name === 'AbortError') {
+          setErrorDetails({
+            title: "Request Timeout",
+            message: "The request took too long to complete. Please check your internet connection and try again.",
+          })
+        } else if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
+          setErrorDetails({
+            title: "Connection Error",
+            message: "Unable to connect to the server. Please check if:\n\n" +
+              "• The backend server is running at " + apiUrl + "\n" +
+              "• Your internet connection is working\n" +
+              "• The API URL is correctly configured",
+          })
+        } else {
+          setErrorDetails({
+            title: "Network Error",
+            message: `Unable to connect to the server: ${error.message}`,
+          })
+        }
+        setShowErrorDialog(true)
+        throw error // Re-throw to be caught by outer try-catch
       })
+
+      clearTimeout(timeoutId)
+
+      // Check for authentication redirect
+      if (response.status === 302 || response.status === 307) {
+        const location = response.headers.get('location')
+        if (location && location.includes('login.microsoftonline.com')) {
+          setErrorDetails({
+            title: "Session Expired",
+            message: "Your session has expired. Please log in again.",
+          })
+          setShowErrorDialog(true)
+          router.push('/login')
+          return
+        }
+      }
 
       const responseText = await response.text()
       console.log('Raw response:', responseText)
@@ -238,34 +315,26 @@ export default function EnrollmentForm() {
           statusText: response.statusText,
           data: errorData
         })
-        throw new Error(errorData.message || `Server error: ${response.status} ${response.statusText}`)
+        setErrorDetails({
+          title: "Server Error",
+          message: errorData.message || `Error ${response.status}: ${response.statusText}`,
+        })
+        setShowErrorDialog(true)
+        return
       }
 
-      console.log('Success response:', errorData)
+      // Success case
       setFormSubmitted(true)
-    } catch (err) {
-      console.error('Error updating employee:', err)
-      
-      let errorMessage = 'An unexpected error occurred while updating your information.'
-      let errorTitle = 'Update Failed'
-      
-      if (err instanceof Error) {
-        if (err.message.includes('Failed to fetch')) {
-          errorTitle = 'Connection Error'
-          errorMessage = 'Unable to connect to the server. Please check if:\n\n' +
-            '• The backend server is running at http://localhost:8080\n' +
-            '• Your internet connection is working\n' +
-            '• The API URL is correctly configured'
-        } else {
-          errorMessage = err.message
-        }
+      router.push('/employee/dashboard')
+    } catch (error) {
+      console.error('Error submitting form:', error)
+      if (!errorDetails.title) { // Only set if not already set by network error
+        setErrorDetails({
+          title: "Unexpected Error",
+          message: "An unexpected error occurred. Please try again later.",
+        })
+        setShowErrorDialog(true)
       }
-      
-      setErrorDetails({
-        title: errorTitle,
-        message: errorMessage,
-      })
-      setShowErrorDialog(true)
     }
   }
 
