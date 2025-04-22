@@ -1,5 +1,6 @@
 package cit.edu.workforce.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,4 +12,5 @@ import cit.edu.workforce.Entity.JobTitleEntity;
 public interface JobTitleRepository extends JpaRepository<JobTitleEntity, String> {
 
     Optional<JobTitleEntity> findByJobName(String jobName);
+    List<JobTitleEntity> findByDepartment_DepartmentId(String departmentId);
 }

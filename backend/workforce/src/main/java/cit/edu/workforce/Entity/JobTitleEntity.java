@@ -1,12 +1,11 @@
 package cit.edu.workforce.Entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
-
-
 
 @Entity
 @Table(name = "job_title")
@@ -32,5 +31,6 @@ public class JobTitleEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "department_id", nullable = false)
+    @JsonIgnore
     private DepartmentEntity department;
 }

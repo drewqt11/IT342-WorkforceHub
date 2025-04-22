@@ -35,7 +35,23 @@ export async function GET(request: NextRequest) {
     }
     
     const data = await response.json()
-    return NextResponse.json(data)
+    
+    // Transform the data to break circular references
+    const transformedData = data.map((department: any) => ({
+      departmentId: department.departmentId,
+      departmentName: department.departmentName,
+      description: department.description,
+      // If there are job titles, transform them to break circular references
+      jobTitles: department.jobTitles?.map((job: any) => ({
+        jobId: job.jobId,
+        jobName: job.jobName,
+        jobDescription: job.jobDescription,
+        payGrade: job.payGrade,
+        departmentId: job.departmentId
+      }))
+    }))
+    
+    return NextResponse.json(transformedData)
   } catch (error) {
     console.error("Error in departments GET route:", error)
     return NextResponse.json(

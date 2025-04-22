@@ -37,6 +37,13 @@ public class JobTitleController {
         return ResponseEntity.ok(jobTitleService.getAllJobTitles());
     }
 
+    @GetMapping("/department/{departmentId}")
+    @Operation(summary = "Get job titles by department ID", description = "Get a list of job titles for a specific department")
+    @PreAuthorize("hasAnyRole('ROLE_HR', 'ROLE_ADMIN')")
+    public ResponseEntity<List<JobTitleEntity>> getJobTitlesByDepartmentId(@PathVariable String departmentId) {
+        return ResponseEntity.ok(jobTitleService.getJobTitlesByDepartmentId(departmentId));
+    }
+
     @GetMapping("/{id}")
     @Operation(summary = "Get job title by ID", description = "Get a job title by its ID")
     @PreAuthorize("hasAnyRole('ROLE_HR', 'ROLE_ADMIN')")

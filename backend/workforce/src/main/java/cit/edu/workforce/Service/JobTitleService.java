@@ -26,6 +26,11 @@ public class JobTitleService {
     }
 
     @Transactional(readOnly = true)
+    public List<JobTitleEntity> getJobTitlesByDepartmentId(String departmentId) {
+        return jobTitleRepository.findByDepartment_DepartmentId(departmentId);
+    }
+
+    @Transactional(readOnly = true)
     public Optional<JobTitleEntity> getJobTitleById(String jobId) {
         return jobTitleRepository.findById(jobId);
     }

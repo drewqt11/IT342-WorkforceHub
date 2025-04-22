@@ -11,7 +11,10 @@ import { NextRequest, NextResponse } from "next/server"
  * @throws {401} If authorization header is missing
  * @throws {500} If there's an internal server error
  */
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
     const authHeader = request.headers.get("authorization")
     
@@ -21,8 +24,13 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         { status: 401 }
       )
     }
+
+    // Get the department ID from the URL path
+    const url = new URL(request.url)
+    const pathSegments = url.pathname.split('/')
+    const departmentId = pathSegments[pathSegments.length - 2]
     
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hr/job-titles?departmentId=${params.id}`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hr/job-titles/department/${departmentId}`, {
       headers: {
         Authorization: authHeader,
       },
@@ -37,7 +45,17 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     }
     
     const data = await response.json()
-    return NextResponse.json(data)
+    
+    // Transform the data to break circular references
+    const transformedData = data.map((job: any) => ({
+      jobId: job.jobId,
+      jobName: job.jobName,
+      jobDescription: job.jobDescription,
+      payGrade: job.payGrade,
+      departmentId: job.departmentId
+    }))
+    
+    return NextResponse.json(transformedData)
   } catch (error) {
     console.error("Error in job titles GET route:", error)
     return NextResponse.json(

@@ -39,6 +39,7 @@ export default function DepartmentsPage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isAddJobTitlesDialogOpen, setIsAddJobTitlesDialogOpen] = useState(false)
+  const [isViewJobsDialogOpen, setIsViewJobsDialogOpen] = useState(false)
   const [newDepartmentName, setNewDepartmentName] = useState("")
   const [newDepartmentDescription, setNewDepartmentDescription] = useState("")
   const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null)
@@ -50,6 +51,7 @@ export default function DepartmentsPage() {
   const [jobTitles, setJobTitles] = useState<JobTitle[]>([])
   const [processing, setProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [loadingJobs, setLoadingJobs] = useState(false)
 
   useEffect(() => {
     fetchDepartments()
@@ -251,24 +253,59 @@ export default function DepartmentsPage() {
     setIsDeleteDialogOpen(true)
   }
 
+  const handleViewJobs = async (department: Department) => {
+    try {
+      setLoadingJobs(true)
+      setSelectedDepartmentForJobs(department)
+      const token = authService.getToken()
+      
+      if (!token) {
+        router.push("/")
+        toast.error("Authentication required. Please log in.")
+        return
+      }
+
+      const response = await fetch(`/api/hr/departments/${department.departmentId}/job-titles`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch job titles")
+      }
+
+      const data = await response.json()
+      setJobTitles(data)
+      setIsViewJobsDialogOpen(true)
+    } catch (error) {
+      console.error("Error fetching job titles:", error)
+      toast.error("Failed to fetch job titles")
+    } finally {
+      setLoadingJobs(false)
+    }
+  }
+
+  const handleOpenAddJobTitles = (department: Department) => {
+    setSelectedDepartmentForJobs(department)
+    setJobTitles([{ 
+      jobId: `new-${Date.now()}`, 
+      jobName: "", 
+      jobDescription: "", 
+      payGrade: "",
+      departmentId: department.departmentId
+    }])
+    setIsAddJobTitlesDialogOpen(true)
+  }
+
   const handleAddJobTitle = () => {
     setJobTitles([...jobTitles, { 
-      jobId: "", 
+      jobId: `new-${Date.now()}`, 
       jobName: "", 
       jobDescription: "", 
       payGrade: "",
       departmentId: selectedDepartmentForJobs?.departmentId || "" 
     }])
-  }
-
-  const handleRemoveJobTitle = (index: number) => {
-    setJobTitles(jobTitles.filter((_, i) => i !== index))
-  }
-
-  const handleJobTitleChange = (index: number, field: keyof JobTitle, value: string) => {
-    const updatedJobTitles = [...jobTitles]
-    updatedJobTitles[index] = { ...updatedJobTitles[index], [field]: value }
-    setJobTitles(updatedJobTitles)
   }
 
   const handleSubmitJobTitles = async () => {
@@ -328,7 +365,10 @@ export default function DepartmentsPage() {
       toast.success("Job titles created successfully")
       setIsAddJobTitlesDialogOpen(false)
       setJobTitles([])
-      setSelectedDepartmentForJobs(null)
+      // Refresh the job titles list
+      if (selectedDepartmentForJobs) {
+        handleViewJobs(selectedDepartmentForJobs)
+      }
     } catch (error) {
       console.error("Error creating job titles:", error)
       setError(error instanceof Error ? error.message : "Failed to create job titles")
@@ -336,6 +376,16 @@ export default function DepartmentsPage() {
     } finally {
       setProcessing(false)
     }
+  }
+
+  const handleRemoveJobTitle = (index: number) => {
+    setJobTitles(jobTitles.filter((_, i) => i !== index))
+  }
+
+  const handleJobTitleChange = (index: number, field: keyof JobTitle, value: string) => {
+    const updatedJobTitles = [...jobTitles]
+    updatedJobTitles[index] = { ...updatedJobTitles[index], [field]: value }
+    setJobTitles(updatedJobTitles)
   }
 
   return (
@@ -532,14 +582,21 @@ export default function DepartmentsPage() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => {
-                                setSelectedDepartmentForJobs(department)
-                                setIsAddJobTitlesDialogOpen(true)
-                              }}
+                              onClick={() => handleViewJobs(department)}
                               className="flex items-center gap-2"
+                              disabled={loadingJobs}
                             >
-                              <Plus className="h-4 w-4" />
-                              Add Jobs
+                              {loadingJobs && selectedDepartmentForJobs?.departmentId === department.departmentId ? (
+                                <div className="flex items-center gap-2">
+                                  <div className="h-3 w-3 rounded-full border-2 border-[#3B82F6] border-t-transparent animate-spin"></div>
+                                  <span>Loading...</span>
+                                </div>
+                              ) : (
+                                <>
+                                  <Building2 className="h-4 w-4" />
+                                  View Jobs
+                                </>
+                              )}
                             </Button>
                             <Button
                               variant="outline"
@@ -687,6 +744,69 @@ export default function DepartmentsPage() {
         </DialogContent>
       </Dialog>
 
+      {/* View Jobs Dialog */}
+      <Dialog open={isViewJobsDialogOpen} onOpenChange={setIsViewJobsDialogOpen}>
+        <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Job Titles in {selectedDepartmentForJobs?.departmentName}</DialogTitle>
+            <DialogDescription>
+              View and manage job titles for this department
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end mb-4">
+            <Button
+              onClick={() => handleOpenAddJobTitles(selectedDepartmentForJobs!)}
+              className="flex items-center gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Add Job Title
+            </Button>
+          </div>
+          <div className="space-y-4 overflow-y-auto flex-1 pr-2">
+            {jobTitles.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-[#6B7280] dark:text-[#9CA3AF]">No job titles found for this department.</p>
+              </div>
+            ) : (
+              jobTitles.map((job, index) => (
+                <div key={job.jobId} className="space-y-4 p-4 border rounded-lg">
+                  <div className="flex justify-between items-center">
+                    <h3 className="font-medium">Job Title #{index + 1}</h3>
+                  </div>
+                  <div className="grid gap-4">
+                    <div>
+                      <Label>Job Name</Label>
+                      <p className="text-[#4B5563] dark:text-[#D1D5DB]">{job.jobName}</p>
+                    </div>
+                    <div>
+                      <Label>Job Description</Label>
+                      <p className="text-[#4B5563] dark:text-[#D1D5DB]">{job.jobDescription || "No description"}</p>
+                    </div>
+                    <div>
+                      <Label>Pay Grade</Label>
+                      <p className="text-[#4B5563] dark:text-[#D1D5DB]">{job.payGrade || "Not specified"}</p>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+          <DialogFooter className="mt-4">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsViewJobsDialogOpen(false)
+                setJobTitles([])
+                setSelectedDepartmentForJobs(null)
+              }}
+            >
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Job Titles Dialog */}
       <Dialog open={isAddJobTitlesDialogOpen} onOpenChange={setIsAddJobTitlesDialogOpen}>
         <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-hidden flex flex-col">
           <DialogHeader>
@@ -697,9 +817,9 @@ export default function DepartmentsPage() {
           </DialogHeader>
           <div className="space-y-4 overflow-y-auto flex-1 pr-2">
             {jobTitles.map((job, index) => (
-              <div key={index} className="space-y-4 p-4 border rounded-lg">
+              <div key={job.jobId} className="space-y-4 p-4 border rounded-lg">
                 <div className="flex justify-between items-center">
-                  <h3 className="font-medium">Job Title #{index + 1}</h3>
+                  <h3 className="font-medium">New Job Title #{index + 1}</h3>
                   {index > 0 && (
                     <Button
                       variant="ghost"
@@ -713,27 +833,27 @@ export default function DepartmentsPage() {
                 </div>
                 <div className="grid gap-4">
                   <div>
-                    <Label htmlFor={`jobName-${index}`}>Job Name *</Label>
+                    <Label htmlFor={`jobName-${job.jobId}`}>Job Name *</Label>
                     <Input
-                      id={`jobName-${index}`}
+                      id={`jobName-${job.jobId}`}
                       value={job.jobName}
                       onChange={(e) => handleJobTitleChange(index, "jobName", e.target.value)}
                       placeholder="Enter job name"
                     />
                   </div>
                   <div>
-                    <Label htmlFor={`jobDescription-${index}`}>Job Description</Label>
+                    <Label htmlFor={`jobDescription-${job.jobId}`}>Job Description</Label>
                     <Textarea
-                      id={`jobDescription-${index}`}
+                      id={`jobDescription-${job.jobId}`}
                       value={job.jobDescription}
                       onChange={(e) => handleJobTitleChange(index, "jobDescription", e.target.value)}
                       placeholder="Enter job description"
                     />
                   </div>
                   <div>
-                    <Label htmlFor={`payGrade-${index}`}>Pay Grade</Label>
+                    <Label htmlFor={`payGrade-${job.jobId}`}>Pay Grade</Label>
                     <Input
-                      id={`payGrade-${index}`}
+                      id={`payGrade-${job.jobId}`}
                       value={job.payGrade}
                       onChange={(e) => handleJobTitleChange(index, "payGrade", e.target.value)}
                       placeholder="Enter pay grade"
@@ -761,7 +881,6 @@ export default function DepartmentsPage() {
                 setIsAddJobTitlesDialogOpen(false)
                 setJobTitles([])
                 setError(null)
-                setSelectedDepartmentForJobs(null)
               }}
             >
               Cancel
