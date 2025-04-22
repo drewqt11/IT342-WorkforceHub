@@ -15,10 +15,10 @@ import { NextRequest, NextResponse } from "next/server"
  */
 export async function PUT(
   request: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = context.params
+    const { id } = await params
     const token = request.headers.get("authorization")
     
     if (!token) {
@@ -28,8 +28,8 @@ export async function PUT(
       )
     }
     
-    const formData = await request.formData()
-    const departmentId = formData.get("departmentId")
+    const body = await request.json()
+    const { departmentId } = body
     
     if (!departmentId) {
       return NextResponse.json(
@@ -38,7 +38,7 @@ export async function PUT(
       )
     }
     
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hr/employees/${id}/department?departmentId=${encodeURIComponent(departmentId.toString())}`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hr/employees/${id}/department?departmentId=${encodeURIComponent(departmentId)}`, {
       method: "PUT",
       headers: {
         Authorization: token,

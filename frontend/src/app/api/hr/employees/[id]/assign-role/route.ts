@@ -18,45 +18,52 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
     const token = request.headers.get("authorization")
     const body = await request.json()
     const { roleId } = body
 
     if (!token) {
-      return NextResponse.json({ message: "Authorization required" }, { status: 401 })
+      return NextResponse.json(
+        { error: "Authorization token is required" },
+        { status: 401 }
+      )
     }
 
     if (!roleId) {
-      return NextResponse.json({ message: "Role ID is required" }, { status: 400 })
+      return NextResponse.json(
+        { error: "Role ID is required" },
+        { status: 400 }
+      )
     }
 
-    const normalizedRole = roleId.toUpperCase()
-    
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hr/employees/${id}/role`, {
-      method: "PUT",
-      headers: {
-        Authorization: token,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ roleId: normalizedRole })
-    })
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/hr/employees/${id}/role`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token,
+        },
+        body: JSON.stringify({ roleId }),
+      }
+    )
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
-      if (response.status === 403) {
+      if (response.status === 404) {
         return NextResponse.json(
-          { message: "You don't have permission to update roles" },
-          { status: 403 }
-        )
-      } else if (response.status === 404) {
-        return NextResponse.json(
-          { message: "Employee not found" },
+          { error: "Employee or role not found" },
           { status: 404 }
+        )
+      } else if (response.status === 403) {
+        return NextResponse.json(
+          { error: "You don't have permission to assign roles" },
+          { status: 403 }
         )
       }
       return NextResponse.json(
-        { message: errorData.message || "Failed to update role" },
+        { error: "Failed to assign role", details: errorData },
         { status: response.status }
       )
     }
@@ -64,9 +71,9 @@ export async function PUT(
     const data = await response.json()
     return NextResponse.json(data)
   } catch (error) {
-    console.error("Error updating role:", error)
+    console.error("Error in assign-role route:", error)
     return NextResponse.json(
-      { message: "Internal server error" },
+      { error: "Internal server error" },
       { status: 500 }
     )
   }

@@ -52,6 +52,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
             authorities.add(new SimpleGrantedAuthority("ROLE_INCOMPLETE"));
         }
 
-        return new User(userAccount.getEmailAddress(), userAccount.getPassword(), authorities);
+        // Using a dummy password since we're not using password authentication
+        return new User(userAccount.getEmailAddress(), "NO_PASSWORD", authorities);
     }
 }

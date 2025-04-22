@@ -196,8 +196,7 @@ public class EmployeeService {
 
         // Create user account
         UserAccountEntity userAccount = userAccountService.createUserAccount(
-                registrationDTO.getEmail(),
-                registrationDTO.getPassword());
+                registrationDTO.getEmail());
 
         // Get default role (EMPLOYEE)
         RoleEntity role = roleService.getRoleById("ROLE_EMPLOYEE")

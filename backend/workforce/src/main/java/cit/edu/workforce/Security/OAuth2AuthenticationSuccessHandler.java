@@ -24,7 +24,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -113,7 +112,6 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             userAccount.setCreatedAt(LocalDateTime.now());
             userAccount.setLastLogin(LocalDateTime.now());
             userAccount.setActive(true);
-            userAccount.setPassword(UUID.randomUUID().toString()); // Generate random password (won't be used)
             userAccountRepository.save(userAccount);
 
             // Get default role (EMPLOYEE)

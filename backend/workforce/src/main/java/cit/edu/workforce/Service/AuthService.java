@@ -15,13 +15,10 @@ import cit.edu.workforce.Repository.UserAccountRepository;
 import cit.edu.workforce.Security.JwtTokenProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -33,11 +30,9 @@ import java.util.Optional;
 @Service
 public class AuthService {
 
-    private final AuthenticationManager authenticationManager;
     private final UserAccountRepository userAccountRepository;
     private final EmployeeRepository employeeRepository;
     private final RoleRepository roleRepository;
-    private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final EmailDomainListService emailDomainListService;
     private final UserDetailsService userDetailsService;
@@ -45,20 +40,16 @@ public class AuthService {
 
     @Autowired
     public AuthService(
-            AuthenticationManager authenticationManager,
             UserAccountRepository userAccountRepository,
             EmployeeRepository employeeRepository,
             RoleRepository roleRepository,
-            PasswordEncoder passwordEncoder,
             JwtTokenProvider jwtTokenProvider,
             EmailDomainListService emailDomainListService,
             UserDetailsService userDetailsService,
             RefreshTokenService refreshTokenService) {
-        this.authenticationManager = authenticationManager;
         this.userAccountRepository = userAccountRepository;
         this.employeeRepository = employeeRepository;
         this.roleRepository = roleRepository;
-        this.passwordEncoder = passwordEncoder;
         this.jwtTokenProvider = jwtTokenProvider;
         this.emailDomainListService = emailDomainListService;
         this.userDetailsService = userDetailsService;
@@ -71,16 +62,6 @@ public class AuthService {
         if (!emailDomainListService.isValidDomain(loginRequest.getEmail())) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid email domain. Please use a valid domain.");
         }
-
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        loginRequest.getEmail(),
-                        loginRequest.getPassword()
-                )
-        );
-
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        String jwt = jwtTokenProvider.generateToken(authentication);
 
         UserAccountEntity userAccount = userAccountRepository.findByEmailAddress(loginRequest.getEmail())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
@@ -96,6 +77,14 @@ public class AuthService {
 
         EmployeeEntity employee = employeeOptional.get();
         String roleName = employee.getRole() != null ? employee.getRole().getRoleName() : "Unknown";
+
+        // Generate JWT token
+        String jwt = jwtTokenProvider.generateTokenWithClaims(
+            loginRequest.getEmail(),
+            userAccount.getUserId(),
+            loginRequest.getEmail(),
+            roleName
+        );
 
         // Generate refresh token
         RefreshTokenEntity refreshToken = refreshTokenService.createRefreshToken(userAccount.getUserId());
@@ -128,7 +117,6 @@ public class AuthService {
         // Create user account
         UserAccountEntity userAccount = new UserAccountEntity();
         userAccount.setEmailAddress(registrationDTO.getEmail());
-        userAccount.setPassword(passwordEncoder.encode(registrationDTO.getPassword()));
         userAccount.setCreatedAt(LocalDateTime.now());
         userAccount.setActive(true);
         userAccountRepository.save(userAccount);
@@ -155,15 +143,12 @@ public class AuthService {
         employeeRepository.save(employee);
 
         // Generate JWT token
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        registrationDTO.getEmail(),
-                        registrationDTO.getPassword()
-                )
+        String jwt = jwtTokenProvider.generateTokenWithClaims(
+            registrationDTO.getEmail(),
+            userAccount.getUserId(),
+            registrationDTO.getEmail(),
+            role.getRoleName()
         );
-
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        String jwt = jwtTokenProvider.generateToken(authentication);
 
         // Generate refresh token
         RefreshTokenEntity refreshToken = refreshTokenService.createRefreshToken(userAccount.getUserId());
@@ -251,17 +236,15 @@ public class AuthService {
         // Generate refresh token
         RefreshTokenEntity refreshToken = refreshTokenService.createRefreshToken(userAccount.getUserId());
 
-        String roleName = employee.getRole() != null ? employee.getRole().getRoleName() : "ROLE_EMPLOYEE";
-
         return new AuthResponseDTO(
-                token,
-                refreshToken.getToken(),
-                userAccount.getUserId(),
-                userAccount.getEmailAddress(),
-                roleName,
-                employee.getEmployeeId(),
-                employee.getFirstName(),
-                employee.getLastName()
+            token,
+            refreshToken.getToken(),
+            userAccount.getUserId(),
+            userAccount.getEmailAddress(),
+            employee.getRole() != null ? employee.getRole().getRoleName() : "ROLE_EMPLOYEE",
+            employee.getEmployeeId(),
+            employee.getFirstName(),
+            employee.getLastName()
         );
     }
 }

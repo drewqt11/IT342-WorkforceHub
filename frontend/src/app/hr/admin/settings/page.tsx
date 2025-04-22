@@ -14,6 +14,7 @@ import { authService } from "@/lib/auth"
 import { UserCog, RefreshCw, Search, Filter } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
+import { Toaster } from "@/components/ui/sonner"
 
 interface Employee {
   employeeId: string
@@ -26,6 +27,7 @@ interface Employee {
   jobName: string
   jobTitle: string
   role: string
+  status: boolean
 }
 
 export default function SettingsPage() {
@@ -76,16 +78,22 @@ export default function SettingsPage() {
       // Check if data is an array, if not, try to access the correct property
       const employeesData = Array.isArray(data) ? data : data.employees || data.content || []
       
-      // Log the first employee to see its structure
-      if (employeesData.length > 0) {
-        console.log("Sample employee:", employeesData[0])
-      }
-      
-      // Ensure each employee has a role property with the correct format
-      const processedEmployees = employeesData.map((emp: any) => ({
-        ...emp,
-        role: emp.roleId || emp.role || "ROLE_EMPLOYEE" // Use roleId if available, fallback to role, default to ROLE_EMPLOYEE
-      }))
+      // Ensure each employee has all required fields with proper defaults
+      const processedEmployees = employeesData
+        .filter((emp: any) => emp.status === true) // Only keep active employees
+        .map((emp: any) => ({
+          employeeId: emp.employeeId || "",
+          firstName: emp.firstName || "",
+          lastName: emp.lastName || "",
+          email: emp.email || "",
+          departmentId: emp.departmentId || "",
+          departmentName: emp.departmentName || "Unassigned",
+          jobId: emp.jobId || "",
+          jobName: emp.jobName || "",
+          jobTitle: emp.jobTitle || emp.jobName || "",
+          role: emp.roleId || emp.role || "ROLE_EMPLOYEE",
+          status: emp.status || true
+        }))
       
       setEmployees(processedEmployees as Employee[])
     } catch (error) {
@@ -131,21 +139,21 @@ export default function SettingsPage() {
 
   const handleUpdateRole = async () => {
     if (!selectedEmployee || !selectedRole) {
-      toast.error("Role is required")
-      return
+      toast.error("Role is required");
+      return;
     }
 
     try {
-      setProcessingEmployee(selectedEmployee.employeeId)
-      const token = authService.getToken()
+      setProcessingEmployee(selectedEmployee.employeeId);
+      const token = authService.getToken();
       
       if (!token) {
-        router.push("/")
-        toast.error("Authentication required. Please log in.")
-        return
+        router.push("/");
+        toast.error("Authentication required. Please log in.");
+        return;
       }
       
-      const roleToSend = selectedRole.toUpperCase()
+      const roleToSend = selectedRole.toUpperCase();
       const response = await fetch(`/api/hr/employees/${selectedEmployee.employeeId}/assign-role`, {
         method: "PUT",
         headers: {
@@ -153,12 +161,14 @@ export default function SettingsPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ roleId: roleToSend })
-      })
+      });
 
-      const responseData = await response.json()
+      const responseData = await response.json();
 
       if (!response.ok) {
-        throw new Error(responseData.message || "Failed to update role")
+        const errorMessage = responseData.message || "Failed to update role";
+        toast.error(errorMessage);
+        throw new Error(errorMessage);
       }
 
       // Update the employee in the local state with the response data
@@ -168,19 +178,23 @@ export default function SettingsPage() {
             ? { ...emp, role: responseData.role || roleToSend }
             : emp
         )
-      )
+      );
 
-      toast.success("Employee role updated successfully")
-      setIsUpdateDialogOpen(false)
-      setSelectedRole("")
-      setSelectedEmployee(null)
+      toast.success("Employee role updated successfully");
+      
+      setIsUpdateDialogOpen(false);
+      setSelectedRole("");
+      setSelectedEmployee(null);
     } catch (error) {
-      console.error("Error updating role:", error)
-      toast.error(error instanceof Error ? error.message : "Failed to update role")
+      console.error("Error updating role:", error);
+      // Only show error toast if it hasn't been shown already
+      if (!(error instanceof Error && error.message === "Failed to update role")) {
+        toast.error(error instanceof Error ? error.message : "Failed to update role");
+      }
     } finally {
-      setProcessingEmployee(null)
+      setProcessingEmployee(null);
     }
-  }
+  };
 
   const openUpdateDialog = (employee: Employee) => {
     setSelectedEmployee(employee)
@@ -189,6 +203,9 @@ export default function SettingsPage() {
   }
 
   const filteredEmployees = employees.filter(employee => {
+    // Only show active employees
+    if (!employee.status) return false;
+
     const matchesSearch = 
       employee.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       employee.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -228,6 +245,15 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#F9FAFB] via-[#F0FDFA] to-[#E0F2FE] dark:from-[#1F2937] dark:via-[#134E4A] dark:to-[#0F172A] p-4 md:p-6">
+      <Toaster 
+        position="top-right" 
+        richColors 
+        className="mt-24" 
+        style={{
+          top: "6rem",
+          right: "1rem"
+        }}
+      />
       <div className="w-full max-w-6xl mx-auto space-y-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>

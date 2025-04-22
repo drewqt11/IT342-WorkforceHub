@@ -46,6 +46,7 @@ import {
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { profile } from "console"
+import { Toaster } from "@/components/ui/sonner"
 
 interface Employee {
   employeeId: string
@@ -289,37 +290,25 @@ export default function ActivateEmployeesPage() {
   }
 
   const filterEmployees = () => {
-    let filtered = [...employees]
-
-    // Apply search filter
+    let filtered = employees.filter(employee => !employee.status); // Only show inactive employees
+    
     if (searchTerm) {
-      const term = searchTerm.toLowerCase()
-      filtered = filtered.filter(
-        (employee) =>
-          employee.firstName.toLowerCase().includes(term) ||
-          employee.lastName.toLowerCase().includes(term) ||
-          employee.employeeId.toLowerCase().includes(term) ||
-          employee.email.toLowerCase().includes(term),
-      )
+      filtered = filtered.filter(employee => 
+        employee.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        employee.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        employee.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        employee.employeeId.toLowerCase().includes(searchTerm.toLowerCase())
+      );
     }
-
-    // Apply status filter
-    if (statusFilter !== "all") {
-      const isActive = statusFilter === "active"
-      filtered = filtered.filter((employee) => employee.status === isActive)
-    }
-
-    // Apply department filter
+    
     if (departmentFilter !== "all") {
-      filtered = filtered.filter((employee) => 
-        employee.departmentId === departmentFilter
-      )
+      filtered = filtered.filter(employee => employee.departmentName === departmentFilter);
     }
-
-    setFilteredEmployees(filtered)
-    setTotalPages(Math.ceil(filtered.length / itemsPerPage))
-    setCurrentPage(1)
-  }
+    
+    setFilteredEmployees(filtered);
+    setTotalPages(Math.ceil(filtered.length / itemsPerPage));
+    setCurrentPage(1);
+  };
 
   const handleActivate = async (employeeId: string) => {
     try {
@@ -387,62 +376,57 @@ export default function ActivateEmployeesPage() {
 
   const handleUpdateDepartment = async (employeeId: string, departmentId: string) => {
     try {
-      // Don't allow removing a department once assigned
-      if (!departmentId) {
-        toast.error("Department cannot be removed once assigned")
-        return
+      setProcessingDepartment(employeeId);
+      const token = authService.getToken();
+      
+      if (!token) {
+        router.push("/");
+        toast.error("Authentication required. Please log in.");
+        return;
       }
       
-      setUpdatingDepartment(employeeId)
-      const token = authService.getToken()
-
-      if (!token) {
-        router.push("/")
-        toast.error("Authentication required. Please log in.")
-        return
-      }
-
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hr/employees/${employeeId}/assign-department`, {
+      const response = await fetch(`/api/hr/employees/${employeeId}/assign-department`, {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ departmentId })
-      })
+      });
+
+      const responseData = await response.json();
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        if (response.status === 403) {
-          toast.error("You don't have permission to update departments")
-          return
-        } else if (response.status === 404) {
-          toast.error("Employee or department not found")
-          return
-        }
-        throw new Error(errorData.error || "Failed to update department")
+        const errorMessage = responseData.error || "Failed to update department";
+        toast.error(errorMessage);
+        throw new Error(errorMessage);
       }
 
-      // Update the employee in the local state with the correct department data
+      // Update the employee in the local state
       setEmployees(prevEmployees => 
         prevEmployees.map(emp => 
           emp.employeeId === employeeId 
-            ? {
-                ...emp,
-                departmentName: departmentId
+            ? { 
+                ...emp, 
+                departmentId: responseData.departmentId, 
+                departmentName: responseData.departmentName || departments.find(d => d.departmentId === departmentId)?.departmentName || "Unknown Department"
               }
             : emp
         )
-      )
+      );
 
-      toast.success("Department updated successfully")
+      toast.success("Department updated successfully");
+      
+      setIsDepartmentDialogOpen(false);
+      setSelectedDepartmentId("");
+      setSelectedEmployeeForDepartment(null);
     } catch (error) {
-      console.error("Error updating department:", error)
-      toast.error(error instanceof Error ? error.message : "Failed to update department. Please try again.")
+      console.error("Error updating department:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to update department");
     } finally {
-      setUpdatingDepartment(null)
+      setProcessingDepartment(null);
     }
-  }
+  };
 
   const getPaginatedEmployees = () => {
     const startIndex = (currentPage - 1) * itemsPerPage
@@ -469,120 +453,6 @@ export default function ActivateEmployeesPage() {
     setIsDepartmentDialogOpen(true)
   }
 
-  const handleDepartmentUpdate = async () => {
-    if (!selectedEmployeeForDepartment || !selectedDepartmentId) {
-      toast.error("Please select both an employee and a department")
-      return
-    }
-
-    try {
-      setProcessingDepartment(selectedEmployeeForDepartment.employeeId)
-      const token = authService.getToken()
-      
-      if (!token) {
-        router.push("/")
-        toast.error("Authentication required. Please log in.")
-        return
-      }
-
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hr/employees/${selectedEmployeeForDepartment.employeeId}/department?departmentId=${encodeURIComponent(selectedDepartmentId)}`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        if (response.status === 403) {
-          toast.error("You don't have permission to assign departments")
-          return
-        } else if (response.status === 404) {
-          toast.error("Employee or department not found")
-          return
-        }
-        throw new Error(errorData.error || "Failed to update department")
-      }
-
-      toast.success("Department assigned successfully")
-      setIsDepartmentDialogOpen(false)
-      setSelectedEmployeeForDepartment(null)
-      setSelectedDepartmentId("")
-      fetchEmployees()
-    } catch (error) {
-      console.error("Error updating department:", error)
-      toast.error(error instanceof Error ? error.message : "Failed to update department")
-    } finally {
-      setProcessingDepartment(null)
-    }
-  }
-
-  const fetchEmployeeProfile = async (employeeId: string) => {
-    try {
-      setLoadingProfile(true)
-      const token = authService.getToken()
-      
-      if (!token) {
-        router.push("/")
-        toast.error("Authentication required. Please log in.")
-        return
-      }
-      
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hr/employees/${employeeId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        if (response.status === 404) {
-          throw new Error("Employee profile not found")
-        } else if (response.status === 403) {
-          throw new Error("You don't have permission to view this profile")
-        }
-        throw new Error(errorData.message || "Failed to fetch employee profile")
-      }
-
-      const data = await response.json()
-      
-      // Process the data similar to enrollment page
-      const processedProfile = {
-        ...data,
-        dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
-        hireDate: data.hireDate ? new Date(data.hireDate) : null,
-        // Split address if it exists
-        address: data.address || "",
-        buildingNo: "",
-        street: "",
-        barangay: "",
-        city: "",
-        province: "",
-        zipCode: "",
-        country: "Philippines",
-      }
-
-      // Split address string if it exists
-      if (data.address) {
-        const addressParts = data.address.split(',')
-        if (addressParts.length >= 1) processedProfile.buildingNo = addressParts[0].trim()
-        if (addressParts.length >= 2) processedProfile.street = addressParts[1].trim()
-        if (addressParts.length >= 3) processedProfile.barangay = addressParts[2].trim()
-        if (addressParts.length >= 4) processedProfile.city = addressParts[3].trim()
-        if (addressParts.length >= 5) processedProfile.province = addressParts[4].trim()
-        if (addressParts.length >= 6) processedProfile.zipCode = addressParts[5].trim()
-      }
-
-      setSelectedEmployeeProfile(processedProfile)
-    } catch (error) {
-      console.error("Error fetching employee profile:", error)
-      toast.error(error instanceof Error ? error.message : "Failed to load employee profile. Please try again.")
-    } finally {
-      setLoadingProfile(false)
-    }
-  }
-
   const handleProfileView = (employee: Employee) => {
     setSelectedEmployeeProfile(employee)
     setIsProfileDialogOpen(true)
@@ -590,6 +460,15 @@ export default function ActivateEmployeesPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#F9FAFB] via-[#F0FDFA] to-[#E0F2FE] dark:from-[#1F2937] dark:via-[#134E4A] dark:to-[#0F172A] p-4 md:p-6">
+      <Toaster 
+        position="top-right" 
+        richColors 
+        className="mt-24" 
+        style={{
+          top: "6rem",
+          right: "1rem"
+        }}
+      />
       <div className="w-full max-w-6xl mx-auto space-y-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
@@ -697,26 +576,6 @@ export default function ActivateEmployeesPage() {
                   style={{ width: `${loading ? 0 : getActivePercentage()}%` }}
                 ></div>
               </div>
-
-              <div className="grid grid-cols-2 gap-4 mt-4">
-                <Button
-                  variant="outline"
-                  className="border-[#BFDBFE] text-[#3B82F6] hover:bg-[#EFF6FF] dark:border-[#1E3A8A] dark:text-[#3B82F6] dark:hover:bg-[#1E3A8A]/30"
-                  onClick={() => setStatusFilter("active")}
-                >
-                  <UserCheck className="h-4 w-4 mr-2" />
-                  View Active Employees
-                </Button>
-
-                <Button
-                  variant="outline"
-                  className="border-[#FED7AA] text-[#F59E0B] hover:bg-[#FEF3C7] dark:border-[#78350F] dark:text-[#F59E0B] dark:hover:bg-[#78350F]/30"
-                  onClick={() => setStatusFilter("inactive")}
-                >
-                  <UserX className="h-4 w-4 mr-2" />
-                  View Inactive Employees
-                </Button>
-              </div>
             </div>
           </CardContent>
         </Card>
@@ -757,20 +616,6 @@ export default function ActivateEmployeesPage() {
                 />
               </div>
               <div className="flex gap-2">
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-[180px] border-[#E5E7EB] dark:border-[#374151] bg-white dark:bg-[#111827] focus:ring-[#3B82F6]">
-                    <div className="flex items-center gap-2">
-                      <Filter className="h-4 w-4 text-[#6B7280] dark:text-[#9CA3AF]" />
-                      <SelectValue placeholder="Filter by status" />
-                    </div>
-                  </SelectTrigger>
-                  <SelectContent className="border-[#E5E7EB] dark:border-[#374151] bg-white dark:bg-[#1F2937]">
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="active">Active Only</SelectItem>
-                    <SelectItem value="inactive">Inactive Only</SelectItem>
-                  </SelectContent>
-                </Select>
-
                 <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
                   <SelectTrigger className="w-[180px] border-[#E5E7EB] dark:border-[#374151] bg-white dark:bg-[#111827] focus:ring-[#3B82F6]">
                     <div className="flex items-center gap-2">
@@ -1056,7 +901,7 @@ export default function ActivateEmployeesPage() {
               Cancel
             </Button>
             <Button
-              onClick={handleDepartmentUpdate}
+              onClick={() => handleUpdateDepartment(selectedEmployeeForDepartment?.employeeId || "", selectedDepartmentId)}
               disabled={updatingDepartment === selectedEmployeeForDepartment?.employeeId}
               className="bg-[#3B82F6] text-white hover:bg-[#2563EB] dark:bg-[#1E40AF] dark:hover:bg-[#1E3A8A]"
             >

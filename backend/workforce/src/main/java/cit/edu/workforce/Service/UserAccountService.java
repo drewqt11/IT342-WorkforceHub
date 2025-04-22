@@ -3,7 +3,6 @@ package cit.edu.workforce.Service;
 import cit.edu.workforce.Entity.UserAccountEntity;
 import cit.edu.workforce.Repository.UserAccountRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,23 +13,20 @@ import java.util.Optional;
 public class UserAccountService {
 
     private final UserAccountRepository userAccountRepository;
-    private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public UserAccountService(UserAccountRepository userAccountRepository, PasswordEncoder passwordEncoder) {
+    public UserAccountService(UserAccountRepository userAccountRepository) {
         this.userAccountRepository = userAccountRepository;
-        this.passwordEncoder = passwordEncoder;
     }
 
     @Transactional
-    public UserAccountEntity createUserAccount(String email, String password) {
+    public UserAccountEntity createUserAccount(String email) {
         if (userAccountRepository.existsByEmailAddress(email)) {
             throw new RuntimeException("Email address is already taken");
         }
 
         UserAccountEntity userAccount = new UserAccountEntity();
         userAccount.setEmailAddress(email);
-        userAccount.setPassword(passwordEncoder.encode(password));
         userAccount.setCreatedAt(LocalDateTime.now());
         userAccount.setActive(true);
 

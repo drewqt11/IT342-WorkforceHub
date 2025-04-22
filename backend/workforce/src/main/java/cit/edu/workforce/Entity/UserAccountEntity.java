@@ -24,9 +24,6 @@ public class UserAccountEntity {
     @Column(name = "email_address", unique = true, nullable = false)
     private String emailAddress;
 
-    @Column(name = "password", nullable = false)
-    private String password;
-
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 

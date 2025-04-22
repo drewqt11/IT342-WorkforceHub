@@ -20,7 +20,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -70,7 +69,6 @@ public class EmployeeController {
             @Parameter(description = "Filter by status") @RequestParam(required = false) String status) {
 
         Sort sort = "desc".equalsIgnoreCase(direction) ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
-
         Pageable pageable = PageRequest.of(page, size, sort);
 
         if (name != null || employeeId != null || department != null || status != null) {
@@ -111,14 +109,6 @@ public class EmployeeController {
         return ResponseEntity.ok(employeeService.updateEmployee(id, employeeDTO));
     }
 
-    @PatchMapping("/hr/employees/{id}")
-    @Operation(summary = "Partially update employee", description = "Update specific fields of an existing employee")
-    @PreAuthorize("hasAnyRole('ROLE_HR', 'ROLE_ADMIN')")
-    public ResponseEntity<EmployeeDTO> partialUpdateEmployee(@PathVariable String id,
-            @RequestBody EmployeeDTO employeeDTO) {
-        return ResponseEntity.ok(employeeService.updateEmployeePartially(id, employeeDTO));
-    }
-
     @PatchMapping("/employee/profile")
     @Operation(summary = "Update own profile", description = "Allow employee to update specific fields of their own profile")
     @PreAuthorize("hasAnyRole('ROLE_EMPLOYEE', 'ROLE_HR', 'ROLE_ADMIN')")
@@ -137,21 +127,21 @@ public class EmployeeController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @PatchMapping("/hr/employees/{id}/deactivate")
+    @PutMapping("/hr/employees/{id}/deactivate")
     @Operation(summary = "Deactivate employee", description = "Deactivate an employee (soft delete)")
     @PreAuthorize("hasAnyRole('ROLE_HR', 'ROLE_ADMIN')")
     public ResponseEntity<EmployeeDTO> deactivateEmployee(@PathVariable String id) {
         return ResponseEntity.ok(employeeService.deactivateEmployee(id));
     }
 
-    @PatchMapping("/hr/employees/{id}/activate")
+    @PutMapping("/hr/employees/{id}/activate")
     @Operation(summary = "Activate employee", description = "Activate a previously deactivated employee")
     @PreAuthorize("hasAnyRole('ROLE_HR', 'ROLE_ADMIN')")
     public ResponseEntity<EmployeeDTO> activateEmployee(@PathVariable String id) {
         return ResponseEntity.ok(employeeService.activateEmployee(id));
     }
 
-    @PatchMapping("/hr/employees/{id}/department")
+    @PutMapping("/hr/employees/{id}/assign-department")
     @Operation(summary = "Assign department to employee", description = "Assign a department to an employee")
     @PreAuthorize("hasAnyRole('ROLE_HR', 'ROLE_ADMIN')")
     public ResponseEntity<EmployeeDTO> assignDepartmentToEmployee(@PathVariable String id,
@@ -166,7 +156,7 @@ public class EmployeeController {
         return ResponseEntity.ok(employeeService.assignJobTitle(id, jobId));
     }
 
-    @PutMapping("/hr/employees/{id}/role")
+    @PutMapping("/hr/employees/{id}/assign-role")
     @Operation(summary = "Update employee role", description = "Update an employee's role")
     @PreAuthorize("hasAnyRole('ROLE_HR', 'ROLE_ADMIN')")
     public ResponseEntity<EmployeeDTO> updateEmployeeRole(

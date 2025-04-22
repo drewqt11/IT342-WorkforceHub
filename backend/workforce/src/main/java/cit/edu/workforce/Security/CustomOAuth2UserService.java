@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -130,7 +129,6 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         userAccount.setCreatedAt(LocalDateTime.now());
         userAccount.setLastLogin(LocalDateTime.now());
         userAccount.setActive(true);
-        userAccount.setPassword(UUID.randomUUID().toString()); // Generate random password (won't be used)
         userAccountRepository.save(userAccount);
 
         // Get default employee role

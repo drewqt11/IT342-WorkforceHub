@@ -13,6 +13,8 @@ import { authService } from "@/lib/auth"
 import { Plus, Pencil, Trash2, Building2, RefreshCw } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
+import { Toaster } from "sonner"
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
 
 interface Department {
   departmentId: string
@@ -58,7 +60,7 @@ export default function DepartmentsPage() {
         setUserRole(data.role)
       }
     } catch (error) {
-      console.error("Error fetching user role:", error)
+      toast.error("Failed to fetch user role. Please try again.")
     }
   }
 
@@ -86,7 +88,6 @@ export default function DepartmentsPage() {
       const data = await response.json()
       setDepartments(data)
     } catch (error) {
-      console.error("Error fetching departments:", error)
       toast.error("Failed to load departments. Please try again.")
     } finally {
       setLoading(false)
@@ -133,7 +134,6 @@ export default function DepartmentsPage() {
       setNewDepartmentDescription("")
       fetchDepartments()
     } catch (error) {
-      console.error("Error creating department:", error)
       toast.error("Failed to create department. Please try again.")
     } finally {
       setProcessingDepartment(null)
@@ -181,7 +181,6 @@ export default function DepartmentsPage() {
       setSelectedDepartment(null)
       fetchDepartments()
     } catch (error) {
-      console.error("Error updating department:", error)
       toast.error("Failed to update department. Please try again.")
     } finally {
       setProcessingDepartment(null)
@@ -203,7 +202,7 @@ export default function DepartmentsPage() {
         toast.error("Authentication required. Please log in.")
         return
       }
-
+      
       const response = await fetch(`/api/hr/departments/${id}`, {
         method: "DELETE",
         headers: {
@@ -212,20 +211,7 @@ export default function DepartmentsPage() {
       })
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        
-        if (response.status === 403) {
-          toast.error("You don't have permission to delete departments")
-          return
-        } else if (response.status === 404) {
-          toast.error("Department not found")
-          return
-        } else if (response.status === 409) {
-          toast.error("Cannot delete department: There are employees associated with this department. Please reassign or remove these employees first.")
-          return
-        }
-        
-        throw new Error(errorData.error || "Failed to delete department")
+        throw new Error("Failed to delete department")
       }
 
       toast.success("Department deleted successfully")
@@ -233,8 +219,7 @@ export default function DepartmentsPage() {
       setSelectedDepartment(null)
       fetchDepartments()
     } catch (error) {
-      console.error("Error deleting department:", error)
-      toast.error(error instanceof Error ? error.message : "Failed to delete department")
+      toast.error("Failed to delete department. Please try again.")
     } finally {
       setProcessingDepartment(null)
     }
@@ -254,6 +239,15 @@ export default function DepartmentsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#F9FAFB] via-[#F0FDFA] to-[#E0F2FE] dark:from-[#1F2937] dark:via-[#134E4A] dark:to-[#0F172A] p-4 md:p-6">
+      <Toaster 
+        position="top-right" 
+        richColors 
+        className="mt-24" 
+        style={{
+          top: "6rem",
+          right: "1rem"
+        }}
+      />
       <div className="w-full max-w-6xl mx-auto space-y-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
@@ -392,7 +386,6 @@ export default function DepartmentsPage() {
                 <Table>
                   <TableHeader className="bg-[#F9FAFB] dark:bg-[#111827]">
                     <TableRow className="hover:bg-[#F3F4F6] dark:hover:bg-[#1F2937] border-b border-[#E5E7EB] dark:border-[#374151]">
-                      <TableHead className="text-[#4B5563] dark:text-[#D1D5DB] font-medium">Department ID</TableHead>
                       <TableHead className="text-[#4B5563] dark:text-[#D1D5DB] font-medium">Department Name</TableHead>
                       <TableHead className="text-[#4B5563] dark:text-[#D1D5DB] font-medium">Description</TableHead>
                       <TableHead className="text-[#4B5563] dark:text-[#D1D5DB] font-medium text-right">Actions</TableHead>
@@ -407,17 +400,31 @@ export default function DepartmentsPage() {
                           index % 2 === 0 ? "bg-[#F9FAFB] dark:bg-[#111827]/50" : "",
                         )}
                       >
-                        <TableCell className="font-medium text-[#1F2937] dark:text-white">
-                          <div className="flex items-center gap-2">
-                            <div className="h-6 w-1 rounded-full bg-gradient-to-b from-[#3B82F6] to-[#14B8A6] transition-all duration-300 group-hover:h-full"></div>
-                            {department.departmentId}
-                          </div>
-                        </TableCell>
                         <TableCell className="text-[#4B5563] dark:text-[#D1D5DB] font-medium">
                           {department.departmentName}
                         </TableCell>
                         <TableCell className="text-[#4B5563] dark:text-[#D1D5DB] font-medium">
-                          {department.description || "No description"}
+                          {department.description ? (
+                            <HoverCard>
+                              <HoverCardTrigger asChild>
+                                <span className="select-none cursor-pointer">
+                                  {department.description.length > 30
+                                    ? `${department.description.substring(0, 30)}...`
+                                    : department.description}
+                                </span>
+                              </HoverCardTrigger>
+                              <HoverCardContent className="w-80">
+                                <div className="space-y-1">
+                                  <h4 className="text-sm font-semibold">Description</h4>
+                                  <p className="text-sm text-muted-foreground">
+                                    {department.description}
+                                  </p>
+                                </div>
+                              </HoverCardContent>
+                            </HoverCard>
+                          ) : (
+                            "No description"
+                          )}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">

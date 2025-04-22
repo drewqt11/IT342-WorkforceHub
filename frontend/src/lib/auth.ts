@@ -1,5 +1,12 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
 
+export const defaultFetchOptions = {
+    credentials: 'include' as const,
+    headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+    },
+};
 
 export interface LoginCredentials {
     email: string;
@@ -62,6 +69,7 @@ export const authService = {
     },
 
     async loginWithMicrosoft() {
+        // Directly redirect to the OAuth2 endpoint
         window.location.href = `${API_URL}/oauth2/authorization/microsoft`;
     },
 
