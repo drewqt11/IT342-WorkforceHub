@@ -29,4 +29,8 @@ public class JobTitleEntity {
 
     @Column(name = "pay_grade")
     private String payGrade;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "department_id", nullable = false)
+    private DepartmentEntity department;
 }

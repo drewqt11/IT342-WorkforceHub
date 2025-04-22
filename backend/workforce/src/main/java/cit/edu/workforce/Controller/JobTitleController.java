@@ -1,6 +1,8 @@
 package cit.edu.workforce.Controller;
 
+import cit.edu.workforce.Entity.DepartmentEntity;
 import cit.edu.workforce.Entity.JobTitleEntity;
+import cit.edu.workforce.Service.DepartmentService;
 import cit.edu.workforce.Service.JobTitleService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -20,10 +22,12 @@ import java.util.List;
 public class JobTitleController {
 
     private final JobTitleService jobTitleService;
+    private final DepartmentService departmentService;
 
     @Autowired
-    public JobTitleController(JobTitleService jobTitleService) {
+    public JobTitleController(JobTitleService jobTitleService, DepartmentService departmentService) {
         this.jobTitleService = jobTitleService;
+        this.departmentService = departmentService;
     }
 
     @GetMapping
@@ -48,9 +52,12 @@ public class JobTitleController {
     public ResponseEntity<JobTitleEntity> createJobTitle(
             @RequestParam String jobName,
             @RequestParam(required = false) String jobDescription,
-            @RequestParam(required = false) String payGrade) {
+            @RequestParam(required = false) String payGrade,
+            @RequestParam String departmentId) {
+        DepartmentEntity department = departmentService.getDepartmentById(departmentId)
+                .orElseThrow(() -> new RuntimeException("Department not found"));
         return new ResponseEntity<>(
-                jobTitleService.createJobTitle(jobName, jobDescription, payGrade),
+                jobTitleService.createJobTitle(jobName, jobDescription, payGrade, department),
                 HttpStatus.CREATED);
     }
 
@@ -61,9 +68,12 @@ public class JobTitleController {
             @PathVariable String id,
             @RequestParam String jobName,
             @RequestParam(required = false) String jobDescription,
-            @RequestParam(required = false) String payGrade) {
+            @RequestParam(required = false) String payGrade,
+            @RequestParam String departmentId) {
+        DepartmentEntity department = departmentService.getDepartmentById(departmentId)
+                .orElseThrow(() -> new RuntimeException("Department not found"));
         return ResponseEntity.ok(
-                jobTitleService.updateJobTitle(id, jobName, jobDescription, payGrade));
+                jobTitleService.updateJobTitle(id, jobName, jobDescription, payGrade, department));
     }
 
     @DeleteMapping("/{id}")

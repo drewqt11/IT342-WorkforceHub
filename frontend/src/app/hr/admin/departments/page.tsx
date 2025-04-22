@@ -15,11 +15,20 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 import { Toaster } from "sonner"
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
+import { Textarea } from "@/components/ui/textarea"
 
 interface Department {
   departmentId: string
   departmentName: string
   description?: string
+}
+
+interface JobTitle {
+  jobId: string
+  jobName: string
+  jobDescription: string
+  payGrade: string
+  departmentId: string
 }
 
 export default function DepartmentsPage() {
@@ -29,6 +38,7 @@ export default function DepartmentsPage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [isAddJobTitlesDialogOpen, setIsAddJobTitlesDialogOpen] = useState(false)
   const [newDepartmentName, setNewDepartmentName] = useState("")
   const [newDepartmentDescription, setNewDepartmentDescription] = useState("")
   const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null)
@@ -36,6 +46,10 @@ export default function DepartmentsPage() {
   const [editDepartmentDescription, setEditDepartmentDescription] = useState("")
   const [processingDepartment, setProcessingDepartment] = useState<string | null>(null)
   const [userRole, setUserRole] = useState<string | null>(null)
+  const [selectedDepartmentForJobs, setSelectedDepartmentForJobs] = useState<Department | null>(null)
+  const [jobTitles, setJobTitles] = useState<JobTitle[]>([])
+  const [processing, setProcessing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     fetchDepartments()
@@ -237,6 +251,93 @@ export default function DepartmentsPage() {
     setIsDeleteDialogOpen(true)
   }
 
+  const handleAddJobTitle = () => {
+    setJobTitles([...jobTitles, { 
+      jobId: "", 
+      jobName: "", 
+      jobDescription: "", 
+      payGrade: "",
+      departmentId: selectedDepartmentForJobs?.departmentId || "" 
+    }])
+  }
+
+  const handleRemoveJobTitle = (index: number) => {
+    setJobTitles(jobTitles.filter((_, i) => i !== index))
+  }
+
+  const handleJobTitleChange = (index: number, field: keyof JobTitle, value: string) => {
+    const updatedJobTitles = [...jobTitles]
+    updatedJobTitles[index] = { ...updatedJobTitles[index], [field]: value }
+    setJobTitles(updatedJobTitles)
+  }
+
+  const handleSubmitJobTitles = async () => {
+    if (!selectedDepartmentForJobs) return
+
+    try {
+      setProcessing(true)
+      setError(null)
+      const token = authService.getToken()
+      
+      if (!token) {
+        router.push("/")
+        toast.error("Authentication required. Please log in.")
+        return
+      }
+
+      // Validate job titles
+      if (jobTitles.some(job => !job.jobName.trim())) {
+        setError("Job name is required for all job titles")
+        return
+      }
+
+      // Submit each job title
+      for (const job of jobTitles) {
+        const formData = new FormData()
+        formData.append("jobName", job.jobName)
+        formData.append("jobDescription", job.jobDescription)
+        formData.append("payGrade", job.payGrade)
+        formData.append("departmentId", selectedDepartmentForJobs.departmentId)
+
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hr/job-titles`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: formData,
+        })
+
+        if (!response.ok) {
+          let errorMessage = "Failed to create job title"
+          try {
+            const contentType = response.headers.get("content-type")
+            if (contentType && contentType.includes("application/json")) {
+              const errorData = await response.json()
+              errorMessage = errorData.error || errorMessage
+            } else {
+              const text = await response.text()
+              errorMessage = text || errorMessage
+            }
+          } catch (e) {
+            console.error("Error parsing error response:", e)
+          }
+          throw new Error(errorMessage)
+        }
+      }
+
+      toast.success("Job titles created successfully")
+      setIsAddJobTitlesDialogOpen(false)
+      setJobTitles([])
+      setSelectedDepartmentForJobs(null)
+    } catch (error) {
+      console.error("Error creating job titles:", error)
+      setError(error instanceof Error ? error.message : "Failed to create job titles")
+      toast.error(error instanceof Error ? error.message : "Failed to create job titles")
+    } finally {
+      setProcessing(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#F9FAFB] via-[#F0FDFA] to-[#E0F2FE] dark:from-[#1F2937] dark:via-[#134E4A] dark:to-[#0F172A] p-4 md:p-6">
       <Toaster 
@@ -431,6 +532,18 @@ export default function DepartmentsPage() {
                             <Button
                               variant="outline"
                               size="sm"
+                              onClick={() => {
+                                setSelectedDepartmentForJobs(department)
+                                setIsAddJobTitlesDialogOpen(true)
+                              }}
+                              className="flex items-center gap-2"
+                            >
+                              <Plus className="h-4 w-4" />
+                              Add Jobs
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
                               onClick={() => openEditDialog(department)}
                               disabled={processingDepartment === department.departmentId}
                               className="border-[#BFDBFE] text-[#3B82F6] hover:bg-[#EFF6FF] dark:border-[#1E3A8A] dark:text-[#3B82F6] dark:hover:bg-[#1E3A8A]/30"
@@ -568,6 +681,103 @@ export default function DepartmentsPage() {
                 </div>
               ) : (
                 "Delete Department"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isAddJobTitlesDialogOpen} onOpenChange={setIsAddJobTitlesDialogOpen}>
+        <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Add Job Titles for {selectedDepartmentForJobs?.departmentName}</DialogTitle>
+            <DialogDescription>
+              Add multiple job titles with their descriptions and pay grades for this department
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 overflow-y-auto flex-1 pr-2">
+            {jobTitles.map((job, index) => (
+              <div key={index} className="space-y-4 p-4 border rounded-lg">
+                <div className="flex justify-between items-center">
+                  <h3 className="font-medium">Job Title #{index + 1}</h3>
+                  {index > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleRemoveJobTitle(index)}
+                      className="text-red-500 hover:text-red-600"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+                <div className="grid gap-4">
+                  <div>
+                    <Label htmlFor={`jobName-${index}`}>Job Name *</Label>
+                    <Input
+                      id={`jobName-${index}`}
+                      value={job.jobName}
+                      onChange={(e) => handleJobTitleChange(index, "jobName", e.target.value)}
+                      placeholder="Enter job name"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor={`jobDescription-${index}`}>Job Description</Label>
+                    <Textarea
+                      id={`jobDescription-${index}`}
+                      value={job.jobDescription}
+                      onChange={(e) => handleJobTitleChange(index, "jobDescription", e.target.value)}
+                      placeholder="Enter job description"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor={`payGrade-${index}`}>Pay Grade</Label>
+                    <Input
+                      id={`payGrade-${index}`}
+                      value={job.payGrade}
+                      onChange={(e) => handleJobTitleChange(index, "payGrade", e.target.value)}
+                      placeholder="Enter pay grade"
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+            {error && (
+              <div className="text-red-500 text-sm">{error}</div>
+            )}
+            <Button
+              variant="outline"
+              onClick={handleAddJobTitle}
+              className="w-full"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Another Job Title
+            </Button>
+          </div>
+          <DialogFooter className="mt-4">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsAddJobTitlesDialogOpen(false)
+                setJobTitles([])
+                setError(null)
+                setSelectedDepartmentForJobs(null)
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSubmitJobTitles}
+              disabled={processing || jobTitles.length === 0}
+              className="bg-[#3B82F6] text-white hover:bg-[#2563EB] dark:bg-[#1E40AF] dark:hover:bg-[#1E3A8A]"
+            >
+              {processing ? (
+                <div className="flex items-center gap-2">
+                  <div className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin"></div>
+                  <span>Creating...</span>
+                </div>
+              ) : (
+                "Create Job Titles"
               )}
             </Button>
           </DialogFooter>

@@ -57,21 +57,22 @@ export function AppSidebar({ isMobile, onClose }: AppSidebarProps) {
       icon: LayoutDashboard,
     },
     {
+      title: "Departments",
+      href: "/hr/admin/departments",
+      icon: Building2,
+    },
+    {
       title: "Employees",
       href: "/hr/admin/employees",
       icon: Users,
       subItems: [
-        /*{
+        {
           title: "All Employees",
           href: "/hr/admin/employees/all",
-        },*/
+        },
         {
           title: "Pending Activation",
           href: "/hr/admin/employees/activate",
-        },
-        {
-          title: "Departments",
-          href: "/hr/admin/departments",
         },
       ],
     },

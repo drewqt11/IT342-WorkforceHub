@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
+import java.util.ArrayList;
+import java.util.List;
 
 
 
@@ -26,4 +28,7 @@ public class DepartmentEntity {
     
     @Column(name = "description", nullable = true, length = 500)
     private String description;
+
+    @OneToMany(mappedBy = "department", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<JobTitleEntity> jobTitles = new ArrayList<>();
 }

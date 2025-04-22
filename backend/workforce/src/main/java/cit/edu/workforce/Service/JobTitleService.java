@@ -1,6 +1,7 @@
 package cit.edu.workforce.Service;
 
 import cit.edu.workforce.Entity.JobTitleEntity;
+import cit.edu.workforce.Entity.DepartmentEntity;
 import cit.edu.workforce.Repository.JobTitleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -40,22 +41,24 @@ public class JobTitleService {
     }
 
     @Transactional
-    public JobTitleEntity createJobTitle(String jobName, String jobDescription, String payGrade) {
+    public JobTitleEntity createJobTitle(String jobName, String jobDescription, String payGrade, DepartmentEntity department) {
         JobTitleEntity jobTitle = new JobTitleEntity();
         jobTitle.setJobName(jobName);
         jobTitle.setJobDescription(jobDescription);
         jobTitle.setPayGrade(payGrade);
+        jobTitle.setDepartment(department);
         return jobTitleRepository.save(jobTitle);
     }
 
     @Transactional
-    public JobTitleEntity updateJobTitle(String jobId, String jobName, String jobDescription, String payGrade) {
+    public JobTitleEntity updateJobTitle(String jobId, String jobName, String jobDescription, String payGrade, DepartmentEntity department) {
         JobTitleEntity jobTitle = jobTitleRepository.findById(jobId)
                 .orElseThrow(() -> new RuntimeException("Job title not found"));
 
         jobTitle.setJobName(jobName);
         jobTitle.setJobDescription(jobDescription);
         jobTitle.setPayGrade(payGrade);
+        jobTitle.setDepartment(department);
         return jobTitleRepository.save(jobTitle);
     }
 

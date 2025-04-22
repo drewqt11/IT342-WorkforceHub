@@ -400,7 +400,7 @@ export default function SettingsPage() {
                       <TableHead className="text-[#4B5563] dark:text-[#D1D5DB] font-medium">Department</TableHead>
                       <TableHead className="text-[#4B5563] dark:text-[#D1D5DB] font-medium">Job Title</TableHead>
                       <TableHead className="text-[#4B5563] dark:text-[#D1D5DB] font-medium">Role</TableHead>
-                      <TableHead className="text-[#4B5563] dark:text-[#D1D5DB] font-medium text-right">Actions</TableHead>
+                      <TableHead className="text-[#4B5563] dark:text-[#D1D5DB] font-medium">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -438,7 +438,7 @@ export default function SettingsPage() {
                             {getRoleLabel(employee.role)}
                           </span>
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell>
                           <Button
                             variant="outline"
                             size="sm"

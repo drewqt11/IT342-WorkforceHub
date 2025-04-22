@@ -1,15 +1,17 @@
 import { NextRequest, NextResponse } from "next/server"
 
 /**
- * GET /api/hr/departments
+ * GET /api/hr/departments/{id}/job-titles
  * 
- * Fetches all departments from the backend.
+ * Fetches all job titles for a specific department.
  * 
- * @returns {Promise<NextResponse>} A JSON response containing the list of departments
+ * @param {NextRequest} request - The request object
+ * @param {Object} params - The route parameters containing the department ID
+ * @returns {Promise<NextResponse>} A JSON response containing the list of job titles
  * @throws {401} If authorization header is missing
  * @throws {500} If there's an internal server error
  */
-export async function GET(request: NextRequest) {
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const authHeader = request.headers.get("authorization")
     
@@ -20,7 +22,7 @@ export async function GET(request: NextRequest) {
       )
     }
     
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hr/departments`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hr/job-titles?departmentId=${params.id}`, {
       headers: {
         Authorization: authHeader,
       },
@@ -29,7 +31,7 @@ export async function GET(request: NextRequest) {
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
       return NextResponse.json(
-        { error: "Failed to fetch departments", details: errorData },
+        { error: "Failed to fetch job titles", details: errorData },
         { status: response.status }
       )
     }
@@ -37,74 +39,7 @@ export async function GET(request: NextRequest) {
     const data = await response.json()
     return NextResponse.json(data)
   } catch (error) {
-    console.error("Error in departments GET route:", error)
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    )
-  }
-}
-
-/**
- * POST /api/hr/departments
- * 
- * Creates a new department in the system.
- * 
- * @param {NextRequest} request - The request object containing the department name and description in FormData
- * @returns {Promise<NextResponse>} A JSON response containing the created department
- * @throws {401} If authorization header is missing
- * @throws {400} If department name is missing
- * @throws {500} If there's an internal server error
- */
-export async function POST(request: NextRequest) {
-  try {
-    const authHeader = request.headers.get("authorization")
-    
-    if (!authHeader) {
-      return NextResponse.json(
-        { error: "Authorization header is required" },
-        { status: 401 }
-      )
-    }
-    
-    const formData = await request.formData()
-    const departmentName = formData.get("departmentName")
-    const description = formData.get("description")
-    
-    if (!departmentName) {
-      return NextResponse.json(
-        { error: "Department name is required" },
-        { status: 400 }
-      )
-    }
-    
-    // Build the URL with query parameters
-    let url = `${process.env.NEXT_PUBLIC_API_URL}/hr/departments?departmentName=${encodeURIComponent(departmentName.toString())}`
-    
-    // Add description if provided
-    if (description) {
-      url += `&description=${encodeURIComponent(description.toString())}`
-    }
-    
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        Authorization: authHeader,
-      },
-    })
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      return NextResponse.json(
-        { error: "Failed to create department", details: errorData },
-        { status: response.status }
-      )
-    }
-    
-    const data = await response.json()
-    return NextResponse.json(data)
-  } catch (error) {
-    console.error("Error in departments POST route:", error)
+    console.error("Error in job titles GET route:", error)
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -115,16 +50,16 @@ export async function POST(request: NextRequest) {
 /**
  * POST /api/hr/departments/{id}/job-titles
  * 
- * Creates job titles for a specific department.
+ * Creates a new job title for a specific department.
  * 
- * @param {NextRequest} request - The request object containing the job titles data
+ * @param {NextRequest} request - The request object containing the job title data in FormData
  * @param {Object} params - The route parameters containing the department ID
- * @returns {Promise<NextResponse>} A JSON response containing the created job titles
+ * @returns {Promise<NextResponse>} A JSON response containing the created job title
  * @throws {401} If authorization header is missing
  * @throws {400} If required fields are missing
  * @throws {500} If there's an internal server error
  */
-export async function POST_JOB_TITLES(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const authHeader = request.headers.get("authorization")
     
