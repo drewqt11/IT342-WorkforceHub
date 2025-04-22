@@ -23,8 +23,7 @@
         <li><a href="#feature-4">Feature 4</a></li>
         <li><a href="#feature-5">Feature 5</a></li>
         <li><a href="#feature-6">Feature 6</a></li>
-        <li><a href="#feature-7">Feature 7</a></li>
-        <li><a href="#feature-8">Feature 8</a></li>
+        
       </ul>
     </li>
     <li>
