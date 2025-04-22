@@ -9,7 +9,7 @@ import org.hibernate.annotations.GenericGenerator;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "certification")
+@Table(name = "employee_certification")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
