@@ -1,4 +1,4 @@
-package cit.edu.workforce.config;
+package cit.edu.workforce.Config;
 
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;

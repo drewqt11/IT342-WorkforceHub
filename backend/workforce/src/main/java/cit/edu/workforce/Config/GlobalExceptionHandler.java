@@ -1,4 +1,4 @@
-package cit.edu.workforce.config;
+package cit.edu.workforce.Config;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
