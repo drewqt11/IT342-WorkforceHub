@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="colorPrimary">#3B82F6</color>
+    <color name="colorPrimaryDark">#2563EB</color>
+    <color name="colorAccent">#14B8A6</color>
+
+    <!-- Microsoft Login Colors -->
+    <color name="microsoftBlue">#0078D4</color>
+    <color name="microsoftBlueDark">#106EBE</color>
+    <color name="backgroundGray">#F9FAFB</color>
+    <color name="textPrimary">#1F2937</color>
+    <color name="textSecondary">#6B7280</color>
+    <color name="textTertiary">#4B5563</color>
+    <color name="borderColor">#E5E7EB</color>
+
+
+</resources>
