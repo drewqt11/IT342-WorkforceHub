@@ -29,6 +29,11 @@ public class DepartmentEntity {
     @Column(name = "description", nullable = true, length = 500)
     private String description;
 
+    // New mapping: Department has many JobTitles
     @OneToMany(mappedBy = "department", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<JobTitleEntity> jobTitles = new ArrayList<>();
+    
+    // New relationship added: Department has many job listings
+    @OneToMany(mappedBy = "department", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<JobListingEntity> jobListings = new ArrayList<>();
 }

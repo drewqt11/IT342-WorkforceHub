@@ -61,18 +61,22 @@ public class EmployeeEntity {
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
+    // New relationship added: Employee belongs to a Department
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "department_id")
     private DepartmentEntity department;
 
+    // New relationship added: Employee has a JobTitle
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "job_id")
     private JobTitleEntity jobTitle;
 
+    // New relationship added: Employee has a Role
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "role_id")
     private RoleEntity role;
 
+    // New relationship added: Employee has a UserAccount
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private UserAccountEntity userAccount;

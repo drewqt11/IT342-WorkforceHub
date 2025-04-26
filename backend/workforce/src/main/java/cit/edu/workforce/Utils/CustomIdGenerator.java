@@ -29,6 +29,42 @@ public class CustomIdGenerator {
     }
     
     /**
+     * Generates a benefit plan ID in the format "PLAN-XXXX-XXXXX" where X is a random hexadecimal character (0-9, a-f).
+     * 
+     * @return A formatted benefit plan ID string
+     */
+    public static String generateBenefitPlanId() {
+        return "PLAN-" + generateRandomString(4) + "-" + generateRandomString(5);
+    }
+    
+    /**
+     * Generates a benefit enrollment ID in the format "BENR-XXXX-XXXXX" where X is a random hexadecimal character (0-9, a-f).
+     * 
+     * @return A formatted benefit enrollment ID string
+     */
+    public static String generateBenefitEnrollmentId() {
+        return "BENR-" + generateRandomString(4) + "-" + generateRandomString(5);
+    }
+    
+    /**
+     * Generates a benefit dependent ID in the format "DPND-XXXX-XXXXX" where X is a random hexadecimal character (0-9, a-f).
+     * 
+     * @return A formatted benefit dependent ID string
+     */
+    public static String generateBenefitDependentId() {
+        return "DPND-" + generateRandomString(4) + "-" + generateRandomString(5);
+    }
+    
+    /**
+     * Generates a reimbursement request ID in the format "REIM-XXXX-XXXXX" where X is a random hexadecimal character (0-9, a-f).
+     * 
+     * @return A formatted reimbursement request ID string
+     */
+    public static String generateReimbursementRequestId() {
+        return "REIM-" + generateRandomString(4) + "-" + generateRandomString(5);
+    }
+    
+    /**
      * Generates a random string of specified length using hexadecimal characters.
      * 
      * @param length The length of the random string to generate
