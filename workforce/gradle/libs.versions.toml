@@ -1,7 +1,7 @@
 [versions]
 agp = "8.9.2"
 displayMask = "0.3.0"
-kotlin = "2.0.21"
+kotlin = "2.0.20"
 coreKtx = "1.16.0"
 junit = "4.13.2"
 junitVersion = "1.2.1"

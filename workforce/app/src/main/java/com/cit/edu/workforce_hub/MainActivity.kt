@@ -14,6 +14,19 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.android.material.button.MaterialButton
+import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.createSupabaseClient
+import io.github.jan.supabase.postgrest.Postgrest
+import io.github.jan.supabase.postgrest.postgrest
+
+
+val supabase = createSupabaseClient(
+    supabaseUrl = "https://rystiuryfkxbcqjtdplv.supabase.co",
+    supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ5c3RpdXJ5Zmt4YmNxanRkcGx2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM3Mjg1NDksImV4cCI6MjA1OTMwNDU0OX0.fuPzSfh-VxUW_K93rmsyzY-tYrw8wUrJsk87URTVfmw"
+) {
+    install(Postgrest)
+}
+
 
 class MainActivity : AppCompatActivity() {
 
@@ -26,6 +39,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
+
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
