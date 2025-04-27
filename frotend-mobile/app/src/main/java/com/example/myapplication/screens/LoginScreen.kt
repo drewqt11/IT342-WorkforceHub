@@ -1,11 +1,5 @@
-package com.example.myapplication
+package com.example.myapplication.screens
 
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -16,7 +10,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -28,7 +21,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -38,9 +30,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
@@ -51,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.myapplication.ui.theme.AppTheme
 import androidx.compose.ui.graphics.ColorFilter
+import com.example.myapplication.R
 
 @Composable
 fun MainScreen(
@@ -60,38 +51,11 @@ fun MainScreen(
     var termsAgreed by remember { mutableStateOf(false) }
     var dataConsent by remember { mutableStateOf(false) }
     
-    // For animated decorative elements
-    val infiniteTransition = rememberInfiniteTransition(label = "circle_animation")
-    val alpha by infiniteTransition.animateFloat(
-        initialValue = 0.6f,
-        targetValue = 0.8f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2000),
-            repeatMode = RepeatMode.Reverse
-        ), label = "alpha_animation"
-    )
-
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = Color(0xFFF9FAFB) // backgroundGray
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            // Decorative elements
-            Canvas(
-                modifier = Modifier
-                    .size(80.dp)
-                    .offset((-40).dp, (-40).dp)
-                    .alpha(alpha)
-            ) {
-                drawCircle(
-                    brush = Brush.radialGradient(
-                        colors = listOf(Color(0xFF3B82F6), Color(0xFF2563EB)),
-                        center = Offset(size.width / 2, size.height / 2),
-                        radius = size.width / 2
-                    )
-                )
-            }
-            
             // Main scrollable content
             Column(
                 modifier = Modifier
@@ -100,28 +64,12 @@ fun MainScreen(
                     .padding(horizontal = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Another decorative element inside the scrollable area
+                // Main content area without decorative elements
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 32.dp, bottom = 32.dp)
                 ) {
-                    Canvas(
-                        modifier = Modifier
-                            .size(64.dp)
-                            .align(Alignment.BottomEnd)
-                            .offset(32.dp, 32.dp)
-                            .alpha(alpha)
-                    ) {
-                        drawCircle(
-                            brush = Brush.radialGradient(
-                                colors = listOf(Color(0xFF14B8A6), Color(0xFF0D9488)),
-                                center = Offset(size.width / 2, size.height / 2),
-                                radius = size.width / 2
-                            )
-                        )
-                    }
-                    
                     // Main Content
                     Column(
                         modifier = Modifier
@@ -223,35 +171,6 @@ fun AuthCard(
                 .background(Color.White)
                 .padding(16.dp)
         ) {
-            // Subtle background patterns
-            Canvas(
-                modifier = Modifier
-                    .size(128.dp)
-                    .align(Alignment.TopEnd)
-                    .offset(16.dp, (-16).dp)
-                    .alpha(0.05f)
-            ) {
-                drawCircle(
-                    color = Color(0xFF14B8A6),
-                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.dp.toPx()),
-                    radius = size.width / 2
-                )
-            }
-            
-            Canvas(
-                modifier = Modifier
-                    .size(96.dp)
-                    .align(Alignment.BottomStart)
-                    .offset((-16).dp, 16.dp)
-                    .alpha(0.05f)
-            ) {
-                drawCircle(
-                    color = Color(0xFF3B82F6),
-                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.dp.toPx()),
-                    radius = size.width / 2
-                )
-            }
-            
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
@@ -278,40 +197,11 @@ fun AuthCard(
                 // Microsoft Sign In Card
                 MicrosoftCard(onMicrosoftLoginClick)
                 
-                Spacer(modifier = Modifier.height(24.dp))
-                
-                // Terms and Conditions
-                TermsCard(
-                    termsAgreed = termsAgreed,
-                    dataConsent = dataConsent,
-                    onTermsAgreedChange = onTermsAgreedChange,
-                    onDataConsentChange = onDataConsentChange
-                )
-                
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(18.dp))
                 
                 // Benefits Section
                 BenefitsCard()
             }
-        }
-        
-        // Card Footer
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(Color(0xFFF9FAFB), Color(0xFFE5E7EB))
-                    )
-                )
-                .padding(vertical = 12.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "Contact your IT administrator for support",
-                color = Color(0xFF6B7280),
-                fontSize = 12.sp
-            )
         }
     }
 }
@@ -429,85 +319,14 @@ fun MicrosoftCard(onMicrosoftLoginClick: () -> Unit) {
                             .background(Color(0xFF0078D4)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = "→",
-                            color = Color.White,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_arrow_right),
+                            contentDescription = "Arrow Right",
+                            modifier = Modifier.size(14.dp),
+                            colorFilter = ColorFilter.tint(Color.White)
                         )
                     }
                 }
-            }
-        }
-    }
-}
-
-@Composable
-fun TermsCard(
-    termsAgreed: Boolean,
-    dataConsent: Boolean,
-    onTermsAgreedChange: (Boolean) -> Unit,
-    onDataConsentChange: (Boolean) -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.White
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB))
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            Text(
-                text = "Terms and Conditions",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF1F2937)
-            )
-            
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            // Terms Agreement Checkbox
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Checkbox(
-                    checked = termsAgreed,
-                    onCheckedChange = onTermsAgreedChange
-                )
-                
-                Text(
-                    text = "I agree to the Terms of Service and Privacy Policy",
-                    fontSize = 14.sp,
-                    color = Color(0xFF1F2937),
-                    modifier = Modifier.padding(start = 8.dp)
-                )
-            }
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            // Data Consent Checkbox
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Checkbox(
-                    checked = dataConsent,
-                    onCheckedChange = onDataConsentChange
-                )
-                
-                Text(
-                    text = "I consent to the collection and processing of my personal information as described in the Privacy Policy",
-                    fontSize = 14.sp,
-                    color = Color(0xFF1F2937),
-                    modifier = Modifier.padding(start = 8.dp)
-                )
             }
         }
     }
@@ -564,19 +383,11 @@ fun BenefitItem(text: String) {
                 .background(Color(0xFF3B82F6), CircleShape),
             contentAlignment = Alignment.Center
         ) {
-            Box(
-                modifier = Modifier
-                    .size(20.dp)
-                    .background(Color(0xFF3B82F6), CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "✓",
-                    color = Color.White,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
+            Image(
+                painter = painterResource(id = R.drawable.ic_check_white),
+                contentDescription = "Checkmark",
+                modifier = Modifier.size(12.dp)
+            )
         }
         
         Text(
