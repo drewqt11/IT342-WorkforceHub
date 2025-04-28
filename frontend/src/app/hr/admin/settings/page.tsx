@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -46,11 +46,40 @@ export default function SettingsPage() {
     { value: "ROLE_EMPLOYEE", label: "Employee" },
     { value: "ROLE_HR", label: "HR Admin" }
   ])
+  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null)
+  const logoutTriggered = useRef(false)
 
   useEffect(() => {
     fetchEmployees()
     fetchDepartments()
   }, [])
+
+  // Check for role changes every 10 seconds
+  useEffect(() => {
+    let interval: NodeJS.Timeout
+
+    const checkRole = async () => {
+      try {
+        const profile = await authService.getEmployeeProfile()
+        if (!currentUserRole) {
+          setCurrentUserRole(profile.role)
+        } else if (profile.role !== currentUserRole && !logoutTriggered.current) {
+          logoutTriggered.current = true
+          toast.error("Your role has changed. You will be logged out for security reasons.")
+          setTimeout(() => {
+            authService.logout()
+          }, 2000)
+        }
+      } catch (err) {
+        // Optionally handle error
+      }
+    }
+
+    checkRole()
+    interval = setInterval(checkRole, 10000) // 10 seconds
+
+    return () => clearInterval(interval)
+  }, [currentUserRole])
 
   const fetchEmployees = async () => {
     try {
@@ -154,8 +183,8 @@ export default function SettingsPage() {
       }
       
       const roleToSend = selectedRole.toUpperCase();
-      const response = await fetch(`/api/hr/employees/${selectedEmployee.employeeId}/assign-role`, {
-        method: "PUT",
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hr/employees/${selectedEmployee.employeeId}/assign-role`, {
+        method: "PUT",  
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -166,9 +195,29 @@ export default function SettingsPage() {
       const responseData = await response.json();
 
       if (!response.ok) {
-        const errorMessage = responseData.message || "Failed to update role";
+        // Log the full error for debugging
+        console.error("Failed to update role:", responseData, "Status:", response.status);
+        const errorMessage = responseData.message || responseData.error || "Failed to update role";
         toast.error(errorMessage);
         throw new Error(errorMessage);
+      }
+
+      if (
+        typeof responseData.email === 'string' &&
+        typeof getCookie('email') === 'string' &&
+        responseData.email.toLowerCase() === (getCookie('email') as string).toLowerCase()
+      ) {
+        toast.error("Your role was changed. You will be logged out.");
+        setTimeout(() => {
+          // Remove all cookies
+          if (typeof document !== 'undefined' && document.cookie) {
+            document.cookie.split(';').forEach(function(c) {
+              document.cookie = c.trim().split('=')[0] + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/';
+            });
+          }
+          window.location.href = "/";
+        }, 1500);
+        return;
       }
 
       // Update the employee in the local state with the response data
@@ -241,6 +290,18 @@ export default function SettingsPage() {
       default:
         return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300"
     }
+  }
+
+  // Get the email from cookies
+  function getCookie(name: string): string | null {
+    if (typeof document === 'undefined' || !document.cookie) return null;
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) {
+      const part = parts.pop();
+      if (part) return part.split(';').shift() || null;
+    }
+    return null;
   }
 
   return (

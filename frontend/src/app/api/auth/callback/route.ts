@@ -8,6 +8,7 @@ export async function GET(request: NextRequest) {
     const userId = searchParams.get('userId');
     const email = searchParams.get('email');
     const role = searchParams.get('role');
+    const isActive = searchParams.get('isActive');
     const employeeId = searchParams.get('employeeId');
     const firstName = searchParams.get('firstName');
     const lastName = searchParams.get('lastName');
@@ -67,6 +68,14 @@ export async function GET(request: NextRequest) {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'strict',
+            path: '/',
+        });
+    }
+
+    if (isActive) {
+        response.cookies.set({
+            name: 'isActive',
+            value: isActive,
             path: '/',
         });
     }

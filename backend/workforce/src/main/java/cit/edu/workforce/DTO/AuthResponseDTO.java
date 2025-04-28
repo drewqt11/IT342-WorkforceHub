@@ -1,5 +1,7 @@
 package cit.edu.workforce.DTO;
 
+import java.time.LocalDateTime;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -19,9 +21,10 @@ public class AuthResponseDTO {
     private String employeeId;
     private String firstName;
     private String lastName;
+    private LocalDateTime createdAt;
 
     public AuthResponseDTO(String accessToken, String refreshToken, String userId, String email, String role,
-                          String employeeId, String firstName, String lastName) {
+                          String employeeId, String firstName, String lastName, LocalDateTime createdAt) {
         this.accessToken = accessToken;
         this.refreshToken = refreshToken;
         this.userId = userId;
@@ -30,10 +33,12 @@ public class AuthResponseDTO {
         this.employeeId = employeeId;
         this.firstName = firstName;
         this.lastName = lastName;
+        this.createdAt = createdAt;
+
     }
 
     public AuthResponseDTO(String accessToken, String userId, String email, String role,
-                          String employeeId, String firstName, String lastName) {
+                          String employeeId, String firstName, String lastName, LocalDateTime createdAt) {
         this.accessToken = accessToken;
         this.userId = userId;
         this.email = email;
@@ -41,5 +46,6 @@ public class AuthResponseDTO {
         this.employeeId = employeeId;
         this.firstName = firstName;
         this.lastName = lastName;
+        this.createdAt = createdAt;
     }
 }

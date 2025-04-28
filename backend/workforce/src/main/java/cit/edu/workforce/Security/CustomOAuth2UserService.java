@@ -128,7 +128,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         userAccount.setEmailAddress(oAuth2UserInfo.getEmail());
         userAccount.setCreatedAt(LocalDateTime.now());
         userAccount.setLastLogin(LocalDateTime.now());
-        userAccount.setActive(true);
+        userAccount.setActive(false);
         userAccountRepository.save(userAccount);
 
         // Get default employee role

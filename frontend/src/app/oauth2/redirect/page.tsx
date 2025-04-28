@@ -15,12 +15,10 @@ export default function OAuth2Redirect() {
                 const userId = searchParams.get('userId');
                 const email = searchParams.get('email');
                 const role = searchParams.get('role');
-                const employeeId = searchParams.get('employeeId');
-                const firstName = searchParams.get('firstName');
-                const lastName = searchParams.get('lastName');
+                
 
                 if (!token || !email) {
-                    throw new Error('Missing required parameters');
+                    window.location.href = '/';
                 }
 
                 // Store the token in a cookie
@@ -46,11 +44,11 @@ export default function OAuth2Redirect() {
                     router.push('/employee/dashboard');
                 } else {
                     // Default to employee dashboard if role is not recognized
+                    window.location.href = '/';
                     router.push('/employee/dashboard');
                 }
             } catch (error) {
-                console.error('OAuth2 redirect error:', error);
-                router.push('/?error=oauth_failed');
+                window.location.href = '/';
             }
         };
 

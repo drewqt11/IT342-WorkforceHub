@@ -45,12 +45,6 @@ import {
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Toaster } from "@/components/ui/sonner"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
 
 interface Employee {
   employeeId: string
@@ -112,7 +106,7 @@ interface UserAccountInfo {
   isActive: boolean
 }
 
-export default function AllEmployeesPage() {
+export default function DeactivatedAccountsPage() {
   const router = useRouter()
   const [employees, setEmployees] = useState<Employee[]>([])
   const [filteredEmployees, setFilteredEmployees] = useState<Employee[]>([])
@@ -137,67 +131,6 @@ export default function AllEmployeesPage() {
   const [userAccount, setUserAccount] = useState<UserAccountInfo | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [processingDepartment, setProcessingDepartment] = useState<string | null>(null)
-  const [percentages, setPercentages] = useState({
-    active: 0,
-    inactive: 0,
-    total: 0
-  })
-  const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false)
-  const [pendingAction, setPendingAction] = useState<{ employeeId: string; action: 'activate' | 'deactivate' } | null>(null)
-  const [isStatusUpdating, setIsStatusUpdating] = useState(false)
-  const [isProfileLoading, setIsProfileLoading] = useState(false)
-  const [lastLoginLoading, setLastLoginLoading] = useState(false)
-
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const data = await authService.getEmployeeProfile()
-        setProfile(data)
-
-        try {
-          const userData = await authService.getOAuth2UserInfo()
-          console.log('OAuth2 User Info:', userData)
-          setUserAccount({
-            userId: userData.userId || "N/A",
-            emailAddress: userData.email || data.email,
-            createdAt: userData.createdAt,
-            lastLogin: userData.lastLogin,
-            isActive: userData.isActive,
-          })
-        } catch (userErr) {
-          console.error("Error fetching OAuth2 user info:", userErr)
-          if (data) {
-            setUserAccount({
-              userId: data.userId || "N/A",
-              emailAddress: data.email,
-              createdAt: data.createdAt || new Date().toISOString(),
-              lastLogin: "Not available",
-              isActive: data.status,
-            })
-          }
-        }
-      } catch (err) {
-        console.error("Error fetching profile:", err)
-        if (err instanceof Error) {
-          if (err.message.includes("Network error")) {
-            setError("Unable to connect to the server. Please check your internet connection and try again.")
-          } else if (err.message.includes("Session expired")) {
-            setError("Your session has expired. Please log in again.")
-          } else {
-            setError(`Failed to load profile data: ${err.message}`)
-            authService.logout();
-            window.location.href = '/';
-          }
-        } else {
-          setError("An unexpected error occurred while loading your profile.")
-        }
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchProfile()
-  }, [])
 
   useEffect(() => {
     fetchEmployees()
@@ -261,34 +194,16 @@ export default function AllEmployeesPage() {
             }
           } catch (error) {
             console.error(`Error checking active status for ${emp.email}:`, error)
-            return {
-              ...emp,
-              isActive: false
-            }
+            return null
           }
         })
       )
 
-      // Filter out null values but keep all employees
-      const validEmployees = processedEmployees.filter(emp => emp !== null) as Employee[]
-      
-      // Set employees for display (active only)
-      const activeEmployeesForDisplay = validEmployees.filter(emp => emp.status && emp.isActive)
-      setEmployees(activeEmployeesForDisplay)
-      setTotalPages(Math.ceil(activeEmployeesForDisplay.length / itemsPerPage))
+      // Filter out null values and keep only inactive accounts
+      const validEmployees = processedEmployees.filter(emp => emp !== null && !emp.isActive)
 
-      // Calculate total employees and active employees for percentage
-      // Exclude employees with isActive status as false
-      const totalEmployees = validEmployees.filter(emp => emp.isActive).length
-      const activeEmployees = validEmployees.filter(emp => emp.status && emp.isActive).length
-      const inactiveEmployees = totalEmployees - activeEmployees
-
-      // Update the percentage state
-      setPercentages({
-        active: Math.round((activeEmployees / totalEmployees) * 100),
-        inactive: Math.round((inactiveEmployees / totalEmployees) * 100),
-        total: activeEmployeesForDisplay.length
-      })
+      setEmployees(validEmployees as Employee[])
+      setTotalPages(Math.ceil(validEmployees.length / itemsPerPage))
     } catch (error) {
       console.error("Error fetching employees:", error)
       toast.error("Failed to load employees. Please try again.")
@@ -326,9 +241,6 @@ export default function AllEmployeesPage() {
   const filterEmployees = () => {
     let filtered = [...employees]
 
-    // Filter out inactive employees first
-    filtered = filtered.filter(emp => emp.status && emp.isActive)
-
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase()
       filtered = filtered.filter(
@@ -341,14 +253,7 @@ export default function AllEmployeesPage() {
     }
 
     if (statusFilter !== "all") {
-      filtered = filtered.filter((emp) => {
-        if (statusFilter === "active") {
-          return emp.status && emp.isActive;
-        } else if (statusFilter === "inactive") {
-          return !emp.status || !emp.isActive;
-        }
-        return true;
-      });
+      filtered = filtered.filter((emp) => emp.status === (statusFilter === "active"))
     }
 
     if (departmentFilter !== "all") {
@@ -375,11 +280,8 @@ export default function AllEmployeesPage() {
   }
 
   const getActivePercentage = () => {
-    // Get all employees including inactive ones
-    const allEmployees = employees
-    if (allEmployees.length === 0) return 0
-    const activeEmployees = allEmployees.filter(emp => emp.status).length
-    return Math.round((activeEmployees / allEmployees.length) * 100)
+    if (employees.length === 0) return 0
+    return Math.round((getActiveCount() / employees.length) * 100)
   }
 
   const handleDepartmentDialogOpen = (employee: Employee) => {
@@ -391,8 +293,7 @@ export default function AllEmployeesPage() {
   const handleProfileView = async (employee: Employee) => {
     setSelectedEmployeeProfile(employee);
     setIsProfileDialogOpen(true);
-    setIsProfileLoading(true);
-    setLastLoginLoading(true);
+    setLoadingProfile(true);
 
     try {
       // Fetch employee profile
@@ -417,25 +318,12 @@ export default function AllEmployeesPage() {
       console.error("Error fetching profile:", error);
       toast.error("Failed to load profile data");
     } finally {
-      setIsProfileLoading(false);
-      setLastLoginLoading(false);
+      setLoadingProfile(false);
     }
   };
 
   const handleProfileUpdate = async (employeeId: string, action: 'activate' | 'deactivate') => {
-    if (action === 'deactivate') {
-      setPendingAction({ employeeId, action });
-      setIsConfirmDialogOpen(true);
-      return;
-    }
-
-    // Proceed with activation without confirmation
-    await performProfileUpdate(employeeId, action);
-  };
-
-  const performProfileUpdate = async (employeeId: string, action: 'activate' | 'deactivate') => {
     try {
-      setIsStatusUpdating(true);
       const token = authService.getToken();
       if (!token) {
         toast.error("Authentication required");
@@ -485,8 +373,6 @@ export default function AllEmployeesPage() {
             status: false
           };
         });
-        // Close the profile dialog after deactivation
-        setIsProfileDialogOpen(false);
       }
 
       toast.success(`Account ${action}d successfully`);
@@ -496,8 +382,6 @@ export default function AllEmployeesPage() {
     } catch (error) {
       console.error(`Error ${action}ing account:`, error);
       toast.error(error instanceof Error ? error.message : `Failed to ${action} account`);
-    } finally {
-      setIsStatusUpdating(false);
     }
   };
 
@@ -519,9 +403,9 @@ export default function AllEmployeesPage() {
               <div className="h-10 w-10 bg-gradient-to-br from-[#3B82F6] to-[#14B8A6] rounded-lg flex items-center justify-center mr-1 shadow-md">
                 <Shield className="h-5 w-5 text-white" />
               </div>
-              All Employees
+              Deactivated Accounts
             </h1>
-            <p className="text-[#6B7280] dark:text-[#9CA3AF] mt-1">Manage and view all employees in the system</p>
+            <p className="text-[#6B7280] dark:text-[#9CA3AF] mt-1">View and manage deactivated employee accounts</p>
           </div>
           <Button
             onClick={fetchEmployees}
@@ -532,88 +416,17 @@ export default function AllEmployeesPage() {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card className="border border-[#E5E7EB] dark:border-[#374151] shadow-md overflow-hidden bg-white dark:bg-[#1F2937] hover:shadow-lg transition-shadow duration-200">
-            <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#3B82F6] via-[#0EA5E9] to-[#14B8A6]"></div>
-            <CardContent className="p-6">
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="text-sm font-medium text-[#6B7280] dark:text-[#9CA3AF]">Total Employees</p>
-                  <h3 className="text-3xl font-bold text-[#1F2937] dark:text-white mt-1">
-                    {loading ? <Skeleton className="h-9 w-16" /> : employees.length}
-                  </h3>
-                </div>
-                <div className="h-12 w-12 bg-[#EFF6FF] dark:bg-[#1E3A8A]/30 rounded-full flex items-center justify-center">
-                  <Users className="h-6 w-6 text-[#3B82F6] dark:text-[#3B82F6]" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-
-          <Card className="border border-[#E5E7EB] dark:border-[#374151] shadow-md overflow-hidden bg-white dark:bg-[#1F2937] hover:shadow-lg transition-shadow duration-200">
-            <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#3B82F6] via-[#0EA5E9] to-[#14B8A6]"></div>
-            <CardContent className="p-6">
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="text-sm font-medium text-[#6B7280] dark:text-[#9CA3AF]">Departments</p>
-                  <h3 className="text-3xl font-bold text-[#1F2937] dark:text-white mt-1">
-                    {loading ? <Skeleton className="h-9 w-16" /> : departments.length}
-                  </h3>
-                </div>
-                <div className="h-12 w-12 bg-[#EFF6FF] dark:bg-[#1E3A8A]/30 rounded-full flex items-center justify-center">
-                  <Building2 className="h-6 w-6 text-[#3B82F6] dark:text-[#3B82F6]" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card className="border border-[#E5E7EB] dark:border-[#374151] shadow-md overflow-hidden bg-white dark:bg-[#1F2937] hover:shadow-lg transition-shadow duration-200">
-          <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#3B82F6] via-[#0EA5E9] to-[#14B8A6]"></div>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Clock className="h-5 w-5 text-[#3B82F6] dark:text-[#3B82F6]" />
-                <h3 className="text-lg font-semibold text-[#1F2937] dark:text-white">Activation Status</h3>
-              </div>
-              <Badge
-                variant="outline"
-                className="bg-[#EFF6FF] text-[#3B82F6] border-[#BFDBFE] dark:bg-[#1E3A8A]/30 dark:text-[#3B82F6] dark:border-[#1E3A8A]"
-              >
-                <Sparkles className="h-3.5 w-3.5 mr-1.5" />
-                {percentages.active}% Active
-              </Badge>
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex justify-between mb-1">
-                <span className="text-sm font-medium text-[#6B7280] dark:text-[#9CA3AF]">Active Employees</span>
-                <span className="text-sm font-medium text-[#14B8A6] dark:text-[#14B8A6]">
-                  {loading ? "..." : `${percentages.active}%`}
-                </span>
-              </div>
-              <div className="h-3 w-full bg-[#F3F4F6] dark:bg-[#374151] rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-[#3B82F6] to-[#14B8A6] rounded-full transition-all duration-1000 ease-out"
-                  style={{ width: `${loading ? 0 : percentages.active}%` }}
-                ></div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
         <Card className="border border-[#E5E7EB] dark:border-[#374151] shadow-xl overflow-hidden bg-white dark:bg-[#1F2937]">
           <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#3B82F6] via-[#0EA5E9] to-[#14B8A6]"></div>
           <CardHeader className="bg-[#F9FAFB] dark:bg-[#111827] border-b border-[#E5E7EB] dark:border-[#374151]">
             <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
               <div>
                 <CardTitle className="text-xl text-[#1F2937] dark:text-white flex items-center gap-2">
-                  <Users className="h-5 w-5 text-[#3B82F6] dark:text-[#3B82F6]" />
-                  Employee List
+                  <UserX className="h-5 w-5 text-[#3B82F6] dark:text-[#3B82F6]" />
+                  Deactivated Accounts List
                 </CardTitle>
                 <CardDescription className="text-[#6B7280] dark:text-[#9CA3AF] mt-1">
-                  View and manage all employees in the system
+                  View and manage deactivated employee accounts
                 </CardDescription>
               </div>
               <div className="flex items-center gap-2">
@@ -621,7 +434,7 @@ export default function AllEmployeesPage() {
                   variant="outline"
                   className="bg-[#F0FDFA] text-[#14B8A6] border-[#99F6E4] dark:bg-[#134E4A]/30 dark:text-[#14B8A6] dark:border-[#134E4A] px-3 py-1.5"
                 >
-                  {filteredEmployees.length} employees found
+                  {filteredEmployees.length} accounts found
                 </Badge>
               </div>
             </div>
@@ -638,19 +451,6 @@ export default function AllEmployeesPage() {
                 />
               </div>
               <div className="flex gap-2">
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-[180px] border-[#E5E7EB] dark:border-[#374151] bg-white dark:bg-[#111827] focus:ring-[#3B82F6]">
-                    <div className="flex items-center gap-2">
-                      <Filter className="h-4 w-4 text-[#6B7280] dark:text-[#9CA3AF]" />
-                      <SelectValue placeholder="Filter by status" />
-                    </div>
-                  </SelectTrigger>
-                  <SelectContent className="border-[#E5E7EB] dark:border-[#374151] bg-white dark:bg-[#1F2937]">
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
-                  </SelectContent>
-                </Select>
                 <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
                   <SelectTrigger className="w-[180px] border-[#E5E7EB] dark:border-[#374151] bg-white dark:bg-[#111827] focus:ring-[#3B82F6]">
                     <div className="flex items-center gap-2">
@@ -686,21 +486,10 @@ export default function AllEmployeesPage() {
                     <AlertCircle className="h-8 w-8 text-[#6B7280] dark:text-[#9CA3AF]" />
                   </div>
                 </div>
-                <h3 className="text-xl font-medium text-[#1F2937] dark:text-white mb-2">No employees found</h3>
+                <h3 className="text-xl font-medium text-[#1F2937] dark:text-white mb-2">No deactivated accounts found</h3>
                 <p className="text-[#6B7280] dark:text-[#9CA3AF] max-w-md mx-auto mb-6">
-                  We couldn't find any employees matching your current filters. Try adjusting your search criteria.
+                  There are currently no deactivated accounts in the system.
                 </p>
-                <Button
-                  className="bg-gradient-to-r from-[#3B82F6] to-[#14B8A6] hover:from-[#2563EB] hover:to-[#0D9488] text-white shadow-md"
-                  onClick={() => {
-                    setSearchTerm("")
-                    setStatusFilter("all")
-                    setDepartmentFilter("all")
-                  }}
-                >
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Reset Filters
-                </Button>
               </div>
             ) : (
               <div className="rounded-lg border border-[#E5E7EB] dark:border-[#374151] overflow-hidden">
@@ -710,11 +499,10 @@ export default function AllEmployeesPage() {
                       <TableHead className="text-[#4B5563] dark:text-[#D1D5DB] font-medium">Employee ID</TableHead>
                       <TableHead className="text-[#4B5563] dark:text-[#D1D5DB] font-medium">ID Number</TableHead>
                       <TableHead className="text-[#4B5563] dark:text-[#D1D5DB] font-medium">Name</TableHead>
-                      <TableHead className="text-[#4B5563] dark:text-[#D1D5DB] font-medium">Gender</TableHead>
-                      <TableHead className="text-[#4B5563] dark:text-[#D1D5DB] font-medium">Contact Number</TableHead>
                       <TableHead className="text-[#4B5563] dark:text-[#D1D5DB] font-medium">Department</TableHead>
-                      <TableHead className="text-[#4B5563] dark:text-[#D1D5DB] font-medium">Status</TableHead>
+                      <TableHead className="text-[#4B5563] dark:text-[#D1D5DB] font-medium">Employee Status</TableHead>
                       <TableHead className="text-[#4B5563] dark:text-[#D1D5DB] font-medium">Actions</TableHead>
+                      <TableHead className="text-[#4B5563] dark:text-[#D1D5DB] font-medium">Account Status</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -742,41 +530,22 @@ export default function AllEmployeesPage() {
                           <div className="text-sm text-[#6B7280] dark:text-[#9CA3AF]">{employee.email}</div>
                         </TableCell>
                         <TableCell className="text-[#4B5563] dark:text-[#D1D5DB]">
-                          {employee.gender || "Not Specified"}
-                        </TableCell>
-                        <TableCell className="text-[#4B5563] dark:text-[#D1D5DB]">
-                          {employee.phoneNumber || "Not Provided"}
-                        </TableCell>
-                        <TableCell className="text-[#4B5563] dark:text-[#D1D5DB]">
                           <Badge
                             variant="outline"
-                            className="bg-[#e8f3fa] text-[#148ab8] border-[#99e3f6] dark:bg-[#134E4A]/30 dark:text-[#14B8A6] dark:border-[#134E4A]"
+                            className="bg-[#F0FDFA] text-[#14B8A6] border-[#99F6E4] dark:bg-[#134E4A]/30 dark:text-[#14B8A6] dark:border-[#134E4A]"
                           >
                             {employee.departmentName}
                           </Badge>
-                          
                         </TableCell>
                         <TableCell>
                           <Badge
                             variant="outline"
-                            className={cn(
-                              "border-2",
-                              employee.status
-                                ? "bg-[#e1fff8] text-[#14b83a] border-[#02da51] dark:bg-[#134E4A]/30 dark:text-[#14B8A6] dark:border-[#134E4A]"
-                                : "bg-[#FEF2F2] text-[#EF4444] border-[#FECACA] dark:bg-[#7F1D1D]/30 dark:text-[#EF4444] dark:border-[#7F1D1D]",
-                            )}
+                            className="bg-[#FEF2F2] text-[#EF4444] border-[#FECACA] dark:bg-[#7F1D1D]/30 dark:text-[#EF4444] dark:border-[#7F1D1D]"
                           >
-                            {employee.status ? (
-                              <div className="flex items-center gap-1">
-                                <CheckCircle className="h-3.5 w-3.5" />
-                                <span>Active</span>
-                              </div>
-                            ) : (
-                              <div className="flex items-center gap-1">
-                                <XCircle className="h-3.5 w-3.5" />
-                                <span>Inactive</span>
-                              </div>
-                            )}
+                            <div className="flex items-center gap-1">
+                              <XCircle className="h-3.5 w-3.5" />
+                              <span>Inactive</span>
+                            </div>
                           </Badge>
                         </TableCell>
                         <TableCell>
@@ -791,6 +560,17 @@ export default function AllEmployeesPage() {
                               View Profile
                             </Button>
                           </div>
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleProfileUpdate(employee.employeeId, 'activate')}
+                            className="border-[#BFDBFE] text-[#04c807] hover:bg-green-600 hover:text-white dark:border-[#1E3A8A] dark:text-[#3B82F6] dark:hover:bg-[#1E3A8A]/30"
+                          >
+                            <UserCheck className="h-3.5 w-3.5 mr-1" />
+                            Activate Account
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -848,126 +628,6 @@ export default function AllEmployeesPage() {
           </div>
         )}
       </div>
-
-      <Dialog open={isDepartmentDialogOpen} onOpenChange={setIsDepartmentDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Update Department</DialogTitle>
-            <DialogDescription>
-              Select a new department for {selectedEmployeeForDepartment?.firstName}{" "}
-              {selectedEmployeeForDepartment?.lastName}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="department" className="text-right">
-                Department
-              </Label>
-              <Select value={selectedDepartmentId} onValueChange={setSelectedDepartmentId}>
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Select a department" />
-                </SelectTrigger>
-                <SelectContent>
-                  {departments.map((department) => (
-                    <SelectItem key={department.departmentId} value={department.departmentId}>
-                      {department.departmentName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsDepartmentDialogOpen(false)}
-              disabled={processingDepartment !== null}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={async () => {
-                if (selectedEmployeeForDepartment && selectedDepartmentId) {
-                  try {
-                    setProcessingDepartment(selectedEmployeeForDepartment.employeeId)
-                    const token = authService.getToken()
-                    if (!token) {
-                      toast.error("Authentication required")
-                      return
-                    }
-
-                    const response = await fetch(
-                      `/api/hr/employees/${selectedEmployeeForDepartment.employeeId}/assign-department`,
-                      {
-                        method: "PUT",
-                        headers: {
-                          Authorization: `Bearer ${token}`,
-                          "Content-Type": "application/json",
-                        },
-                        body: JSON.stringify({ departmentId: selectedDepartmentId })
-                      },
-                    )
-
-                    const responseData = await response.json()
-
-                    if (!response.ok) {
-                      const errorMessage = responseData.error || "Failed to update department"
-                      toast.error(errorMessage)
-                      throw new Error(errorMessage)
-                    }
-
-                    // Update the employee in the local state
-                    setEmployees(prevEmployees => 
-                      prevEmployees.map(emp => 
-                        emp.employeeId === selectedEmployeeForDepartment.employeeId 
-                          ? { 
-                              ...emp, 
-                              departmentId: responseData.departmentId, 
-                              departmentName: responseData.departmentName || departments.find(d => d.departmentId === selectedDepartmentId)?.departmentName || "Unknown Department"
-                            }
-                          : emp
-                      )
-                    )
-
-                    // Update the selected employee profile if it's the same employee
-                    if (selectedEmployeeProfile?.employeeId === selectedEmployeeForDepartment.employeeId) {
-                      setSelectedEmployeeProfile(prev => {
-                        if (!prev) return prev;
-                        return {
-                          ...prev,
-                          departmentId: responseData.departmentId,
-                          departmentName: responseData.departmentName || departments.find(d => d.departmentId === selectedDepartmentId)?.departmentName || "Unknown Department"
-                        }
-                      });
-                    }
-
-                    toast.success("Department updated successfully")
-                    setIsDepartmentDialogOpen(false)
-                    setSelectedDepartmentId("")
-                    setSelectedEmployeeForDepartment(null)
-                  } catch (error) {
-                    console.error("Error updating department:", error)
-                    toast.error(error instanceof Error ? error.message : "Failed to update department")
-                  } finally {
-                    setProcessingDepartment(null)
-                  }
-                }
-              }}
-              disabled={!selectedDepartmentId || processingDepartment !== null}
-              className="bg-[#3B82F6] text-white hover:bg-[#2563EB] dark:bg-[#1E40AF] dark:hover:bg-[#1E3A8A]"
-            >
-              {processingDepartment ? (
-                <div className="flex items-center gap-1">
-                  <div className="h-3 w-3 rounded-full border-2 border-white border-t-transparent animate-spin"></div>
-                  <span>Updating...</span>
-                </div>
-              ) : (
-                "Update"
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       <Dialog open={isProfileDialogOpen} onOpenChange={setIsProfileDialogOpen}>
         <DialogContent className="max-w-[90vw] md:max-w-[85vw] lg:max-w-[1000px] p-0 overflow-hidden h-[90vh] max-h-[800px]">
@@ -1072,68 +732,21 @@ export default function AllEmployeesPage() {
                       </div>
                       <div>
                         <p className="text-xs text-[#6B7280] dark:text-[#9CA3AF]">Last Login</p>
-                        {lastLoginLoading ? (
-                          <div className="flex items-center gap-2">
-                            <div className="h-3 w-3 rounded-full border-2 border-[#3B82F6] border-t-transparent animate-spin"></div>
-                            <p className="text-sm font-medium text-[#6B7280] dark:text-[#9CA3AF]">Loading...</p>
-                          </div>
-                        ) : (
-                          <p className="text-sm font-medium text-[#1F2937] dark:text-white">
-                            {userAccount?.lastLogin ? new Date(userAccount.lastLogin).toLocaleString() : "Not available"}
-                          </p>
-                        )}
+                        <p className="text-sm font-medium text-[#1F2937] dark:text-white">
+                          {userAccount?.lastLogin ? new Date(userAccount.lastLogin).toLocaleString() : "Not available"}
+                        </p>
                       </div>
                       <div>
-                        <p className="text-xs text-[#6B7280] dark:text-[#9CA3AF]">Status</p>
+                        <p className="text-xs text-[#6B7280] dark:text-[#9CA3AF]">Account Status</p>
                         <div className="flex items-center gap-2">
-                          {isProfileLoading ? (
-                            <div className="flex items-center gap-2">
-                              <div className="h-3 w-3 rounded-full border-2 border-[#3B82F6] border-t-transparent animate-spin"></div>
-                              <p className="text-sm font-medium text-[#6B7280] dark:text-[#9CA3AF]">Loading...</p>
-                            </div>
-                          ) : isStatusUpdating ? (
-                            <div className="flex items-center gap-2">
-                              <div className="h-3 w-3 rounded-full border-2 border-[#3B82F6] border-t-transparent animate-spin"></div>
-                              <p className="text-sm font-medium text-[#6B7280] dark:text-[#9CA3AF]">Updating...</p>
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-2">
-                              <p className={cn(
-                                "text-sm font-medium",
-                                userAccount?.isActive 
-                                  ? "text-green-600 dark:text-green-400" 
-                                  : "text-red-600 dark:text-red-400"
-                              )}>
-                                {userAccount?.isActive ? "Active" : "Inactive"}
-                              </p>
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      onClick={() => handleProfileUpdate(selectedEmployeeProfile.employeeId, userAccount?.isActive ? 'deactivate' : 'activate')}
-                                      className={cn(
-                                        "h-8 w-8 p-0",
-                                        userAccount?.isActive
-                                          ? "text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30"
-                                          : "text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30"
-                                      )}
-                                    >
-                                      {userAccount?.isActive ? (
-                                        <UserX className="h-4 w-4" />
-                                      ) : (
-                                        <UserCheck className="h-4 w-4" />
-                                      )}
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>{userAccount?.isActive ? "Deactivate Account" : "Activate Account"}</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            </div>
-                          )}
+                          <p className={cn(
+                            "text-sm font-medium",
+                            userAccount?.isActive 
+                              ? "text-green-600 dark:text-green-400" 
+                              : "text-red-600 dark:text-red-400"
+                          )}>
+                            {userAccount?.isActive ? "Active" : "Inactive"}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -1301,85 +914,6 @@ export default function AllEmployeesPage() {
                       </div>
                     </div>
                   </div>
-
-                  <div className="bg-[#F9FAFB] dark:bg-[#1F2937] rounded-lg p-4 border border-[#E5E7EB] dark:border-[#374151]">
-                    <h3 className="text-sm font-medium text-[#3B82F6] dark:text-[#60A5FA] mb-3 flex items-center gap-2">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="lucide lucide-activity"
-                      >
-                        <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
-                      </svg>{" "}
-                      Activity Timeline
-                    </h3>
-                    <div className="space-y-4">
-                      <div className="flex gap-3">
-                        <div className="flex flex-col items-center">
-                          <div className="w-8 h-8 rounded-full bg-[#EFF6FF] dark:bg-[#1E3A8A]/30 flex items-center justify-center">
-                            <CheckCircle className="h-4 w-4 text-[#3B82F6] dark:text-[#3B82F6]" />
-                          </div>
-                          <div className="w-0.5 h-full bg-[#E5E7EB] dark:bg-[#374151] mt-2"></div>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-[#1F2937] dark:text-white">Account Created</p>
-                          <p className="text-xs text-[#6B7280] dark:text-[#9CA3AF]">
-                            {selectedEmployeeProfile.createdAt
-                              ? new Date(selectedEmployeeProfile.createdAt).toLocaleString()
-                              : "Not provided"}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex gap-3">
-                        <div className="flex flex-col items-center">
-                          <div className="w-8 h-8 rounded-full bg-[#F0FDFA] dark:bg-[#134E4A]/30 flex items-center justify-center">
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              width="16"
-                              height="16"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              className="lucide lucide-briefcase text-[#14B8A6] dark:text-[#14B8A6]"
-                            >
-                              <rect width="20" height="14" x="2" y="7" rx="2" ry="2"></rect>
-                              <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
-                            </svg>
-                          </div>
-                          <div className="w-0.5 h-full bg-[#E5E7EB] dark:bg-[#374151] mt-2"></div>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-[#1F2937] dark:text-white">Hired</p>
-                          <p className="text-xs text-[#6B7280] dark:text-[#9CA3AF]">
-                            {selectedEmployeeProfile.hireDate || "Date not provided"}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex gap-3">
-                        <div className="flex flex-col items-center">
-                          <div className="w-8 h-8 rounded-full bg-[#EFF6FF] dark:bg-[#1E3A8A]/30 flex items-center justify-center">
-                            <Building2 className="h-4 w-4 text-[#3B82F6] dark:text-[#3B82F6]" />
-                          </div>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-[#1F2937] dark:text-white">Assigned to Department</p>
-                          <p className="text-xs text-[#6B7280] dark:text-[#9CA3AF]">
-                            {selectedEmployeeProfile.departmentName}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
                 </div>
               )}
 
@@ -1395,46 +929,6 @@ export default function AllEmployeesPage() {
           </div>
         </DialogContent>
       </Dialog>
-
-      <Dialog open={isConfirmDialogOpen} onOpenChange={setIsConfirmDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Confirm Account Deactivation</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to deactivate this account? All deactivated accounts will not be able to access the system.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsConfirmDialogOpen(false)}
-              disabled={isStatusUpdating}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={async () => {
-                if (pendingAction) {
-                  await performProfileUpdate(pendingAction.employeeId, pendingAction.action);
-                  setIsConfirmDialogOpen(false);
-                  setPendingAction(null);
-                }
-              }}
-              disabled={isStatusUpdating}
-            >
-              {isStatusUpdating ? (
-                <div className="flex items-center gap-2">
-                  <div className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin"></div>
-                  <span>Deactivating...</span>
-                </div>
-              ) : (
-                "Confirm Deactivation"
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   )
-}
+} 

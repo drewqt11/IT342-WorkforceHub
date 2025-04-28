@@ -29,6 +29,7 @@ export interface AuthResponse {
     employeeId: string;
     firstName: string;
     lastName: string;
+    createdAt: string;
 }
 
 export const authService = {
@@ -242,11 +243,31 @@ export const authService = {
         document.cookie = 'refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
     },
 
+    clearAllCookies() {
+        // Get all cookies
+        const cookies = document.cookie.split(';');
+        
+        // Clear each cookie
+        cookies.forEach(cookie => {
+            const eqPos = cookie.indexOf('=');
+            const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
+            // Clear cookie with all possible paths and domains
+            document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+            document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=${window.location.hostname}`;
+            document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=.${window.location.hostname}`;
+        });
+    },
+
     async logout() {
         const token = this.getToken();
         if (token) {
             try {
-                await fetch(`${API_URL}/auth/logout`, {
+                // Extract userId from JWT token
+                const jwt = token.replace(/^Bearer /, "");
+                const payload = JSON.parse(Buffer.from(jwt.split('.')[1], 'base64').toString());
+                const userId = payload.userId;
+
+                await fetch(`${API_URL}/auth/logout?userId=${userId}`, {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${token}`,
@@ -257,6 +278,49 @@ export const authService = {
             }
         }
         this.clearTokens();
+        this.clearAllCookies();
         window.location.href = '/';
+    },
+
+    async getLastLogin(email: string): Promise<string> {
+        const token = this.getToken();
+        if (!token) {
+            throw new Error('No authentication token found');
+        }
+
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hr/user-accounts/${email}/last-login`, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch last login time');
+        }
+
+        const lastLogin = await response.json();
+        return lastLogin;
+    },
+
+    async getActiveStatus(email: string): Promise<boolean> {
+        const token = this.getToken();
+        if (!token) {
+            throw new Error('No authentication token found');
+        }
+
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hr/user-accounts/${email}/active-status`, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch active status');
+        }
+
+        const isActive = await response.json();
+        return isActive;
     },
 }; 

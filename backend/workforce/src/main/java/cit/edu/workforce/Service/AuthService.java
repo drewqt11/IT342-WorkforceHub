@@ -97,7 +97,8 @@ public class AuthService {
                 roleName,
                 employee.getEmployeeId(),
                 employee.getFirstName(),
-                employee.getLastName()
+                employee.getLastName(),
+                userAccount.getCreatedAt()
         );
     }
 
@@ -118,7 +119,7 @@ public class AuthService {
         UserAccountEntity userAccount = new UserAccountEntity();
         userAccount.setEmailAddress(registrationDTO.getEmail());
         userAccount.setCreatedAt(LocalDateTime.now());
-        userAccount.setActive(true);
+        userAccount.setActive(false);
         userAccountRepository.save(userAccount);
 
         // Get default role (EMPLOYEE)
@@ -161,7 +162,8 @@ public class AuthService {
                 role.getRoleName(),
                 employee.getEmployeeId(),
                 employee.getFirstName(),
-                employee.getLastName()
+                employee.getLastName(),
+                userAccount.getCreatedAt()
         );
     }
 
@@ -244,7 +246,8 @@ public class AuthService {
             employee.getRole() != null ? employee.getRole().getRoleName() : "ROLE_EMPLOYEE",
             employee.getEmployeeId(),
             employee.getFirstName(),
-            employee.getLastName()
+            employee.getLastName(),
+            userAccount.getCreatedAt()      
         );
     }
 }

@@ -85,7 +85,7 @@ public class JobTitleController {
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete job title", description = "Delete a job title")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasAnyRole('ROLE_HR', 'ROLE_ADMIN') ")
     public ResponseEntity<Void> deleteJobTitle(@PathVariable String id) {
         jobTitleService.deleteJobTitle(id);
         return ResponseEntity.noContent().build();

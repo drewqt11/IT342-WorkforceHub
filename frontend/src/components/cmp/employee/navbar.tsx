@@ -149,12 +149,24 @@ export function Navbar({ onMobileMenuToggle }: NavbarProps) {
     try {
       // Call the authService logout method which handles the backend API call
       await authService.logout();
+      // Remove all cookies
+      if (typeof document !== 'undefined' && document.cookie) {
+        document.cookie.split(';').forEach(function(c) {
+          document.cookie = c.trim().split('=')[0] + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/';
+        });
+      }
       // The authService.logout() method already redirects to '/', but we'll keep this for clarity
       router.push('/');
     } catch (error) {
       console.error('Logout error:', error);
       // Even if there's an error, clear tokens and redirect
       authService.clearTokens();
+      // Remove all cookies
+      if (typeof document !== 'undefined' && document.cookie) {
+        document.cookie.split(';').forEach(function(c) {
+          document.cookie = c.trim().split('=')[0] + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/';
+        });
+      }
       router.push('/');
     }
   };

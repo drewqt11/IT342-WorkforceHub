@@ -65,6 +65,8 @@ interface Employee {
   role: string
   status: boolean
   employmentStatus: string
+  isActive: boolean
+  createdAt?: string
 }
 
 interface Department {
@@ -219,8 +221,14 @@ export default function ActivateEmployeesPage() {
       // Check if data is an array, if not, try to access the correct property
       const employeesData = Array.isArray(data) ? data : data.employees || data.content || []
       
-      // Ensure each employee has all required fields with proper defaults
-      const processedEmployees = employeesData.map((emp: any) => ({
+      // Process employees and check their active status
+      const processedEmployees = await Promise.all(
+        employeesData.map(async (emp: any) => {
+          try {
+            // Check if the employee's user account is active
+            const isActive = await authService.getActiveStatus(emp.email)
+            
+            return {
         employeeId: emp.employeeId || "",
         firstName: emp.firstName || "",
         lastName: emp.lastName || "",
@@ -236,11 +244,21 @@ export default function ActivateEmployeesPage() {
         jobName: emp.jobName || "",
         role: emp.roleId || emp.role || "ROLE_EMPLOYEE",
         status: emp.status || false,
-        employmentStatus: emp.employmentStatus || "INACTIVE"
-      }))
+              employmentStatus: emp.employmentStatus || "INACTIVE",
+              isActive: isActive // Add the active status from user account
+            }
+          } catch (error) {
+            console.error(`Error checking active status for employee ${emp.email}:`, error)
+            return null // Return null for employees we couldn't check
+          }
+        })
+      )
+
+      // Filter out null values and inactive employees
+      const validEmployees = processedEmployees.filter(emp => emp !== null && emp.isActive) as Employee[]
       
-      setEmployees(processedEmployees as Employee[])
-      setTotalPages(Math.ceil(processedEmployees.length / itemsPerPage))
+      setEmployees(validEmployees)
+      setTotalPages(Math.ceil(validEmployees.length / itemsPerPage))
     } catch (error) {
       console.error("Error fetching employees:", error)
       toast.error("Failed to load employees. Please try again.")
@@ -337,7 +355,8 @@ export default function ActivateEmployeesPage() {
       }
 
       toast.success("Employee activated successfully")
-      fetchEmployees() // Refresh the list
+      // Refresh the employee list
+      await fetchEmployees()
     } catch (error) {
       console.error("Error activating employee:", error)
       toast.error("Failed to activate employee. Please try again.")
@@ -369,7 +388,8 @@ export default function ActivateEmployeesPage() {
       }
 
       toast.success("Employee deactivated successfully")
-      fetchEmployees() // Refresh the list
+      // Refresh the employee list
+      await fetchEmployees()
     } catch (error) {
       console.error("Error deactivating employee:", error)
       toast.error("Failed to deactivate employee. Please try again.")
@@ -406,20 +426,10 @@ export default function ActivateEmployeesPage() {
         throw new Error(errorMessage);
       }
 
-      // Update the employee in the local state
-      setEmployees(prevEmployees => 
-        prevEmployees.map(emp => 
-          emp.employeeId === employeeId 
-            ? { 
-                ...emp, 
-                departmentId: responseData.departmentId, 
-                departmentName: responseData.departmentName || departments.find(d => d.departmentId === departmentId)?.departmentName || "Unknown Department"
-              }
-            : emp
-        )
-      );
-
       toast.success("Department updated successfully");
+      
+      // Refresh the employee list
+      await fetchEmployees();
       
       setIsDepartmentDialogOpen(false);
       setSelectedDepartmentId("");
@@ -457,10 +467,222 @@ export default function ActivateEmployeesPage() {
     setIsDepartmentDialogOpen(true)
   }
 
-  const handleProfileView = (employee: Employee) => {
-    setSelectedEmployeeProfile(employee)
-    setIsProfileDialogOpen(true)
-  }
+  const handleProfileView = async (employee: Employee) => {
+    setSelectedEmployeeProfile(employee);
+    setIsProfileDialogOpen(true);
+    setLoadingProfile(true);
+
+    try {
+      // Fetch employee profile
+      const profileData = await authService.getEmployeeProfile();
+      setProfile(profileData);
+
+      // Fetch last login time and active status
+      const [lastLoginTime, isActive] = await Promise.all([
+        authService.getLastLogin(employee.email),
+        authService.getActiveStatus(employee.email)
+      ]);
+      
+      // Update user account with the last login time and active status
+      setUserAccount({
+        userId: employee.employeeId,
+        email: employee.email,
+        createdAt: employee.createdAt || new Date().toISOString(),
+        lastLogin: lastLoginTime,
+        isActive: isActive
+      });
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+      toast.error("Failed to load profile data");
+    } finally {
+      setLoadingProfile(false);
+    }
+  };
+
+  // Add a new function to handle profile updates
+  const handleProfileUpdate = async (employeeId: string, action: 'activate' | 'deactivate') => {
+    try {
+      const token = authService.getToken();
+      if (!token) {
+        toast.error("Authentication required");
+        return;
+      }
+
+      const response = await fetch(
+        `/api/hr/user-accounts/${selectedEmployeeProfile?.email}/account/${action}`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        if (response.status === 404) {
+          toast.error("User account not found");
+        } else {
+          throw new Error(errorData.error || `Failed to ${action} account`);
+        }
+        return;
+      }
+
+      const data = await response.json();
+      setUserAccount(prev => prev ? { ...prev, isActive: !prev.isActive } : null);
+      toast.success(`Account ${action}d successfully`);
+      
+      // Refresh the employee list after the change
+      await fetchEmployees();
+    } catch (error) {
+      console.error(`Error ${action}ing account:`, error);
+      toast.error(error instanceof Error ? error.message : `Failed to ${action} account`);
+    }
+  };
+
+  // Update the profile dialog content to use the new handleProfileUpdate function
+  const renderProfileDialog = () => (
+    <Dialog open={isProfileDialogOpen} onOpenChange={setIsProfileDialogOpen}>
+      <DialogContent className="sm:max-w-[600px]">
+        <DialogHeader>
+          <DialogTitle>Employee Profile</DialogTitle>
+          <DialogDescription>
+            View detailed information about {selectedEmployeeProfile?.firstName} {selectedEmployeeProfile?.lastName}
+          </DialogDescription>
+        </DialogHeader>
+        {selectedEmployeeProfile && (
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-[#4B5563] dark:text-[#D1D5DB]">First Name</Label>
+                <div className="p-2 border rounded-md bg-[#F9FAFB] dark:bg-[#1F2937] text-[#1F2937] dark:text-white">
+                  {selectedEmployeeProfile.firstName}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-[#4B5563] dark:text-[#D1D5DB]">Last Name</Label>
+                <div className="p-2 border rounded-md bg-[#F9FAFB] dark:bg-[#1F2937] text-[#1F2937] dark:text-white">
+                  {selectedEmployeeProfile.lastName}
+                </div>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-[#4B5563] dark:text-[#D1D5DB]">Email</Label>
+                <div className="p-2 border rounded-md bg-[#F9FAFB] dark:bg-[#1F2937] text-[#1F2937] dark:text-white">
+                  {selectedEmployeeProfile.email}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-[#4B5563] dark:text-[#D1D5DB]">Phone Number</Label>
+                <div className="p-2 border rounded-md bg-[#F9FAFB] dark:bg-[#1F2937] text-[#1F2937] dark:text-white">
+                  {selectedEmployeeProfile.phoneNumber || "Not provided"}
+                </div>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-[#4B5563] dark:text-[#D1D5DB]">Gender</Label>
+                <div className="p-2 border rounded-md bg-[#F9FAFB] dark:bg-[#1F2937] text-[#1F2937] dark:text-white">
+                  {selectedEmployeeProfile.gender || "Not specified"}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-[#4B5563] dark:text-[#D1D5DB]">Date of Birth</Label>
+                <div className="p-2 border rounded-md bg-[#F9FAFB] dark:bg-[#1F2937] text-[#1F2937] dark:text-white">
+                  {selectedEmployeeProfile.dateOfBirth || "Not provided"}
+                </div>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-[#4B5563] dark:text-[#D1D5DB]">Address</Label>
+              <div className="p-2 border rounded-md bg-[#F9FAFB] dark:bg-[#1F2937] text-[#1F2937] dark:text-white">
+                {selectedEmployeeProfile.address || "Not provided"}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-[#4B5563] dark:text-[#D1D5DB]">Marital Status</Label>
+              <div className="p-2 border rounded-md bg-[#F9FAFB] dark:bg-[#1F2937] text-[#1F2937] dark:text-white">
+                {selectedEmployeeProfile.maritalStatus || "Not specified"}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-[#4B5563] dark:text-[#D1D5DB]">Department</Label>
+                <div className="p-2 border rounded-md bg-[#F9FAFB] dark:bg-[#1F2937] text-[#1F2937] dark:text-white">
+                  {selectedEmployeeProfile.departmentName}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-[#4B5563] dark:text-[#D1D5DB]">Employment Status</Label>
+                <div className="p-2 border rounded-md bg-[#F9FAFB] dark:bg-[#1F2937] text-[#1F2937] dark:text-white">
+                  {selectedEmployeeProfile.employmentStatus}
+                </div>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-[#4B5563] dark:text-[#D1D5DB]">Account Status</Label>
+              <div className="flex items-center gap-2">
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "border-2",
+                    userAccount?.isActive
+                      ? "bg-[#F0FDFA] text-[#14B8A6] border-[#99F6E4] dark:bg-[#134E4A]/30 dark:text-[#14B8A6] dark:border-[#134E4A]"
+                      : "bg-[#FEF2F2] text-[#EF4444] border-[#FECACA] dark:bg-[#7F1D1D]/30 dark:text-[#EF4444] dark:border-[#7F1D1D]"
+                  )}
+                >
+                  {userAccount?.isActive ? (
+                    <div className="flex items-center gap-1">
+                      <CheckCircle className="h-3.5 w-3.5" />
+                      <span>Active</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1">
+                      <XCircle className="h-3.5 w-3.5" />
+                      <span>Inactive</span>
+                    </div>
+                  )}
+                </Badge>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleProfileUpdate(selectedEmployeeProfile.employeeId, userAccount?.isActive ? 'deactivate' : 'activate')}
+                  className={cn(
+                    "ml-2",
+                    userAccount?.isActive
+                      ? "border-[#FED7AA] text-[#F59E0B] hover:bg-[#FEF3C7] dark:border-[#78350F] dark:text-[#F59E0B] dark:hover:bg-[#78350F]/30"
+                      : "border-[#BFDBFE] text-[#3B82F6] hover:bg-[#EFF6FF] dark:border-[#1E3A8A] dark:text-[#3B82F6] dark:hover:bg-[#1E3A8A]/30"
+                  )}
+                >
+                  {userAccount?.isActive ? (
+                    <div className="flex items-center gap-1">
+                      <UserX className="h-3.5 w-3.5" />
+                      <span>Deactivate</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1">
+                      <UserCheck className="h-3.5 w-3.5" />
+                      <span>Activate</span>
+                    </div>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+        <DialogFooter>
+          <Button 
+            onClick={() => setIsProfileDialogOpen(false)}
+            className="bg-[#3B82F6] hover:bg-[#2563EB] text-white"
+          >
+            Close
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#F9FAFB] via-[#F0FDFA] to-[#E0F2FE] dark:from-[#1F2937] dark:via-[#134E4A] dark:to-[#0F172A] p-4 md:p-6">
@@ -922,96 +1144,7 @@ export default function ActivateEmployeesPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isProfileDialogOpen} onOpenChange={setIsProfileDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Employee Profile</DialogTitle>
-            <DialogDescription>
-              View detailed information about {selectedEmployeeProfile?.firstName} {selectedEmployeeProfile?.lastName}
-            </DialogDescription>
-          </DialogHeader>
-          {selectedEmployeeProfile && (
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-[#4B5563] dark:text-[#D1D5DB]">First Name</Label>
-                  <div className="p-2 border rounded-md bg-[#F9FAFB] dark:bg-[#1F2937] text-[#1F2937] dark:text-white">
-                    {selectedEmployeeProfile.firstName}
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-[#4B5563] dark:text-[#D1D5DB]">Last Name</Label>
-                  <div className="p-2 border rounded-md bg-[#F9FAFB] dark:bg-[#1F2937] text-[#1F2937] dark:text-white">
-                    {selectedEmployeeProfile.lastName}
-                  </div>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-[#4B5563] dark:text-[#D1D5DB]">Email</Label>
-                  <div className="p-2 border rounded-md bg-[#F9FAFB] dark:bg-[#1F2937] text-[#1F2937] dark:text-white">
-                    {selectedEmployeeProfile.email}
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-[#4B5563] dark:text-[#D1D5DB]">Phone Number</Label>
-                  <div className="p-2 border rounded-md bg-[#F9FAFB] dark:bg-[#1F2937] text-[#1F2937] dark:text-white">
-                    {selectedEmployeeProfile.phoneNumber || "Not provided"}
-                  </div>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-[#4B5563] dark:text-[#D1D5DB]">Gender</Label>
-                  <div className="p-2 border rounded-md bg-[#F9FAFB] dark:bg-[#1F2937] text-[#1F2937] dark:text-white">
-                    {selectedEmployeeProfile.gender || "Not specified"}
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-[#4B5563] dark:text-[#D1D5DB]">Date of Birth</Label>
-                  <div className="p-2 border rounded-md bg-[#F9FAFB] dark:bg-[#1F2937] text-[#1F2937] dark:text-white">
-                    {selectedEmployeeProfile.dateOfBirth || "Not provided"}
-                  </div>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-[#4B5563] dark:text-[#D1D5DB]">Address</Label>
-                <div className="p-2 border rounded-md bg-[#F9FAFB] dark:bg-[#1F2937] text-[#1F2937] dark:text-white">
-                  {selectedEmployeeProfile.address || "Not provided"}
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-[#4B5563] dark:text-[#D1D5DB]">Marital Status</Label>
-                <div className="p-2 border rounded-md bg-[#F9FAFB] dark:bg-[#1F2937] text-[#1F2937] dark:text-white">
-                  {selectedEmployeeProfile.maritalStatus || "Not specified"}
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-[#4B5563] dark:text-[#D1D5DB]">Department</Label>
-                  <div className="p-2 border rounded-md bg-[#F9FAFB] dark:bg-[#1F2937] text-[#1F2937] dark:text-white">
-                    {selectedEmployeeProfile.departmentName}
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-[#4B5563] dark:text-[#D1D5DB]">Employment Status</Label>
-                  <div className="p-2 border rounded-md bg-[#F9FAFB] dark:bg-[#1F2937] text-[#1F2937] dark:text-white">
-                    {selectedEmployeeProfile.employmentStatus}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button 
-              onClick={() => setIsProfileDialogOpen(false)}
-              className="bg-[#3B82F6] hover:bg-[#2563EB] text-white"
-            >
-              Close
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {renderProfileDialog()}
     </div>
   )
 }

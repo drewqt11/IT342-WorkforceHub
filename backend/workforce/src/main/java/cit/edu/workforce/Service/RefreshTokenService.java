@@ -44,15 +44,16 @@ public class RefreshTokenService {
         UserAccountEntity userAccount = userAccountRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
 
-        // Delete existing refresh tokens for the user
-        refreshTokenRepository.findByUserAccount(userAccount)
-                .ifPresent(token -> refreshTokenRepository.delete(token));
+        // Delete any existing token for this user
+        refreshTokenRepository.deleteByUserId(userId);
 
         // Create new refresh token
         RefreshTokenEntity refreshToken = new RefreshTokenEntity();
         refreshToken.setUserAccount(userAccount);
         refreshToken.setExpiryDate(Instant.now().plusMillis(refreshTokenDurationMs));
         refreshToken.setToken(UUID.randomUUID().toString());
+        refreshToken.setRevoked(false);
+        refreshToken.setUsed(false);
 
         return refreshTokenRepository.save(refreshToken);
     }

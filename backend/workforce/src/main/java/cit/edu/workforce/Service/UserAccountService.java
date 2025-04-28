@@ -1,7 +1,9 @@
 package cit.edu.workforce.Service;
 
 import cit.edu.workforce.Entity.UserAccountEntity;
+import cit.edu.workforce.Entity.EmployeeEntity;
 import cit.edu.workforce.Repository.UserAccountRepository;
+import cit.edu.workforce.Repository.EmployeeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,10 +15,12 @@ import java.util.Optional;
 public class UserAccountService {
 
     private final UserAccountRepository userAccountRepository;
+    private final EmployeeRepository employeeRepository;
 
     @Autowired
-    public UserAccountService(UserAccountRepository userAccountRepository) {
+    public UserAccountService(UserAccountRepository userAccountRepository, EmployeeRepository employeeRepository) {
         this.userAccountRepository = userAccountRepository;
+        this.employeeRepository = employeeRepository;
     }
 
     @Transactional
@@ -28,7 +32,7 @@ public class UserAccountService {
         UserAccountEntity userAccount = new UserAccountEntity();
         userAccount.setEmailAddress(email);
         userAccount.setCreatedAt(LocalDateTime.now());
-        userAccount.setActive(true);
+        userAccount.setActive(false);
 
         return userAccountRepository.save(userAccount);
     }
@@ -58,6 +62,16 @@ public class UserAccountService {
     @Transactional
     public UserAccountEntity deactivateUser(UserAccountEntity userAccount) {
         userAccount.setActive(false);
+        
+        // Find and deactivate associated employee
+        Optional<EmployeeEntity> employeeOptional = employeeRepository.findByUserAccount(userAccount);
+        if (employeeOptional.isPresent()) {
+            EmployeeEntity employee = employeeOptional.get();
+            employee.setStatus(false);
+            employee.setEmploymentStatus("INACTIVE");
+            employeeRepository.save(employee);
+        }
+        
         return userAccountRepository.save(userAccount);
     }
 
@@ -77,5 +91,16 @@ public class UserAccountService {
 
         // Check if the domain is @cit.edu as required
         return "cit.edu".equals(domain);
+    }
+
+    @Transactional(readOnly = true)
+    public UserAccountEntity getUserAccountByEmail(String email) {
+        return findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User account not found for email: " + email));
+    }
+
+    @Transactional
+    public UserAccountEntity saveUserAccount(UserAccountEntity userAccount) {
+        return userAccountRepository.save(userAccount);
     }
 }

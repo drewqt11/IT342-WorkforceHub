@@ -76,11 +76,6 @@ export function AppSidebar({ isMobile, onClose }: AppSidebarProps) {
         },
       ],
     },
-    {
-      title: "Settings",
-      href: "/hr/admin/settings",
-      icon: Settings,
-    },
     /*{
       title: "Recruitment",
       href: "/hr/admin/recruitment",
@@ -145,6 +140,22 @@ export function AppSidebar({ isMobile, onClose }: AppSidebarProps) {
       icon: Settings,
     },*/
   ]
+
+  const settingsItem: MenuItem = {
+    title: "Settings",
+    href: "/hr/admin/settings",
+    icon: Settings,
+    subItems: [
+      {
+        title: "General Settings",
+        href: "/hr/admin/settings",
+      },
+      {
+        title: "Deactivated Accounts",
+        href: "/hr/admin/settings/deactivated",
+      },
+    ],
+  }
 
   return (
     <div className="flex h-full flex-col border-r border-blue-100 bg-blue-50/90 backdrop-blur-md dark:bg-blue-950/90 dark:border-blue-900">
@@ -245,13 +256,55 @@ export function AppSidebar({ isMobile, onClose }: AppSidebarProps) {
         </nav>
           </div>
 
-      {/* Footer section */}
-      <div className="border-t border-blue-100 dark:border-blue-900 p-4">
+      {/* Footer section with Settings */}
+      <div className="border-t border-blue-100 dark:border-blue-900 p-4 space-y-4">
+        <div className="flex flex-col">
+          <button
+            onClick={() => toggleSubMenu(settingsItem.title)}
+            className={cn(
+              "flex items-center justify-between rounded-lg px-3 py-2.5 transition-all",
+              pathname === settingsItem.href || pathname.startsWith(`${settingsItem.href}/`) || openSubMenu === settingsItem.title
+                ? "bg-white dark:bg-blue-900 text-blue-600 dark:text-blue-300 shadow-sm"
+                : "text-blue-800 dark:text-blue-200 hover:bg-white hover:text-blue-600 dark:hover:bg-blue-900 dark:hover:text-blue-300",
+            )}
+          >
+            <div className="flex items-center gap-3">
+              <settingsItem.icon className="h-5 w-5" />
+              <span>{settingsItem.title}</span>
+            </div>
+            {openSubMenu === settingsItem.title ? (
+              <ChevronDown className="h-4 w-4" />
+            ) : (
+              <ChevronRight className="h-4 w-4" />
+            )}
+          </button>
+
+          {openSubMenu === settingsItem.title && (
+            <div className="ml-3 mt-1 space-y-1 border-l-2 border-blue-200 dark:border-blue-800 pl-2">
+              {settingsItem.subItems?.map((subItem) => (
+                <Link
+                  key={subItem.href}
+                  href={subItem.href}
+                  className={cn(
+                    "block rounded-lg px-3 py-2 text-sm transition-all",
+                    pathname === subItem.href
+                      ? "bg-white dark:bg-blue-900 text-blue-600 dark:text-blue-300 shadow-sm"
+                      : "text-blue-800 dark:text-blue-200 hover:bg-white hover:text-blue-600 dark:hover:bg-blue-900 dark:hover:text-blue-300",
+                  )}
+                  onClick={() => isMobile && onClose && onClose()}
+                >
+                  {subItem.title}
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+
         <div className="flex items-center gap-2 text-xs text-blue-600 dark:text-blue-300">
           <div className="h-2 w-2 rounded-full bg-green-500" />
           <span>System Status: Online</span>
         </div>
-    </div>
+      </div>
     </div>
   )
 }

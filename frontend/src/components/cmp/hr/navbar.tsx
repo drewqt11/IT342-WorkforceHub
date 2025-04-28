@@ -94,10 +94,22 @@ export function Navbar({ onMobileMenuToggle }: NavbarProps) {
   const handleLogout = async () => {
     try {
       await authService.logout()
+      // Remove all cookies
+      if (typeof document !== 'undefined' && document.cookie) {
+        document.cookie.split(';').forEach(function(c) {
+          document.cookie = c.trim().split('=')[0] + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/';
+        });
+      }
       router.push("/")
     } catch (error) {
       console.error("Logout error:", error)
       authService.clearTokens()
+      // Remove all cookies
+      if (typeof document !== 'undefined' && document.cookie) {
+        document.cookie.split(';').forEach(function(c) {
+          document.cookie = c.trim().split('=')[0] + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/';
+        });
+      }
       router.push("/")
     }
   }

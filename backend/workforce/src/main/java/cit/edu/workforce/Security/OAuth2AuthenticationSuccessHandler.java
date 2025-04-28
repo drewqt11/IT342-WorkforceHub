@@ -111,7 +111,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             userAccount.setEmailAddress(email);
             userAccount.setCreatedAt(LocalDateTime.now());
             userAccount.setLastLogin(LocalDateTime.now());
-            userAccount.setActive(true);
+            userAccount.setActive(false);
             userAccountRepository.save(userAccount);
 
             // Get default role (EMPLOYEE)

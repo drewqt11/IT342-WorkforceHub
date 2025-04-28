@@ -25,7 +25,11 @@ export function middleware(request: NextRequest) {
     }
 
     // Role-based access control
-    if (request.nextUrl.pathname.startsWith('/employee') && userRole?.toLowerCase() !== 'employee') {
+    if (
+        request.nextUrl.pathname.startsWith('/employee') &&
+        userRole?.toLowerCase() !== 'employee' &&
+        userRole?.toLowerCase() !== 'hr administrator'
+    ) {
         return NextResponse.redirect(new URL('/', request.url))
     }
 

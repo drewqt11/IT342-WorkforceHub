@@ -18,6 +18,10 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshTokenEntity
     Optional<RefreshTokenEntity> findByUserAccount(UserAccountEntity userAccount);
 
     @Modifying
+    @Query("DELETE FROM RefreshTokenEntity r WHERE r.userAccount.userId = :userId")
+    void deleteByUserId(String userId);
+
+    @Modifying
     @Query("UPDATE RefreshTokenEntity r SET r.revoked = true WHERE r.userAccount.userId = :userId")
     void revokeAllTokensByUser(String userId);
 

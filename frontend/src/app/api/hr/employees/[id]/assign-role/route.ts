@@ -13,6 +13,20 @@ import { NextRequest, NextResponse } from "next/server"
  * @throws {404} If employee with the given ID is not found
  * @throws {500} If there's an internal server error
  */
+
+function getEmployeeIdFromToken(token: string): string | null {
+  try {
+    // Remove 'Bearer ' if present
+    const jwt = token.replace(/^Bearer /, "");
+    const payload = JSON.parse(Buffer.from(jwt.split('.')[1], 'base64').toString());
+    console.log('Decoded JWT payload:', payload); // Debug log
+    return payload.employeeId || null;
+  } catch (e) {
+    console.error('Failed to decode JWT:', e);
+    return null;
+  }
+}
+
 export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -69,7 +83,12 @@ export async function PUT(
     }
 
     const data = await response.json()
-    return NextResponse.json(data)
+    // Check if the updated employee is the current user
+    const currentEmployeeId = getEmployeeIdFromToken(token || "")
+    console.log('API Route: id param:', id, 'currentEmployeeId from JWT:', currentEmployeeId); // Debug log
+    const shouldLogout = currentEmployeeId && currentEmployeeId === id
+    // Ensure the response includes the updated employee's email
+    return NextResponse.json({ ...data, shouldLogout, email: data.email })
   } catch (error) {
     console.error("Error in assign-role route:", error)
     return NextResponse.json(

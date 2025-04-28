@@ -25,7 +25,7 @@ public class RefreshTokenEntity {
     private String token;
 
     @OneToOne
-    @JoinColumn(name = "user_id", referencedColumnName = "user_id")
+    @JoinColumn(name = "user_id", referencedColumnName = "user_id", unique = true)
     private UserAccountEntity userAccount;
 
     @Column(name = "expiry_date", nullable = false)

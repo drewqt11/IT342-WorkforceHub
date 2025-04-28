@@ -36,15 +36,10 @@ export default function EmployeeDashboard() {
       try {
         const data = await authService.getEmployeeProfile();
         setProfile(data);
-        
-        // Redirect HR Administrators to the HR admin dashboard without any status check
-        if (data.role === "HR ADMINISTRATOR") {
-          router.push('/hr/admin/dashboard');
-          return; // Exit early to prevent rendering employee dashboard
-        }
       } catch (err) {
         setError('Failed to load profile data');
         console.error('Error fetching profile:', err);
+        setLoading(false);
       } finally {
         setLoading(false);
       }
