@@ -1,6 +1,8 @@
-package com.example.myapplication.ui.theme
+package com.example.myapplication.presentation.theme
 
 import android.app.Activity
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
@@ -15,41 +17,42 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-// Our color scheme
+// Our color scheme using AppColors
 private val LightColorScheme = lightColorScheme(
-    primary = Color(0xFF3B82F6),       // colorPrimary - Blue
-    onPrimary = Color.White,
-    primaryContainer = Color(0xFFDBEAFE),
-    onPrimaryContainer = Color(0xFF1E40AF),
-    secondary = Color(0xFF14B8A6),     // colorAccent - Teal
-    onSecondary = Color.White,
-    secondaryContainer = Color(0xFFCCFBF1),
-    onSecondaryContainer = Color(0xFF0F766E),
-    tertiary = Color(0xFF0078D4),      // microsoftBlue
-    background = Color(0xFFF9FAFB),    // backgroundGray
-    surface = Color.White,
-    onSurface = Color(0xFF1F2937),     // textPrimary
-    surfaceVariant = Color(0xFFF3F4F6),
-    outline = Color(0xFFE5E7EB),       // borderColor
+    primary = AppColors.blue500,
+    onPrimary = AppColors.white,
+    primaryContainer = AppColors.blue100,
+    onPrimaryContainer = AppColors.blue900,
+    secondary = AppColors.teal500,
+    onSecondary = AppColors.white,
+    secondaryContainer = AppColors.teal100,
+    onSecondaryContainer = AppColors.teal700,
+    tertiary = AppColors.blue700,
+    background = AppColors.gray50,
+    surface = AppColors.white,
+    onSurface = AppColors.gray800,
+    surfaceVariant = AppColors.gray100,
+    outline = AppColors.gray200,
 )
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Color(0xFF60A5FA),
-    onPrimary = Color.White,
-    primaryContainer = Color(0xFF1E40AF),
-    onPrimaryContainer = Color(0xFFDBEAFE),
-    secondary = Color(0xFF2DD4BF),
-    onSecondary = Color.White,
-    secondaryContainer = Color(0xFF0F766E),
-    onSecondaryContainer = Color(0xFFCCFBF1),
-    tertiary = Color(0xFF0078D4),
-    background = Color(0xFF1F2937),
-    surface = Color(0xFF374151),
-    onSurface = Color.White,
-    surfaceVariant = Color(0xFF4B5563),
-    outline = Color(0xFF6B7280),
+    primary = AppColors.blue300,
+    onPrimary = AppColors.white,
+    primaryContainer = AppColors.blue900,
+    onPrimaryContainer = AppColors.blue100,
+    secondary = AppColors.teal300,
+    onSecondary = AppColors.white,
+    secondaryContainer = AppColors.teal900,
+    onSecondaryContainer = AppColors.teal100,
+    tertiary = AppColors.blue500,
+    background = AppColors.gray800,
+    surface = AppColors.gray700,
+    onSurface = AppColors.white,
+    surfaceVariant = AppColors.gray700,
+    outline = AppColors.gray500,
 )
 
+@RequiresApi(Build.VERSION_CODES.S)
 @Composable
 fun AppTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),

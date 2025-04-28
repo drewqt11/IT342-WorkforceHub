@@ -1,4 +1,4 @@
-package com.example.myapplication.components
+package com.example.myapplication.presentation.components
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -15,9 +15,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Divider
+import androidx.compose.material3.DrawerState
 import androidx.compose.material3.Icon
+import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -26,23 +29,93 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.myapplication.screens.AppColors
+import com.example.myapplication.presentation.theme.AppColors
 import com.example.myapplication.R
+import kotlinx.coroutines.launch
+
+/**
+ * Enum class that defines the different screens in the app
+ * Used to determine which menu item should be highlighted
+ */
+enum class AppScreen {
+    DASHBOARD,
+    TIME_ATTENDANCE,
+    LEAVE_REQUESTS,
+    PERFORMANCE,
+    TRAINING,
+    PROFILE
+}
+
+/**
+ * UniversalDrawer is a composable function that provides a consistent navigation drawer
+ * across all screens. It handles the drawer state and navigation logic internally.
+ * 
+ * @param drawerState the state of the drawer (open/closed)
+ * @param currentScreen the current screen to highlight the appropriate menu item
+ * @param onLogout function to call when logging out
+ * @param onNavigateToDashboard function to navigate to dashboard
+ * @param onNavigateToAttendance function to navigate to time & attendance
+ * @param onNavigateToLeaveRequests function to navigate to leave requests
+ * @param onNavigateToPerformance function to navigate to performance
+ * @param onNavigateToTraining function to navigate to training
+ * @param onNavigateToProfile function to navigate to profile
+ * @param content the content to display in the main area of the screen
+ */
+@Composable
+fun UniversalDrawer(
+    drawerState: DrawerState,
+    currentScreen: AppScreen,
+    onLogout: () -> Unit,
+    onNavigateToDashboard: () -> Unit,
+    onNavigateToAttendance: () -> Unit,
+    onNavigateToLeaveRequests: () -> Unit,
+    onNavigateToPerformance: () -> Unit,
+    onNavigateToTraining: () -> Unit,
+    onNavigateToProfile: () -> Unit,
+    content: @Composable () -> Unit
+) {
+    val scope = rememberCoroutineScope()
+    
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            SideBarMenu(
+                currentScreen = currentScreen,
+                drawerState = drawerState,
+                onLogout = onLogout,
+                onNavigateToDashboard = onNavigateToDashboard,
+                onNavigateToAttendance = onNavigateToAttendance,
+                onNavigateToLeaveRequests = onNavigateToLeaveRequests,
+                onNavigateToPerformance = onNavigateToPerformance,
+                onNavigateToTraining = onNavigateToTraining,
+                onNavigateToProfile = onNavigateToProfile
+            )
+        },
+        content = content
+    )
+}
 
 /**
  * SideBarMenu is a composable function that displays a navigation drawer menu
- * It can be used with ModalNavigationDrawer in DashboardScreen
+ * It handles all navigation logic internally
+ * 
+ * @param currentScreen the current screen being displayed to highlight the appropriate menu item
+ * @param drawerState the state of the drawer (open/closed)
  */
 @Composable
 fun SideBarMenu(
-    onCloseDrawer: () -> Unit,
+    currentScreen: AppScreen,
+    drawerState: DrawerState,
     onLogout: () -> Unit,
-    onNavigateToAttendance: () -> Unit = {},
-    onNavigateToLeaveRequests: () -> Unit = {},
-    onNavigateToPerformance: () -> Unit = {},
-    onNavigateToTraining: () -> Unit = {},
-    onNavigateToProfile: () -> Unit = {}
+    onNavigateToDashboard: () -> Unit,
+    onNavigateToAttendance: () -> Unit,
+    onNavigateToLeaveRequests: () -> Unit,
+    onNavigateToPerformance: () -> Unit,
+    onNavigateToTraining: () -> Unit,
+    onNavigateToProfile: () -> Unit
 ) {
+    val scope = rememberCoroutineScope()
+    
     Column(
         modifier = Modifier
             .fillMaxHeight()
@@ -108,32 +181,61 @@ fun SideBarMenu(
             MenuNavItem(
                 title = "Dashboard",
                 icon = R.drawable.home_dashboard_icon,
-                isSelected = true,
-                onClick = { onCloseDrawer() }
+                isSelected = currentScreen == AppScreen.DASHBOARD,
+                onClick = {
+                    scope.launch {
+                        drawerState.close()
+                        onNavigateToDashboard()
+                    }
+                }
             )
             
             MenuNavItem(
                 title = "Time & Attendance",
                 icon = R.drawable.time_attendance_icon,
-                onClick = onNavigateToAttendance
+                isSelected = currentScreen == AppScreen.TIME_ATTENDANCE,
+                onClick = {
+                    scope.launch {
+                        drawerState.close()
+                        onNavigateToAttendance()
+                    }
+                }
             )
             
             MenuNavItem(
                 title = "Leave Requests",
                 icon = R.drawable.leave_requests_icon,
-                onClick = onNavigateToLeaveRequests
+                isSelected = currentScreen == AppScreen.LEAVE_REQUESTS,
+                onClick = {
+                    scope.launch {
+                        drawerState.close()
+//                        onNavigateToLeaveRequests()
+                    }
+                }
             )
             
             MenuNavItem(
                 title = "Performance",
                 icon = R.drawable.performance_icon,
-                onClick = onNavigateToPerformance
+                isSelected = currentScreen == AppScreen.PERFORMANCE,
+                onClick = {
+                    scope.launch {
+                        drawerState.close()
+//                        onNavigateToPerformance()
+                    }
+                }
             )
             
             MenuNavItem(
                 title = "Training & Events",
                 icon = R.drawable.training_icon,
-                onClick = onNavigateToTraining
+                isSelected = currentScreen == AppScreen.TRAINING,
+                onClick = {
+                    scope.launch {
+                        drawerState.close()
+//                        onNavigateToTraining()
+                    }
+                }
             )
             
             Divider(
@@ -144,7 +246,13 @@ fun SideBarMenu(
             MenuNavItem(
                 title = "Profile",
                 icon = R.drawable.ic_single_account_24dp,
-                onClick = onNavigateToProfile
+                isSelected = currentScreen == AppScreen.PROFILE,
+                onClick = {
+                    scope.launch {
+                        drawerState.close()
+//                        onNavigateToProfile()
+                    }
+                }
             )
         }
         
@@ -157,7 +265,12 @@ fun SideBarMenu(
                 title = "Logout",
                 icon = R.drawable.logout_icon,
                 tint = AppColors.red,
-                onClick = onLogout
+                onClick = {
+                    scope.launch {
+                        drawerState.close()
+                        onLogout()
+                    }
+                }
             )
         }
     }

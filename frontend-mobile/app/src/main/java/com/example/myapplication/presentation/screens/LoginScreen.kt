@@ -1,4 +1,4 @@
-package com.example.myapplication.screens
+package com.example.myapplication.presentation.screens
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -39,7 +39,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.myapplication.ui.theme.AppTheme
+import com.example.myapplication.presentation.theme.AppTheme
 import androidx.compose.ui.graphics.ColorFilter
 import com.example.myapplication.R
 

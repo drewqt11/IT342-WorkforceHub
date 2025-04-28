@@ -1,4 +1,4 @@
-package com.example.myapplication.screens
+package com.example.myapplication.presentation.screens
 
 import android.R
 import androidx.compose.animation.core.RepeatMode
@@ -31,7 +31,6 @@ import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -58,57 +57,18 @@ import androidx.compose.ui.zIndex
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.launch
-import com.example.myapplication.components.SideBarMenu
-
-// Enhanced color scheme
-object AppColors {
-    // Primary blues
-    val blue50 = Color(0xFFEFF6FF)
-    val blue100 = Color(0xFFDCEAFF)
-    val blue300 = Color(0xFF93C5FD)
-    val blue500 = Color(0xFF3B82F6)
-    val blue700 = Color(0xFF2563EB)
-    val blue900 = Color(0xFF1E3A8A)
-    
-    // Secondary teals
-    val teal50 = Color(0xFFF0FDFA)
-    val teal100 = Color(0xFFCCFBF1)
-    val teal300 = Color(0xFF5EEAD4)
-    val teal500 = Color(0xFF14B8A6)
-    val teal700 = Color(0xFF0D9488)
-    val teal900 = Color(0xFF134E4A)
-    
-    // Neutrals
-    val white = Color(0xFFFFFFFF)
-    val gray50 = Color(0xFFF9FAFB)
-    val gray100 = Color(0xFFF3F4F6)
-    val gray200 = Color(0xFFE5E7EB)
-    val gray300 = Color(0xFFD1D5DB)
-    val gray500 = Color(0xFF6B7280)
-    val gray700 = Color(0xFF374151)
-    val gray800 = Color(0xFF1F2937)
-    
-    // Status colors
-    val green = Color(0xFF22C55E)
-    val greenLight = Color(0xFFDCFCE7)
-    val amber = Color(0xFFF59E0B)
-    val amberLight = Color(0xFFFEF3C7)
-    val red = Color(0xFFEF4444)
-    val redLight = Color(0xFFFEE2E2)
-    
-    // Gradients
-    val blueGradient = Brush.verticalGradient(
-        colors = listOf(blue700, blue500)
-    )
-    
-    val tealGradient = Brush.verticalGradient(
-        colors = listOf(teal700, teal500)
-    )
-}
+import com.example.myapplication.presentation.components.AppScreen
+import com.example.myapplication.presentation.components.UniversalDrawer
+import com.example.myapplication.presentation.theme.AppColors
 
 @Composable
 fun DashboardScreen(
-    onLogout: () -> Unit = {}
+    onLogout: () -> Unit = {},
+    onNavigateToAttendance: () -> Unit = {},
+    onNavigateToLeaveRequests: () -> Unit = {},
+    onNavigateToPerformance: () -> Unit = {},
+    onNavigateToTraining: () -> Unit = {},
+    onNavigateToProfile: () -> Unit = {}
 ) {
     // For animated decorative elements
     val infiniteTransition = rememberInfiniteTransition(label = "circle_animation")
@@ -141,56 +101,17 @@ fun DashboardScreen(
         modifier = Modifier.fillMaxSize(),
         color = AppColors.gray50
     ) {
-        // Navigation drawer wrapper
-        ModalNavigationDrawer(
+        // Using the Universal Drawer instead of directly using ModalNavigationDrawer
+        UniversalDrawer(
             drawerState = drawerState,
-            drawerContent = {
-                SideBarMenu(
-                    onCloseDrawer = {
-                        scope.launch {
-                            drawerState.close()
-                        }
-                    },
-                    onLogout = {
-                        // Close drawer before logging out
-                        scope.launch {
-                            drawerState.close()
-                            // Call the logout function passed from MainActivity
-                            onLogout()
-                        }
-                    },
-                    onNavigateToAttendance = {
-                        scope.launch {
-                            drawerState.close()
-                            // TODO: Navigate to attendance screen
-                        }
-                    },
-                    onNavigateToLeaveRequests = {
-                        scope.launch {
-                            drawerState.close()
-                            // TODO: Navigate to leave requests screen
-                        }
-                    },
-                    onNavigateToPerformance = {
-                        scope.launch {
-                            drawerState.close()
-                            // TODO: Navigate to performance screen
-                        }
-                    },
-                    onNavigateToTraining = {
-                        scope.launch {
-                            drawerState.close()
-                            // TODO: Navigate to training screen
-                        }
-                    },
-                    onNavigateToProfile = {
-                        scope.launch {
-                            drawerState.close()
-                            // TODO: Navigate to profile screen
-                        }
-                    }
-                )
-            }
+            currentScreen = AppScreen.DASHBOARD,
+            onLogout = onLogout,
+            onNavigateToDashboard = {}, // Already on dashboard, no need to navigate
+            onNavigateToAttendance = onNavigateToAttendance,
+            onNavigateToLeaveRequests = onNavigateToLeaveRequests,
+            onNavigateToPerformance = onNavigateToPerformance,
+            onNavigateToTraining = onNavigateToTraining,
+            onNavigateToProfile = onNavigateToProfile
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
                 // Decorative background elements
@@ -328,11 +249,11 @@ fun DashboardHeader(
             )
     ) {
         // Decorative circles in the header - removing them to match the image
-        
+
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 18.dp)
+                .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 19.dp)
         ) {
             // Menu button at top left
             Row(
@@ -354,7 +275,7 @@ fun DashboardHeader(
                     )
                 }
             }
-            
+
             // User profile section
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -376,9 +297,9 @@ fun DashboardHeader(
                         color = AppColors.blue700
                     )
                 }
-                
+
                 Spacer(modifier = Modifier.width(16.dp))
-                
+
                 // User info
                 Column {
                     // Welcome message
@@ -387,7 +308,7 @@ fun DashboardHeader(
                         color = AppColors.white.copy(alpha = 0.85f),
                         fontSize = 16.sp
                     )
-                    
+
                     Text(
                         text = "Full Name",
                         color = AppColors.white,
@@ -395,18 +316,18 @@ fun DashboardHeader(
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 0.5.sp
                     )
-                    
+
                     Text(
-                        text = "Position",
+                        text = "ID Number",
                         color = AppColors.white.copy(alpha = 0.85f),
                         fontSize = 14.sp,
                         letterSpacing = 0.5.sp
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             // Date display
             Row(
                 modifier = Modifier
@@ -422,14 +343,14 @@ fun DashboardHeader(
                     tint = AppColors.white,
                     modifier = Modifier.size(18.dp)
                 )
-                
+
                 Spacer(modifier = Modifier.width(8.dp))
-                
+
                 // Get current date formatted nicely
                 val today = LocalDate.now()
                 val formatter = DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy")
                 val formattedDate = today.format(formatter)
-                
+
                 Text(
                     text = formattedDate,
                     color = AppColors.white,
@@ -679,7 +600,6 @@ fun AttendanceTimeItem(
 
 @Composable
 fun LeaveRequestsCard() {
-    Spacer(modifier = Modifier.width(8.dp))
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = AppColors.white),
@@ -889,7 +809,6 @@ fun LeaveRequestItem(
 
 @Composable
 fun UpcomingTrainingCard() {
-    Spacer(modifier = Modifier.width(8.dp))
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = AppColors.white),
@@ -1108,7 +1027,6 @@ fun UpcomingTrainingCard() {
 
 @Composable
 fun PerformanceMetricsCard() {
-    Spacer(modifier = Modifier.width(8.dp))
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = AppColors.white),
@@ -1322,7 +1240,12 @@ fun DashboardScreenPreview() {
         color = AppColors.gray50
     ) {
         DashboardScreen(
-            onLogout = {}
+            onLogout = {},
+            onNavigateToAttendance = {},
+            onNavigateToLeaveRequests = {},
+            onNavigateToPerformance = {},
+            onNavigateToTraining = {},
+            onNavigateToProfile = {}
         )
     }
 } 
