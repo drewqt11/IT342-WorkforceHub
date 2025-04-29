@@ -24,7 +24,17 @@ import java.security.Principal;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-
+/**
+ * AuthController - Provides API endpoints for authentication and user management
+ * New file: Implements authentication endpoints for login, registration, token management,
+ * and OAuth2 integration with Microsoft
+ * 
+ * This controller handles:
+ * - User login and registration
+ * - JWT token management (creation, refresh, validation)
+ * - OAuth2 integration
+ * - Dashboard access control
+ */
 @RestController
 @RequestMapping("/api/auth")
 @Tag(name = "Authentication", description = "Authentication API")
@@ -44,6 +54,10 @@ public class AuthController {
         this.employeeRepository = employeeRepository;
     }
 
+    /**
+     * Authenticate a user and generate a JWT token
+     * This endpoint validates credentials and returns an access token
+     */
     @PostMapping("/login")
     @Operation(summary = "User login", description = "Authenticates a user and returns a JWT token")
     public ResponseEntity<AuthResponseDTO> login(@Valid @RequestBody LoginRequestDTO loginRequest) {
@@ -51,6 +65,10 @@ public class AuthController {
         return ResponseEntity.ok(authResponse);
     }
 
+    /**
+     * Register a new employee in the system
+     * Creates a new user account and employee record
+     */
     @PostMapping("/register")
     @Operation(summary = "User registration", description = "Registers a new employee")
     public ResponseEntity<AuthResponseDTO> register(@Valid @RequestBody EmployeeRegistrationDTO registrationDTO) {
@@ -58,6 +76,10 @@ public class AuthController {
         return new ResponseEntity<>(authResponse, HttpStatus.CREATED);
     }
 
+    /**
+     * Refresh an access token using a refresh token
+     * Allows extending session without re-authenticating
+     */
     @PostMapping("/refresh-token")
     @Operation(summary = "Refresh token", description = "Refresh an access token using a refresh token")
     public ResponseEntity<TokenRefreshResponseDTO> refreshToken(@Valid @RequestBody TokenRefreshRequestDTO request) {
@@ -65,6 +87,10 @@ public class AuthController {
         return ResponseEntity.ok(tokenRefreshResponse);
     }
 
+    /**
+     * Logout a user by invalidating their refresh tokens
+     * Important for security to end sessions properly
+     */
     @PostMapping("/logout")
     @PreAuthorize("isAuthenticated()")
     @SecurityRequirement(name = "bearerAuth")
@@ -74,6 +100,10 @@ public class AuthController {
         return ResponseEntity.ok().build();
     }
 
+    /**
+     * Get user token after OAuth2 authentication with Microsoft
+     * Used in the OAuth2 authorization flow
+     */
     @GetMapping("/oauth2/token-info/{email}")
     @Operation(summary = "Get token info", description = "Retrieves information about a user from email after OAuth2 login")
     public ResponseEntity<AuthResponseDTO> getOAuth2TokenInfo(@PathVariable String email) {
@@ -81,6 +111,10 @@ public class AuthController {
         return ResponseEntity.ok(authResponse);
     }
     
+    /**
+     * Get information about the authenticated OAuth2 user
+     * Returns profile data from Microsoft identity
+     */
     @GetMapping("/oauth2/user-info")
     @PreAuthorize("isAuthenticated()")
     @SecurityRequirement(name = "bearerAuth")
@@ -113,6 +147,10 @@ public class AuthController {
         return ResponseEntity.ok(userInfo);
     }
 
+    /**
+     * Admin dashboard access endpoint
+     * Restricted to users with admin role
+     */
     @GetMapping("/dashboard/admin")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     @SecurityRequirement(name = "bearerAuth")
@@ -121,6 +159,10 @@ public class AuthController {
         return ResponseEntity.ok("Hello, Admin " + principal.getName());
     }
 
+    /**
+     * Employee dashboard access endpoint
+     * Available to all authenticated users
+     */
     @GetMapping("/dashboard/employee")
     @PreAuthorize("hasAnyRole('ROLE_EMPLOYEE', 'ROLE_HR', 'ROLE_ADMIN')")
     @SecurityRequirement(name = "bearerAuth")

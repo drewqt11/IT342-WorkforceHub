@@ -33,6 +33,7 @@ public class EmergencyContactEntity {
     @Column(name = "address")
     private String address;
 
+    // New relationship added: Emergency contact belongs to an Employee
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employee_id")
     private EmployeeEntity employee;

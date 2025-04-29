@@ -33,6 +33,7 @@ public class CertificationEntity {
     @Column(name = "status")
     private String status;
 
+    // New relationship added: Certification belongs to an Employee
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employee_id")
     private EmployeeEntity employee;
