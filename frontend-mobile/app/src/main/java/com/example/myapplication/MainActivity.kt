@@ -1,10 +1,12 @@
 package com.example.myapplication
 
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -18,6 +20,7 @@ import com.example.myapplication.presentation.screens.TimeAttendanceScreen
 import com.example.myapplication.presentation.theme.AppTheme
 
 class MainActivity : ComponentActivity() {
+    @RequiresApi(Build.VERSION_CODES.S)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
