@@ -20,6 +20,7 @@ import {
   BarChart,
   LogOut,
   X,
+  Clock8,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
@@ -35,6 +36,7 @@ interface MenuItem {
   icon: React.ElementType
   disabled?: boolean
   subItems?: SubMenuItem[]
+  isDivider?: boolean
 }
 
 interface AppSidebarProps {
@@ -57,6 +59,12 @@ export function AppSidebar({ isMobile, onClose }: AppSidebarProps) {
       icon: LayoutDashboard,
     },
     {
+      title: "Main",
+      href: "#main-divider",
+      icon: LayoutDashboard,
+      isDivider: true,
+    },
+    {
       title: "Departments",
       href: "/hr/admin/departments",
       icon: Building2,
@@ -73,6 +81,39 @@ export function AppSidebar({ isMobile, onClose }: AppSidebarProps) {
         {
           title: "Pending Activation",
           href: "/hr/admin/employees/activate",
+        },
+      ],
+    },
+    {
+      title: "Management",
+      href: "#management-divider",
+      icon: LayoutDashboard,
+      isDivider: true,
+    },
+    {
+      title: "Time & Attendance",
+      href: "/hr/admin/attendance/records",
+      icon: Clock8,
+      subItems: [
+        {
+          title: "Clock In/Out Records",
+          href: "/hr/admin/attendance/clock-in-out/records",
+        },
+        {
+          title: "Attendance Logs",
+          href: "/hr/admin/attendance/logs",
+        },
+        {
+          title: "Overtime Requests",
+          href: "/hr/admin/attendance/overtime-requests",
+        },
+        {
+          title: "Leave Requests",
+          href: "/hr/admin/attendance/leave-requests",
+        },
+        {
+          title: "Attendance Reports",
+          href: "/hr/admin/attendance/reports",
         },
       ],
     },
@@ -115,6 +156,12 @@ export function AppSidebar({ isMobile, onClose }: AppSidebarProps) {
       ],
     },
     {
+      title: "Career",
+      href: "#career-divider",
+      icon: LayoutDashboard,
+      isDivider: true,
+    },
+    {
       title: "Training",
       href: "/hr/admin/training",
       icon: GraduationCap,
@@ -134,7 +181,7 @@ export function AppSidebar({ isMobile, onClose }: AppSidebarProps) {
       href: "/hr/admin/reports",
       icon: BarChart,
     },
-    {
+    /*{
       title: "Settings",
       href: "/hr/admin/settings",
       icon: Settings,
@@ -181,77 +228,85 @@ export function AppSidebar({ isMobile, onClose }: AppSidebarProps) {
         <nav className="grid items-start px-4 text-sm font-medium gap-1">
           {menuItems.map((item) => (
             <div key={item.href} className="flex flex-col">
-              {/* Main menu item */}
-              {item.subItems ? (
-                <button
-                  onClick={() => toggleSubMenu(item.title)}
-                  className={cn(
-                    "flex items-center justify-between rounded-lg px-3 py-2.5 transition-all",
-                    item.disabled
-                      ? "text-blue-300 cursor-not-allowed opacity-60"
-                      : pathname === item.href || pathname.startsWith(`${item.href}/`) || openSubMenu === item.title
-                        ? "bg-white dark:bg-blue-900 text-blue-600 dark:text-blue-300 shadow-sm"
-                        : "text-blue-800 dark:text-blue-200 hover:bg-white hover:text-blue-600 dark:hover:bg-blue-900 dark:hover:text-blue-300",
-                  )}
-                  disabled={item.disabled}
-                >
-                  <div className="flex items-center gap-3">
-                    <item.icon className="h-5 w-5" />
-                    <span>{item.title}</span>
-                  </div>
-                  {openSubMenu === item.title ? (
-                    <ChevronDown className="h-4 w-4" />
-                  ) : (
-                    <ChevronRight className="h-4 w-4" />
-                  )}
-                </button>
+              {item.isDivider ? (
+                <div className="px-3 py-2 text-xs font-medium text-neutral-600 dark:text-blue-300 uppercase tracking-wider">
+                  {item.title}
+                </div>
               ) : (
-                <Link
-                  href={item.disabled ? "#" : item.href}
-                  className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all",
-                    item.disabled
-                      ? "text-blue-300 cursor-not-allowed opacity-60"
-                      : pathname === item.href
-                        ? "bg-white dark:bg-blue-900 text-blue-600 dark:text-blue-300 shadow-sm"
-                        : "text-blue-800 dark:text-blue-200 hover:bg-white hover:text-blue-600 dark:hover:bg-blue-900 dark:hover:text-blue-300",
-                  )}
-                  onClick={(e) => {
-                    if (item.disabled) e.preventDefault()
-                    if (isMobile && onClose) onClose()
-                  }}
-                >
-                  <item.icon className="h-5 w-5" />
-                  <span>{item.title}</span>
-                    </Link>
-              )}
-
-              {/* Sub menu items */}
-              {item.subItems && openSubMenu === item.title && (
-                <div className="ml-3 mt-1 space-y-1 border-l-2 border-blue-200 dark:border-blue-800 pl-2">
-                  {item.subItems.map((subItem) => (
-                    <Link
-                      key={subItem.href}
-                      href={subItem.disabled ? "#" : subItem.href}
+                <>
+                  {/* Main menu item */}
+                  {item.subItems ? (
+                    <button
+                      onClick={() => toggleSubMenu(item.title)}
                       className={cn(
-                        "block rounded-lg px-3 py-2 text-sm transition-all",
-                        subItem.disabled
+                        "flex items-center justify-between rounded-lg px-3 py-2.5 transition-all",
+                        item.disabled
                           ? "text-blue-300 cursor-not-allowed opacity-60"
-                          : pathname === subItem.href
+                          : pathname === item.href || pathname.startsWith(`${item.href}/`) || openSubMenu === item.title
+                            ? "bg-white dark:bg-blue-900 text-blue-600 dark:text-blue-300 shadow-sm"
+                            : "text-blue-800 dark:text-blue-200 hover:bg-white hover:text-blue-600 dark:hover:bg-blue-900 dark:hover:text-blue-300",
+                      )}
+                      disabled={item.disabled}
+                    >
+                      <div className="flex items-center gap-3">
+                        <item.icon className="h-5 w-5" />
+                        <span>{item.title}</span>
+                      </div>
+                      {openSubMenu === item.title ? (
+                        <ChevronDown className="h-4 w-4" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4" />
+                      )}
+                    </button>
+                  ) : (
+                    <Link
+                      href={item.disabled ? "#" : item.href}
+                      className={cn(
+                        "flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all",
+                        item.disabled
+                          ? "text-blue-300 cursor-not-allowed opacity-60"
+                          : pathname === item.href
                             ? "bg-white dark:bg-blue-900 text-blue-600 dark:text-blue-300 shadow-sm"
                             : "text-blue-800 dark:text-blue-200 hover:bg-white hover:text-blue-600 dark:hover:bg-blue-900 dark:hover:text-blue-300",
                       )}
                       onClick={(e) => {
-                        if (subItem.disabled) e.preventDefault()
+                        if (item.disabled) e.preventDefault()
                         if (isMobile && onClose) onClose()
                       }}
                     >
-                      {subItem.title}
+                      <item.icon className="h-5 w-5" />
+                      <span>{item.title}</span>
                     </Link>
-                  ))}
-                </div>
+                  )}
+
+                  {/* Sub menu items */}
+                  {item.subItems && openSubMenu === item.title && (
+                    <div className="ml-3 mt-1 space-y-1 border-l-2 border-blue-200 dark:border-blue-800 pl-2">
+                      {item.subItems.map((subItem) => (
+                        <Link
+                          key={subItem.href}
+                          href={subItem.disabled ? "#" : subItem.href}
+                          className={cn(
+                            "block rounded-lg px-3 py-2 text-sm transition-all",
+                            subItem.disabled
+                              ? "text-blue-300 cursor-not-allowed opacity-60"
+                              : pathname === subItem.href
+                                ? "bg-white dark:bg-blue-900 text-blue-600 dark:text-blue-300 shadow-sm"
+                                : "text-blue-800 dark:text-blue-200 hover:bg-white hover:text-blue-600 dark:hover:bg-blue-900 dark:hover:text-blue-300",
+                          )}
+                          onClick={(e) => {
+                            if (subItem.disabled) e.preventDefault()
+                            if (isMobile && onClose) onClose()
+                          }}
+                        >
+                          {subItem.title}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </>
               )}
-          </div>
+            </div>
           ))}
         </nav>
           </div>

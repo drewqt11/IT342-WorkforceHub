@@ -4,6 +4,7 @@ import cit.edu.workforce.Entity.DepartmentEntity;
 import cit.edu.workforce.Entity.JobTitleEntity;
 import cit.edu.workforce.Service.DepartmentService;
 import cit.edu.workforce.Service.JobTitleService;
+import cit.edu.workforce.Service.EmployeeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -23,11 +24,13 @@ public class JobTitleController {
 
     private final JobTitleService jobTitleService;
     private final DepartmentService departmentService;
+    private final EmployeeService employeeService;
 
     @Autowired
-    public JobTitleController(JobTitleService jobTitleService, DepartmentService departmentService) {
+    public JobTitleController(JobTitleService jobTitleService, DepartmentService departmentService, EmployeeService employeeService) {
         this.jobTitleService = jobTitleService;
         this.departmentService = departmentService;
+        this.employeeService = employeeService;
     }
 
     @GetMapping
@@ -89,5 +92,15 @@ public class JobTitleController {
     public ResponseEntity<Void> deleteJobTitle(@PathVariable String id) {
         jobTitleService.deleteJobTitle(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/employees/{employeeId}")
+    @Operation(summary = "Update employee job title", description = "Update an employee's job title")
+    @PreAuthorize("hasAnyRole('ROLE_HR', 'ROLE_ADMIN')")
+    public ResponseEntity<Void> updateEmployeeJobTitle(
+            @PathVariable String employeeId,
+            @RequestParam String jobTitleId) {
+        employeeService.assignJobTitle(employeeId, jobTitleId);
+        return ResponseEntity.ok().build();
     }
 }

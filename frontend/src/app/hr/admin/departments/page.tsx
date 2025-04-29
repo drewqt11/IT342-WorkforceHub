@@ -31,6 +31,11 @@ interface Department {
   description?: string
 }
 
+interface PayGrade {
+  min: string
+  max: string
+}
+
 interface JobTitle {
   jobId: string
   jobName: string
@@ -68,6 +73,7 @@ export default function DepartmentsPage() {
   const [editJobTitlePayGrade, setEditJobTitlePayGrade] = useState("")
   const [isDeleteJobTitleDialogOpen, setIsDeleteJobTitleDialogOpen] = useState(false)
   const [jobTitleToDelete, setJobTitleToDelete] = useState<JobTitle | null>(null)
+  const [isDeletingJobTitle, setIsDeletingJobTitle] = useState(false)
   const [payGradeMin, setPayGradeMin] = useState("");
   const [payGradeMax, setPayGradeMax] = useState("");
   const [payGradeError, setPayGradeError] = useState("");
@@ -340,6 +346,8 @@ export default function DepartmentsPage() {
         departmentId: department.departmentId,
       },
     ])
+    setPayGradeMin("")
+    setPayGradeMax("")
     setIsAddJobTitlesDialogOpen(true)
   }
 
@@ -376,17 +384,27 @@ export default function DepartmentsPage() {
         return
       }
 
+      // Validate pay grade
+      const payGradeError = validatePayGrade(payGradeMin, payGradeMax)
+      if (payGradeError) {
+        setError(payGradeError)
+        return
+      }
+
       // Submit each job title
       for (let i = 0; i < addJobTitles.length; i++) {
-        const job = { ...addJobTitles[i] };
-        // Concatenate pay grade from min/max fields if present
+        const job = { ...addJobTitles[i] }
+        // Only set pay grade if both min and max are provided and validation passed
         if (payGradeMin && payGradeMax) {
-          job.payGrade = `Php ${payGradeMin.replace(/,/g, '')}.00 - ${payGradeMax.replace(/,/g, '')}.00`;
+          const min = parseInt(payGradeMin.replace(/,/g, ''), 10)
+          const max = parseInt(payGradeMax.replace(/,/g, ''), 10)
+          job.payGrade = `Php ${min.toLocaleString("en-US")}.00 - ${max.toLocaleString("en-US")}.00`
         }
+
         const formData = new FormData()
         formData.append("jobName", job.jobName)
-        formData.append("jobDescription", job.jobDescription)
-        formData.append("payGrade", job.payGrade)
+        formData.append("jobDescription", job.jobDescription || '')
+        formData.append("payGrade", job.payGrade || '')
         formData.append("departmentId", selectedDepartmentForJobs.departmentId)
 
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hr/job-titles`, {
@@ -441,11 +459,29 @@ export default function DepartmentsPage() {
     setAddJobTitles(updatedJobTitles)
   }
 
+  // Clear pay grade fields when opening Add Job Titles dialog
+  useEffect(() => {
+    if (isAddJobTitlesDialogOpen) {
+      setPayGradeMin("")
+      setPayGradeMax("")
+      setPayGradeError("")
+    }
+  }, [isAddJobTitlesDialogOpen])
+
+  // Clear pay grade fields when closing Add Job Titles dialog
+  useEffect(() => {
+    if (!isAddJobTitlesDialogOpen) {
+      setPayGradeMin("")
+      setPayGradeMax("")
+      setPayGradeError("")
+    }
+  }, [isAddJobTitlesDialogOpen])
+
   const handleDeleteJobTitle = async (jobId: string) => {
     if (!selectedDepartmentForJobs) return
 
     try {
-      setProcessing(true)
+      setIsDeletingJobTitle(true)
       const token = authService.getToken()
 
       if (!token) {
@@ -479,7 +515,7 @@ export default function DepartmentsPage() {
     } catch (error) {
       toast.error("Failed to delete job title. Please try again.")
     } finally {
-      setProcessing(false)
+      setIsDeletingJobTitle(false)
     }
   }
 
@@ -488,6 +524,43 @@ export default function DepartmentsPage() {
     let num = val.replace(/[^\d]/g, "");
     if (!num) return "";
     return parseInt(num, 10).toLocaleString("en-US");
+  }
+
+  // Helper to format pay grade display
+  function formatPayGradeDisplay(payGrade: string) {
+    if (!payGrade) return "No Grade"
+    const match = payGrade.match(/Php\s*([\d,]+(?:\.\d{1,2})?)\s*-\s*([\d,]+(?:\.\d{1,2})?)/);
+    if (match) {
+      const min = parseInt(match[1].replace(/,/g, ''), 10).toLocaleString("en-US")
+      const max = parseInt(match[2].replace(/,/g, ''), 10).toLocaleString("en-US")
+      return `Php ${min}.00 - ${max}.00`
+    }
+    return payGrade
+  }
+
+  function validatePayGrade(min: string, max: string): string | null {
+    if ((min && !max) || (!min && max)) {
+      return "Both minimum and maximum pay grade are required"
+    }
+    
+    if (min && max) {
+      const minValue = parseInt(min.replace(/,/g, ''), 10)
+      const maxValue = parseInt(max.replace(/,/g, ''), 10)
+      
+      if (isNaN(minValue) || isNaN(maxValue)) {
+        return "Pay grade must be a valid number"
+      }
+      
+      if (minValue >= maxValue) {
+        return "Maximum pay grade must be greater than minimum pay grade"
+      }
+      
+      if (minValue < 0 || maxValue < 0) {
+        return "Pay grade cannot be negative"
+      }
+    }
+    
+    return null
   }
 
   return (
@@ -916,7 +989,7 @@ export default function DepartmentsPage() {
                         <div className="mb-6">
                           <span className="block text-xs text-[#6B7280] dark:text-[#9CA3AF] font-medium">Pay Grade</span>
                           <div className="mt-1 text-sm font-medium text-[#1E40AF] dark:text-[#93C5FD]">
-                            {job.payGrade || "No Grade"}
+                            {formatPayGradeDisplay(job.payGrade)}
                           </div>
                         </div>
                       </div>
@@ -1276,7 +1349,9 @@ export default function DepartmentsPage() {
                     return;
                   }
                   // Use departmentId from context or job title
-                  const payGrade = editPayGradeMin && editPayGradeMax ? `Php ${editPayGradeMin.replace(/,/g, '')}.00 - ${editPayGradeMax.replace(/,/g, '')}.00` : "";
+                  const min = parseInt(editPayGradeMin.replace(/,/g, ''), 10);
+                  const max = parseInt(editPayGradeMax.replace(/,/g, ''), 10);
+                  const payGrade = `Php ${min.toLocaleString("en-US")}.00 - ${max.toLocaleString("en-US")}.00`;
                   const response = await fetch(`/api/hr/job-titles/${selectedJobTitle.jobId}`, {
                     method: "PUT",
                     headers: {
@@ -1341,6 +1416,7 @@ export default function DepartmentsPage() {
             <Button
               variant="outline"
               onClick={() => setIsDeleteJobTitleDialogOpen(false)}
+              disabled={isDeletingJobTitle}
             >
               Cancel
             </Button>
@@ -1353,8 +1429,16 @@ export default function DepartmentsPage() {
                   setJobTitleToDelete(null);
                 }
               }}
+              disabled={isDeletingJobTitle}
             >
-              Delete
+              {isDeletingJobTitle ? (
+                <div className="flex items-center gap-2">
+                  <div className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin"></div>
+                  <span>Deleting...</span>
+                </div>
+              ) : (
+                "Delete"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

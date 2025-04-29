@@ -163,8 +163,9 @@ public class EmployeeService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Department cannot be null");
         }
 
-        // Update the employee's department
+        // Update the employee's department and set job title to null
         employee.setDepartment(department);
+        employee.setJobTitle(null); // Set job title to null when department changes
         EmployeeEntity updatedEmployee = employeeRepository.save(employee);
 
         return convertToDTO(updatedEmployee);

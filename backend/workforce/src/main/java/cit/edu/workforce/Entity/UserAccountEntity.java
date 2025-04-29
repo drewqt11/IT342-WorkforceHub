@@ -36,6 +36,6 @@ public class UserAccountEntity {
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
-        isActive = false;
+        isActive = true;
     }
 }

@@ -67,6 +67,8 @@ interface Employee {
   employmentStatus: string
   isActive: boolean
   createdAt?: string
+  idNumber?: string
+  hireDate?: string
 }
 
 interface Department {
@@ -107,6 +109,13 @@ interface UserAccountInfo {
   isActive: boolean
 }
 
+interface JobTitle {
+  jobId: string
+  jobName: string
+  departmentId: string
+  employeeId: string
+}
+
 export default function ActivateEmployeesPage() {
   const router = useRouter()
   const [employees, setEmployees] = useState<Employee[]>([])
@@ -132,6 +141,13 @@ export default function ActivateEmployeesPage() {
   const [userAccount, setUserAccount] = useState<UserAccountInfo | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [processingDepartment, setProcessingDepartment] = useState<string | null>(null)
+  const [isUpdateJobTitleDialogOpen, setIsUpdateJobTitleDialogOpen] = useState(false)
+  const [selectedJobTitleForUpdate, setSelectedJobTitleForUpdate] = useState<JobTitle | null>(null)
+  const [updatingJobTitle, setUpdatingJobTitle] = useState<string | null>(null)
+  const [jobTitles, setJobTitles] = useState<JobTitle[]>([])
+  const [selectedJobTitleId, setSelectedJobTitleId] = useState<string>("")
+  const [loadingJobTitles, setLoadingJobTitles] = useState(false)
+  const [jobTitleError, setJobTitleError] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -194,6 +210,40 @@ export default function ActivateEmployeesPage() {
   useEffect(() => {
     filterEmployees()
   }, [employees, searchTerm, statusFilter, departmentFilter])
+
+  useEffect(() => {
+    const fetchJobTitles = async () => {
+      if (selectedDepartmentId) {
+        try {
+          setLoadingJobTitles(true)
+          setJobTitleError(null)
+          const token = authService.getToken()
+          if (!token) return
+
+          const response = await fetch(`/api/hr/departments/${selectedDepartmentId}/job-titles`, {
+            headers: { Authorization: `Bearer ${token}` },
+          })
+
+          if (!response.ok) {
+            throw new Error("Failed to load job titles")
+          }
+
+          const data = await response.json()
+          setJobTitles(data)
+        } catch (error) {
+          console.error("Error fetching job titles:", error)
+          setJobTitleError("Failed to load job titles. Please try again.")
+          toast.error("Failed to load job titles")
+        } finally {
+          setLoadingJobTitles(false)
+        }
+      } else {
+        setJobTitles([])
+      }
+    }
+
+    fetchJobTitles()
+  }, [selectedDepartmentId])
 
   const fetchEmployees = async () => {
     try {
@@ -415,7 +465,10 @@ export default function ActivateEmployeesPage() {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ departmentId })
+        body: JSON.stringify({ 
+          departmentId,
+          jobId: null // Set jobId to null when department changes
+        })
       });
 
       const responseData = await response.json();
@@ -431,9 +484,21 @@ export default function ActivateEmployeesPage() {
       // Refresh the employee list
       await fetchEmployees();
       
+      // Close department dialog
       setIsDepartmentDialogOpen(false);
-      setSelectedDepartmentId("");
-      setSelectedEmployeeForDepartment(null);
+      setSelectedDepartmentId(departmentId);
+      
+      // Automatically open job title dialog
+      if (selectedEmployeeForDepartment) {
+        setSelectedJobTitleForUpdate({
+          jobId: "",
+          jobName: "",
+          departmentId: departmentId,
+          employeeId: employeeId
+        });
+        setSelectedJobTitleId("");
+        setIsUpdateJobTitleDialogOpen(true);
+      }
     } catch (error) {
       console.error("Error updating department:", error);
       toast.error(error instanceof Error ? error.message : "Failed to update department");
@@ -544,144 +609,558 @@ export default function ActivateEmployeesPage() {
   // Update the profile dialog content to use the new handleProfileUpdate function
   const renderProfileDialog = () => (
     <Dialog open={isProfileDialogOpen} onOpenChange={setIsProfileDialogOpen}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="max-w-[90vw] md:max-w-[85vw] lg:max-w-[1000px] p-0 overflow-hidden h-[90vh] max-h-[800px]">
+        <div className="flex flex-col md:flex-row h-full">
+          {/* Left sidebar with employee photo and basic info */}
+          <div className="w-full md:w-1/3 bg-gradient-to-br from-[#3B82F6] to-[#14B8A6] p-6 text-white overflow-y-auto">
+            <div className="flex flex-col items-center mb-6">
+              <div className="relative group">
+                <div className="w-28 h-28 rounded-full bg-white/20 mb-4 flex items-center justify-center overflow-hidden border-4 border-white/30">
+                  <Users className="h-14 w-14 text-white" />
+                </div>
+                <div className="absolute inset-0 rounded-full flex items-center justify-center bg-black/0 group-hover:bg-black/30 opacity-0 group-hover:opacity-100 transition-all duration-200">
+                  <Button variant="ghost" size="sm" className="text-white h-8 w-8 rounded-full p-0">
+                    <RefreshCw className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+              {selectedEmployeeProfile && (
+                <>
+                  <h3 className="text-xl font-bold text-center">
+                    {selectedEmployeeProfile.firstName} {selectedEmployeeProfile.lastName}
+                  </h3>
+                  <p className="text-sm text-white/80 text-center">
+                    {selectedEmployeeProfile.jobName || "No Job Title"} at {selectedEmployeeProfile.departmentName}
+                  </p>
+
+                  <div className="mt-4 w-full">
+                    <Badge
+                      className={cn(
+                        "w-full justify-center py-1.5 text-sm font-medium",
+                        selectedEmployeeProfile.status
+                          ? "bg-green-400 text-white"
+                          : "bg-red-500 text-white",
+                      )}
+                    >
+                      {selectedEmployeeProfile.status ? (
+                        <div className="flex items-center gap-1.5">
+                          <CheckCircle className="h-4 w-4" />
+                          <span>Employee Active</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1.5">
+                          <XCircle className="h-4 w-4" />
+                          <span>Employee Inactive</span>
+                        </div>
+                      )}
+                    </Badge>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {selectedEmployeeProfile && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-white/60 uppercase">Employee ID</p>
+                    <p className="text-sm font-medium">{selectedEmployeeProfile.employeeId}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-white/60 uppercase">ID Number</p>
+                    <p className="text-sm font-medium">{selectedEmployeeProfile.idNumber || "Not provided"}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-white/60 uppercase">Employment Status</p>
+                    <p className="text-sm font-medium">{selectedEmployeeProfile.employmentStatus}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-white/60 uppercase">Hire Date</p>
+                    <p className="text-sm font-medium text-white dark:text-white">
+                      {selectedEmployeeProfile.hireDate || "Not provided"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Right side with detailed information */}
+          <div className="w-full md:w-2/3 p-6 overflow-y-auto max-h-[calc(90vh-2rem)]">
+            <DialogHeader className="mb-6 text-left">
+              <div>
+                <DialogTitle className="text-2xl">Employee Profile</DialogTitle>
+                <DialogDescription>Detailed information about this employee</DialogDescription>
+              </div>
+            </DialogHeader>
+
+            {selectedEmployeeProfile && (
+              <div className="space-y-6">
+                <div className="bg-[#F9FAFB] dark:bg-[#1F2937] rounded-lg p-4 border border-[#E5E7EB] dark:border-[#374151]">
+                  <h3 className="text-sm font-medium text-[#3B82F6] dark:text-[#60A5FA] mb-3 flex items-center gap-2">
+                    <Clock className="h-4 w-4" /> Account Information
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs text-[#6B7280] dark:text-[#9CA3AF]">Created At</p>
+                      <p className="text-sm font-medium text-[#1F2937] dark:text-white">
+                        {selectedEmployeeProfile.createdAt
+                          ? new Date(selectedEmployeeProfile.createdAt).toLocaleString()
+                          : "Not provided"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-[#6B7280] dark:text-[#9CA3AF]">Last Login</p>
+                      {loadingProfile ? (
+                        <div className="flex items-center gap-2">
+                          <div className="h-3 w-3 rounded-full border-2 border-[#3B82F6] border-t-transparent animate-spin"></div>
+                          <p className="text-sm font-medium text-[#6B7280] dark:text-[#9CA3AF]">Loading...</p>
+                        </div>
+                      ) : (
+                        <p className="text-sm font-medium text-[#1F2937] dark:text-white">
+                          {userAccount?.lastLogin ? new Date(userAccount.lastLogin).toLocaleString() : "Not available"}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-xs text-[#6B7280] dark:text-[#9CA3AF]">Status</p>
+                      <div className="flex items-center gap-2">
+                        {loadingProfile ? (
+                          <div className="flex items-center gap-2">
+                            <div className="h-3 w-3 rounded-full border-2 border-[#3B82F6] border-t-transparent animate-spin"></div>
+                            <p className="text-sm font-medium text-[#6B7280] dark:text-[#9CA3AF]">Loading...</p>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <p className={cn(
+                              "text-sm font-medium",
+                              userAccount?.isActive 
+                                ? "text-green-600 dark:text-green-400" 
+                                : "text-red-600 dark:text-red-400"
+                            )}>
+                              {userAccount?.isActive ? "Active" : "Inactive"}
+                            </p>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => handleProfileUpdate(selectedEmployeeProfile.employeeId, userAccount?.isActive ? 'deactivate' : 'activate')}
+                                    className={cn(
+                                      "h-8 w-8 p-0",
+                                      userAccount?.isActive
+                                        ? "text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30"
+                                        : "text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30"
+                                    )}
+                                  >
+                                    {userAccount?.isActive ? (
+                                      <UserX className="h-4 w-4" />
+                                    ) : (
+                                      <UserCheck className="h-4 w-4" />
+                                    )}
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>{userAccount?.isActive ? "Deactivate Account" : "Activate Account"}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-[#F9FAFB] dark:bg-[#1F2937] rounded-lg p-4 border border-[#E5E7EB] dark:border-[#374151]">
+                  <h3 className="text-sm font-medium text-[#3B82F6] dark:text-[#60A5FA] mb-3 flex items-center gap-2">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="lucide lucide-mail"
+                    >
+                      <rect width="20" height="16" x="2" y="4" rx="2"></rect>
+                      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+                    </svg>{" "}
+                    Contact Information
+                  </h3>
+                  <div className="grid grid-cols-1 gap-4">
+                    <div>
+                      <p className="text-xs text-[#6B7280] dark:text-[#9CA3AF]">Email</p>
+                      <p className="text-sm font-medium text-[#1F2937] dark:text-white flex items-center gap-2">
+                        {selectedEmployeeProfile.email}
+                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0 rounded-full">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="lucide lucide-copy"
+                          >
+                            <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+                            <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
+                          </svg>
+                        </Button>
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-[#6B7280] dark:text-[#9CA3AF]">Phone Number</p>
+                      <p className="text-sm font-medium text-[#1F2937] dark:text-white flex items-center gap-2">
+                        {selectedEmployeeProfile.phoneNumber || "Not provided"}
+                        {selectedEmployeeProfile.phoneNumber && (
+                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0 rounded-full">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="14"
+                              height="14"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              className="lucide lucide-copy"
+                            >
+                              <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+                              <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
+                            </svg>
+                          </Button>
+                        )}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-[#6B7280] dark:text-[#9CA3AF]">Address</p>
+                      <p className="text-sm font-medium text-[#1F2937] dark:text-white">
+                        {selectedEmployeeProfile.address || "Not provided"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-[#6B7280] dark:text-[#9CA3AF]">Emergency Contact</p>
+                      <p className="text-sm font-medium text-[#1F2937] dark:text-white">Not provided</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-[#F9FAFB] dark:bg-[#1F2937] rounded-lg p-4 border border-[#E5E7EB] dark:border-[#374151]">
+                  <h3 className="text-sm font-medium text-[#3B82F6] dark:text-[#60A5FA] mb-3 flex items-center gap-2">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="lucide lucide-briefcase"
+                    >
+                      <rect width="20" height="14" x="2" y="7" rx="2" ry="2"></rect>
+                      <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                    </svg>{" "}
+                    Employment Information
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs text-[#6B7280] dark:text-[#9CA3AF]">Department</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium text-[#1F2937] dark:text-white">
+                          {selectedEmployeeProfile.departmentName}
+                        </p>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDepartmentDialogOpen(selectedEmployeeProfile)}
+                          disabled={updatingDepartment === selectedEmployeeProfile.employeeId}
+                          className="ml-2 px-2 py-1 h-7 text-xs border-[#BFDBFE] text-[#3B82F6] hover:bg-[#EFF6FF] dark:border-[#1E3A8A] dark:text-[#3B82F6] dark:hover:bg-[#1E3A8A]/30"
+                        >
+                          {updatingDepartment === selectedEmployeeProfile.employeeId ? (
+                            <div className="flex items-center gap-1">
+                              <div className="h-2.5 w-2.5 rounded-full border-2 border-[#3B82F6] border-t-transparent animate-spin"></div>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1">
+                              <Building2 className="h-3.5 w-3.5" />
+                            </div>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-xs text-[#6B7280] dark:text-[#9CA3AF]">Job Title</p>
+                      <p className="text-sm font-medium text-[#1F2937] dark:text-white">
+                        {selectedEmployeeProfile.jobName || "Not assigned"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-[#6B7280] dark:text-[#9CA3AF]">Hire Date</p>
+                      <p className="text-sm font-medium text-[#1F2937] dark:text-white">
+                        {selectedEmployeeProfile.hireDate || "Not provided"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-[#6B7280] dark:text-[#9CA3AF]">Employment Type</p>
+                      <p className="text-sm font-medium text-[#1F2937] dark:text-white">
+                        {selectedEmployeeProfile.employmentStatus}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-[#6B7280] dark:text-[#9CA3AF]">Work Experience</p>
+                      <p className="text-sm font-medium text-[#1F2937] dark:text-white">
+                        {selectedEmployeeProfile.hireDate
+                          ? Math.floor(
+                              (new Date().getTime() - new Date(selectedEmployeeProfile.hireDate).getTime()) /
+                                (365.25 * 24 * 60 * 60 * 1000),
+                            ) + " years"
+                          : "Not available"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-[#6B7280] dark:text-[#9CA3AF]">Manager</p>
+                      <p className="text-sm font-medium text-[#1F2937] dark:text-white">Not assigned</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <DialogFooter className="mt-6 flex justify-start">
+              <Button
+                onClick={() => setIsProfileDialogOpen(false)}
+                className="bg-gradient-to-r from-[#3B82F6] to-[#14B8A6] hover:from-[#2563EB] hover:to-[#0D9488] text-white"
+              >
+                Close
+              </Button>
+            </DialogFooter>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+
+  const handleUpdateJobTitle = async (jobId: string, departmentId: string) => {
+    try {
+      setUpdatingJobTitle(jobId);
+      const token = authService.getToken();
+      
+      if (!token) {
+        router.push("/");
+        toast.error("Authentication required. Please log in.");
+        return;
+      }
+      
+      if (!selectedJobTitleForUpdate?.employeeId) {
+        throw new Error("Employee ID is required");
+      }
+      
+      const response = await fetch(`/api/hr/employees/${selectedJobTitleForUpdate.employeeId}/job-title`, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ jobId: selectedJobTitleId })
+      });
+
+      const responseData = await response.json();
+
+      if (!response.ok) {
+        const errorMessage = responseData.error || responseData.message || "Failed to update job title";
+        toast.error(errorMessage);
+        throw new Error(errorMessage);
+      }
+
+      toast.success("Job title updated successfully");
+      
+      // Refresh the employee list to show updated job titles
+      await fetchEmployees();
+      
+      // Close the dialog and reset states
+      setIsUpdateJobTitleDialogOpen(false);
+      setSelectedJobTitleForUpdate(null);
+      setSelectedJobTitleId("");
+      setSelectedEmployeeForDepartment(null);
+    } catch (error) {
+      console.error("Error updating job title:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to update job title");
+    } finally {
+      setUpdatingJobTitle(null);
+    }
+  };
+
+  const handleUpdateJobTitleDialogOpen = (employee: Employee) => {
+    setSelectedJobTitleForUpdate({
+      jobId: employee.jobId,
+      jobName: employee.jobName,
+      departmentId: employee.departmentId,
+      employeeId: employee.employeeId
+    });
+    setSelectedDepartmentId(employee.departmentId);
+    setSelectedJobTitleId(employee.jobId);
+    setIsUpdateJobTitleDialogOpen(true);
+  };
+
+  const renderUpdateJobTitleDialog = () => (
+    <Dialog 
+      open={isUpdateJobTitleDialogOpen} 
+      onOpenChange={(open) => {
+        if (!open && !selectedJobTitleId && selectedEmployeeForDepartment) {
+          toast.warning("Need to assign job-title to proceed");
+          return;
+        }
+        setIsUpdateJobTitleDialogOpen(open);
+      }}
+    >
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Employee Profile</DialogTitle>
+          <DialogTitle>Update Job Title</DialogTitle>
           <DialogDescription>
-            View detailed information about {selectedEmployeeProfile?.firstName} {selectedEmployeeProfile?.lastName}
+            {selectedEmployeeForDepartment ? 
+              `Assign Job Title for ${selectedEmployeeForDepartment.firstName} ${selectedEmployeeForDepartment.lastName}` :
+              `Select a new job title for ${selectedEmployeeProfile?.firstName} ${selectedEmployeeProfile?.lastName}`
+            }
           </DialogDescription>
         </DialogHeader>
-        {selectedEmployeeProfile && (
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-[#4B5563] dark:text-[#D1D5DB]">First Name</Label>
-                <div className="p-2 border rounded-md bg-[#F9FAFB] dark:bg-[#1F2937] text-[#1F2937] dark:text-white">
-                  {selectedEmployeeProfile.firstName}
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-[#4B5563] dark:text-[#D1D5DB]">Last Name</Label>
-                <div className="p-2 border rounded-md bg-[#F9FAFB] dark:bg-[#1F2937] text-[#1F2937] dark:text-white">
-                  {selectedEmployeeProfile.lastName}
-                </div>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-[#4B5563] dark:text-[#D1D5DB]">Email</Label>
-                <div className="p-2 border rounded-md bg-[#F9FAFB] dark:bg-[#1F2937] text-[#1F2937] dark:text-white">
-                  {selectedEmployeeProfile.email}
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-[#4B5563] dark:text-[#D1D5DB]">Phone Number</Label>
-                <div className="p-2 border rounded-md bg-[#F9FAFB] dark:bg-[#1F2937] text-[#1F2937] dark:text-white">
-                  {selectedEmployeeProfile.phoneNumber || "Not provided"}
-                </div>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-[#4B5563] dark:text-[#D1D5DB]">Gender</Label>
-                <div className="p-2 border rounded-md bg-[#F9FAFB] dark:bg-[#1F2937] text-[#1F2937] dark:text-white">
-                  {selectedEmployeeProfile.gender || "Not specified"}
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-[#4B5563] dark:text-[#D1D5DB]">Date of Birth</Label>
-                <div className="p-2 border rounded-md bg-[#F9FAFB] dark:bg-[#1F2937] text-[#1F2937] dark:text-white">
-                  {selectedEmployeeProfile.dateOfBirth || "Not provided"}
-                </div>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-[#4B5563] dark:text-[#D1D5DB]">Address</Label>
-              <div className="p-2 border rounded-md bg-[#F9FAFB] dark:bg-[#1F2937] text-[#1F2937] dark:text-white">
-                {selectedEmployeeProfile.address || "Not provided"}
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-[#4B5563] dark:text-[#D1D5DB]">Marital Status</Label>
-              <div className="p-2 border rounded-md bg-[#F9FAFB] dark:bg-[#1F2937] text-[#1F2937] dark:text-white">
-                {selectedEmployeeProfile.maritalStatus || "Not specified"}
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-[#4B5563] dark:text-[#D1D5DB]">Department</Label>
-                <div className="p-2 border rounded-md bg-[#F9FAFB] dark:bg-[#1F2937] text-[#1F2937] dark:text-white">
-                  {selectedEmployeeProfile.departmentName}
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-[#4B5563] dark:text-[#D1D5DB]">Employment Status</Label>
-                <div className="p-2 border rounded-md bg-[#F9FAFB] dark:bg-[#1F2937] text-[#1F2937] dark:text-white">
-                  {selectedEmployeeProfile.employmentStatus}
-                </div>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-[#4B5563] dark:text-[#D1D5DB]">Account Status</Label>
-              <div className="flex items-center gap-2">
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    "border-2",
-                    userAccount?.isActive
-                      ? "bg-[#F0FDFA] text-[#14B8A6] border-[#99F6E4] dark:bg-[#134E4A]/30 dark:text-[#14B8A6] dark:border-[#134E4A]"
-                      : "bg-[#FEF2F2] text-[#EF4444] border-[#FECACA] dark:bg-[#7F1D1D]/30 dark:text-[#EF4444] dark:border-[#7F1D1D]"
-                  )}
-                >
-                  {userAccount?.isActive ? (
-                    <div className="flex items-center gap-1">
-                      <CheckCircle className="h-3.5 w-3.5" />
-                      <span>Active</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-1">
-                      <XCircle className="h-3.5 w-3.5" />
-                      <span>Inactive</span>
-                    </div>
-                  )}
-                </Badge>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleProfileUpdate(selectedEmployeeProfile.employeeId, userAccount?.isActive ? 'deactivate' : 'activate')}
-                  className={cn(
-                    "ml-2",
-                    userAccount?.isActive
-                      ? "border-[#FED7AA] text-[#F59E0B] hover:bg-[#FEF3C7] dark:border-[#78350F] dark:text-[#F59E0B] dark:hover:bg-[#78350F]/30"
-                      : "border-[#BFDBFE] text-[#3B82F6] hover:bg-[#EFF6FF] dark:border-[#1E3A8A] dark:text-[#3B82F6] dark:hover:bg-[#1E3A8A]/30"
-                  )}
-                >
-                  {userAccount?.isActive ? (
-                    <div className="flex items-center gap-1">
-                      <UserX className="h-3.5 w-3.5" />
-                      <span>Deactivate</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-1">
-                      <UserCheck className="h-3.5 w-3.5" />
-                      <span>Activate</span>
-                    </div>
-                  )}
-                </Button>
-              </div>
+        <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="department" className="text-right">
+              Department
+            </Label>
+            <div className="col-span-3 flex items-center gap-2">
+
+              <span className="font-medium text-[#1F2937] dark:text-white">
+                {departments.find(d => d.departmentId === selectedDepartmentId)?.departmentName || "Not assigned"}
+              </span>
             </div>
           </div>
-        )}
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="jobTitle" className="text-right">
+              Job Title
+            </Label>
+            <div className="col-span-3">
+              {loadingJobTitles ? (
+                <div className="flex items-center gap-2">
+                  <div className="h-4 w-4 rounded-full border-2 border-[#3B82F6] border-t-transparent animate-spin" />
+                  <span className="text-sm text-[#6B7280] dark:text-[#9CA3AF]">Loading job titles...</span>
+                </div>
+              ) : jobTitleError ? (
+                <div className="flex items-center gap-2 text-red-500">
+                  <AlertCircle className="h-4 w-4" />
+                  <span className="text-sm">{jobTitleError}</span>
+                </div>
+              ) : (
+                <Select
+                  value={selectedJobTitleId}
+                  onValueChange={setSelectedJobTitleId}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a job title" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {jobTitles.length > 0 ? (
+                      jobTitles.map((job) => (
+                        <SelectItem key={job.jobId} value={job.jobId}>
+                          {job.jobName}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="no-jobs" disabled>
+                        No job titles available for this department
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+          </div>
+        </div>
         <DialogFooter>
-          <Button 
-            onClick={() => setIsProfileDialogOpen(false)}
-            className="bg-[#3B82F6] hover:bg-[#2563EB] text-white"
+          <Button
+            variant="outline"
+            onClick={() => {
+              if (!selectedJobTitleId && selectedEmployeeForDepartment) {
+                toast.warning("Need to assign job-title to proceed");
+                return;
+              }
+              setIsUpdateJobTitleDialogOpen(false);
+              setSelectedJobTitleId("");
+            }}
+            disabled={updatingJobTitle === selectedJobTitleForUpdate?.jobId || loadingJobTitles || (!selectedJobTitleId && Boolean(selectedEmployeeForDepartment))}
           >
-            Close
+            Cancel
+          </Button>
+          <Button
+            onClick={() => handleUpdateJobTitle(selectedJobTitleForUpdate?.jobId || "", selectedDepartmentId)}
+            disabled={updatingJobTitle === selectedJobTitleForUpdate?.jobId || !selectedJobTitleId || loadingJobTitles}
+            className="bg-gradient-to-r from-[#3B82F6] to-[#14B8A6] hover:from-[#2563EB] hover:to-[#0D9488] text-white"
+          >
+            {updatingJobTitle === selectedJobTitleForUpdate?.jobId ? (
+              <div className="flex items-center gap-1">
+                <div className="h-3 w-3 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                <span>Updating...</span>
+              </div>
+            ) : (
+              "Update"
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+
+  const renderJobTitleCell = (employee: Employee) => (
+    <TableCell className="text-[#4B5563] dark:text-[#D1D5DB]">
+      <div className="flex items-center justify-between">
+        <span>{employee.jobName || "Not Assigned"}</span>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => handleUpdateJobTitleDialogOpen(employee)}
+          disabled={updatingJobTitle === employee.jobId || !employee.departmentId}
+          className={cn(
+            "ml-2 px-2 py-1 h-7 text-xs border-[#BFDBFE] text-[#3B82F6] hover:bg-[#EFF6FF] dark:border-[#1E3A8A] dark:text-[#3B82F6] dark:hover:bg-[#1E3A8A]/30",
+            !employee.departmentId && "opacity-50 cursor-not-allowed"
+          )}
+        >
+          {updatingJobTitle === employee.jobId ? (
+            <div className="flex items-center gap-1">
+              <div className="h-2.5 w-2.5 rounded-full border-2 border-[#3B82F6] border-t-transparent animate-spin" />
+            </div>
+          ) : (
+            <div className="flex items-center gap-1">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="lucide lucide-briefcase"
+              >
+                <rect width="20" height="14" x="2" y="7" rx="2" ry="2"></rect>
+                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+              </svg>
+            </div>
+          )}
+        </Button>
+      </div>
+    </TableCell>
   );
 
   return (
@@ -903,6 +1382,7 @@ export default function ActivateEmployeesPage() {
                         <TableHead className="text-[#4B5563] dark:text-[#D1D5DB] font-medium">Name</TableHead>
                         <TableHead className="text-[#4B5563] dark:text-[#D1D5DB] font-medium">Email</TableHead>
                         <TableHead className="text-[#4B5563] dark:text-[#D1D5DB] font-medium">Department</TableHead>
+                        <TableHead className="text-[#4B5563] dark:text-[#D1D5DB] font-medium">Job Title</TableHead>
                         <TableHead className="text-[#4B5563] dark:text-[#D1D5DB] font-medium">Status</TableHead>
                         <TableHead className="text-[#4B5563] dark:text-[#D1D5DB] font-medium">Profile</TableHead>
                         <TableHead className="text-[#4B5563] dark:text-[#D1D5DB] font-medium">Actions</TableHead>
@@ -917,12 +1397,12 @@ export default function ActivateEmployeesPage() {
                             index % 2 === 0 ? "bg-[#F9FAFB] dark:bg-[#111827]/50" : "",
                           )}
                         >
-                           <TableCell className="font-medium text-[#1F2937] dark:text-white">
-                          <div className="flex items-center gap-2">
-                            <div className="h-6 w-1 rounded-full bg-gradient-to-b from-[#3B82F6] to-[#14B8A6] transition-all duration-300 group-hover:h-full"></div>
-                            {employee.employeeId}
-                          </div>
-                        </TableCell>
+                          <TableCell className="font-medium text-[#1F2937] dark:text-white">
+                            <div className="flex items-center gap-2">
+                              <div className="h-6 w-1 rounded-full bg-gradient-to-b from-[#3B82F6] to-[#14B8A6] transition-all duration-300 group-hover:h-full"></div>
+                              {employee.employeeId}
+                            </div>
+                          </TableCell>
                           <TableCell className="text-[#4B5563] dark:text-[#D1D5DB]">
                             {employee.firstName} {employee.lastName}
                           </TableCell>
@@ -930,27 +1410,66 @@ export default function ActivateEmployeesPage() {
                             {employee.email}
                           </TableCell>
                           <TableCell className="text-[#4B5563] dark:text-[#D1D5DB]">
-                            {employee.departmentName}
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDepartmentDialogOpen(employee)}
-                              disabled={updatingDepartment === employee.employeeId}
-                              className="ml-2 px-2 py-1 h-7 text-xs border-[#BFDBFE] text-[#3B82F6] hover:bg-[#EFF6FF] dark:border-[#1E3A8A] dark:text-[#3B82F6] dark:hover:bg-[#1E3A8A]/30"
-                            >
-                              {updatingDepartment === employee.employeeId ? (
-                                <div className="flex items-center gap-1">
-                                  <div className="h-2.5 w-2.5 rounded-full border-2 border-[#3B82F6] border-t-transparent animate-spin"></div>
-                                  <span className="text-xs">Processing...</span>
-                                </div>
-                              ) : (
-                                <div className="flex items-center gap-1">
-                                  <span className="text-xs">Update</span>
-                                </div>
-                              )}
-                            </Button>
+                            <div className="flex items-center justify-between">
+                              <span>{employee.departmentName}</span>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDepartmentDialogOpen(employee)}
+                                disabled={updatingDepartment === employee.employeeId}
+                                className="ml-2 px-2 py-1 h-7 text-xs border-[#BFDBFE] text-[#3B82F6] hover:bg-[#EFF6FF] dark:border-[#1E3A8A] dark:text-[#3B82F6] dark:hover:bg-[#1E3A8A]/30"
+                              >
+                                {updatingDepartment === employee.employeeId ? (
+                                  <div className="flex items-center gap-1">
+                                    <div className="h-2.5 w-2.5 rounded-full border-2 border-[#3B82F6] border-t-transparent animate-spin" />
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center gap-1">
+                                    <Building2 className="h-3.5 w-3.5" />
+                                  </div>
+                                )}
+                              </Button>
+                            </div>
                           </TableCell>
-                          
+                          <TableCell className="text-[#4B5563] dark:text-[#D1D5DB]">
+                            <div className="flex items-center justify-between">
+                              <span>{employee.jobName || "Not Assigned"}</span>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleUpdateJobTitleDialogOpen(employee)}
+                                disabled={updatingJobTitle === employee.jobId || !employee.departmentId}
+                                className={cn(
+                                  "ml-2 px-2 py-1 h-7 text-xs border-[#BFDBFE] text-[#3B82F6] hover:bg-[#EFF6FF] dark:border-[#1E3A8A] dark:text-[#3B82F6] dark:hover:bg-[#1E3A8A]/30",
+                                  !employee.departmentId && "opacity-50 cursor-not-allowed"
+                                )}
+                              >
+                                {updatingJobTitle === employee.jobId ? (
+                                  <div className="flex items-center gap-1">
+                                    <div className="h-2.5 w-2.5 rounded-full border-2 border-[#3B82F6] border-t-transparent animate-spin" />
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center gap-1">
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      width="14"
+                                      height="14"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      strokeWidth="2"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      className="lucide lucide-briefcase"
+                                    >
+                                      <rect width="20" height="14" x="2" y="7" rx="2" ry="2"></rect>
+                                      <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                                    </svg>
+                                  </div>
+                                )}
+                              </Button>
+                            </div>
+                          </TableCell>
                           <TableCell>
                             <Badge
                               variant="outline"
@@ -1144,6 +1663,7 @@ export default function ActivateEmployeesPage() {
         </DialogContent>
       </Dialog>
 
+      {renderUpdateJobTitleDialog()}
       {renderProfileDialog()}
     </div>
   )
