@@ -1,0 +1,16 @@
+{
+  "client_id": "daa5a8d6-ba3f-4d5c-a71f-56beff12a197",
+  "authorization_user_agent": "DEFAULT",
+  "redirect_uri": "msauth-workforcehub://auth",
+  "account_mode": "SINGLE",
+  "broker_redirect_uri_registered": true,
+  "authorities": [
+    {
+      "type": "AAD",
+      "audience": {
+        "type": "AzureADMyOrg",
+        "tenant_id": "823cde44-4433-456d-b801-bdf0ab3d41fc"
+      }
+    }
+  ]
+} 

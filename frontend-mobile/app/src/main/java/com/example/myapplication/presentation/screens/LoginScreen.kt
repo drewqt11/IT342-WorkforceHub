@@ -21,6 +21,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -44,7 +45,8 @@ import androidx.compose.ui.graphics.ColorFilter
 import com.example.myapplication.R
 
 @Composable
-fun MainScreen(
+fun LoginScreen(
+    isLoading: Boolean = false,
     onMicrosoftLoginClick: () -> Unit = {}
 ) {
     // States for checkboxes
@@ -116,6 +118,7 @@ fun MainScreen(
                         
                         // Auth Card
                         AuthCard(
+                            isLoading = isLoading,
                             termsAgreed = termsAgreed,
                             dataConsent = dataConsent,
                             onTermsAgreedChange = { termsAgreed = it },
@@ -131,6 +134,7 @@ fun MainScreen(
 
 @Composable
 fun AuthCard(
+    isLoading: Boolean = false,
     termsAgreed: Boolean,
     dataConsent: Boolean,
     onTermsAgreedChange: (Boolean) -> Unit,
@@ -194,8 +198,8 @@ fun AuthCard(
                 
                 Spacer(modifier = Modifier.height(24.dp))
                 
-                // Microsoft Sign In Card
-                MicrosoftCard(onMicrosoftLoginClick)
+                // Microsoft Sign In Card with loading state
+                MicrosoftCard(isLoading = isLoading, onMicrosoftLoginClick = onMicrosoftLoginClick)
                 
                 Spacer(modifier = Modifier.height(18.dp))
                 
@@ -207,7 +211,7 @@ fun AuthCard(
 }
 
 @Composable
-fun MicrosoftCard(onMicrosoftLoginClick: () -> Unit) {
+fun MicrosoftCard(isLoading: Boolean, onMicrosoftLoginClick: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),
@@ -252,80 +256,40 @@ fun MicrosoftCard(onMicrosoftLoginClick: () -> Unit) {
                     )
                     
                     Text(
-                        text = "Secure single sign-on",
+                        text = "Sign in with your Microsoft work account",
                         fontSize = 12.sp,
                         color = Color(0xFF6B7280)
                     )
                 }
-                
-                Image(
-                    painter = painterResource(id = R.drawable.shield_outline),
-                    contentDescription = "Security Shield",
-                    modifier = Modifier.size(20.dp),
-                    colorFilter = ColorFilter.tint(Color(0xFF3B82F6))
-                )
             }
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            Text(
-                text = "Sign in with your organization's Microsoft account to access all enterprise resources securely.",
-                fontSize = 14.sp,
-                color = Color(0xFF6B7280)
-            )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Microsoft Login Button
             Button(
                 onClick = onMicrosoftLoginClick,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(46.dp),
+                shape = RoundedCornerShape(6.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF0078D4)
+                    containerColor = Color(0xFF0078D4), // Microsoft blue
+                    contentColor = Color.White
                 ),
-                shape = RoundedCornerShape(10.dp)
+                enabled = !isLoading
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Start,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(32.dp)
-                            .background(Color.White, RoundedCornerShape(6.dp)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.microsoft_logo),
-                            contentDescription = "Microsoft Logo",
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
-                    
-                    Spacer(modifier = Modifier.width(12.dp))
-                    
+                if (isLoading) {
+                    // Show loading indicator
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = Color.White,
+                        strokeWidth = 2.dp
+                    )
+                } else {
                     Text(
                         text = "Continue with Microsoft",
-                        modifier = Modifier.weight(1f),
-                        textAlign = TextAlign.Center,
-                        color = Color.White,
-                        maxLines = 1
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium
                     )
-                    
-                    Box(
-                        modifier = Modifier
-                            .size(20.dp)
-                            .background(Color(0xFF0078D4)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.ic_arrow_right),
-                            contentDescription = "Arrow Right",
-                            modifier = Modifier.size(14.dp),
-                            colorFilter = ColorFilter.tint(Color.White)
-                        )
-                    }
                 }
             }
         }
@@ -338,10 +302,9 @@ fun BenefitsCard() {
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFF9FAFB)
+            containerColor = Color(0xFFF3F4F6)
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB))
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(
             modifier = Modifier
@@ -349,7 +312,7 @@ fun BenefitsCard() {
                 .padding(16.dp)
         ) {
             Text(
-                text = "Enterprise Benefits:",
+                text = "Enterprise Benefits",
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFF1F2937)
@@ -357,16 +320,11 @@ fun BenefitsCard() {
             
             Spacer(modifier = Modifier.height(12.dp))
             
-            // Benefits with checkmarks
-            BenefitItem(text = "Single sign-on across all enterprise applications")
-            
-            Spacer(modifier = Modifier.height(6.dp))
-            
-            BenefitItem(text = "Enhanced security with your organization's policies")
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            BenefitItem(text = "Seamless access to all company resources")
+            // Benefits list
+            BenefitItem("Seamless enterprise integration")
+            BenefitItem("Secure single sign-on (SSO)")
+            BenefitItem("Efficient department collaboration")
+            BenefitItem("Integrated employee management")
         }
     }
 }
@@ -374,27 +332,24 @@ fun BenefitsCard() {
 @Composable
 fun BenefitItem(text: String) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        // Check mark icon (use a small circle for simplicity)
         Box(
             modifier = Modifier
-                .size(20.dp)
-                .background(Color(0xFF3B82F6), CircleShape),
-            contentAlignment = Alignment.Center
-        ) {
-            Image(
-                painter = painterResource(id = R.drawable.ic_check_white),
-                contentDescription = "Checkmark",
-                modifier = Modifier.size(12.dp)
-            )
-        }
+                .size(8.dp)
+                .background(Color(0xFF34D399), CircleShape)
+        )
+        
+        Spacer(modifier = Modifier.width(8.dp))
         
         Text(
             text = text,
-            fontSize = 14.sp,
-            color = Color(0xFF4B5563),
-            modifier = Modifier.padding(start = 12.dp)
+            fontSize = 13.sp,
+            color = Color(0xFF4B5563)
         )
     }
 }
