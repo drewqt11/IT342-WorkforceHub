@@ -250,7 +250,7 @@ fun SideBarMenu(
                 onClick = {
                     scope.launch {
                         drawerState.close()
-//                        onNavigateToProfile()
+                        onNavigateToProfile()
                     }
                 }
             )

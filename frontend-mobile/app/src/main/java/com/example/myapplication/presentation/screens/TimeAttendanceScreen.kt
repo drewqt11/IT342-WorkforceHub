@@ -168,6 +168,7 @@ fun TimeAttendanceHeader(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(bottomStart = 22.dp, bottomEnd = 22.dp))
+            .height(220.dp)
             .background(
                 brush = Brush.horizontalGradient(
                     colors = listOf(AppColors.blue500, AppColors.teal500),
@@ -176,7 +177,26 @@ fun TimeAttendanceHeader(
                 )
             )
     ) {
-        // Decorative circles in the header - removing them to match the image
+        // Decorative circles
+        Canvas(
+            modifier = Modifier
+                .fillMaxSize()
+                .alpha(0.15f)
+        ) {
+            // Large circle
+            drawCircle(
+                color = Color.White,
+                center = Offset(size.width * 0.8f, size.height * 0.2f),
+                radius = size.width * 0.3f
+            )
+
+            // Small circle
+            drawCircle(
+                color = Color.White,
+                center = Offset(size.width * 0.2f, size.height * 0.7f),
+                radius = size.width * 0.1f
+            )
+        }
 
         Column(
             modifier = Modifier
