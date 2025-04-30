@@ -193,10 +193,10 @@ fun ProfileScreen(
                             } else if (profileData != null) {
                                 // Profile info cards
                                 ProfileInfoCard(profile = profileData!!)
+
+                                IdDetailsCard(profile = profileData!!)
                                 
                                 EmploymentDetailsCard(profile = profileData!!)
-                                
-                                IdDetailsCard(profile = profileData!!)
                             }
                             
                             // Bottom spacing
@@ -220,19 +220,18 @@ fun ModernProfileHeader(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(260.dp)
+            .clip(RoundedCornerShape(bottomStart = 22.dp, bottomEnd = 22.dp))
+            .height(220.dp)
     ) {
         // Background with gradient
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            AppColors.blue700,
-                            AppColors.blue500,
-                            AppColors.teal500
-                        )
+                    brush = Brush.horizontalGradient(
+                        colors = listOf(AppColors.blue500, AppColors.teal500),
+                        startX = 0f,
+                        endX = 1200f
                     )
                 )
         )
@@ -281,14 +280,6 @@ fun ModernProfileHeader(
                     modifier = Modifier.size(20.dp)
                 )
             }
-            
-            // Title in center
-            Text(
-                text = "Profile",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White
-            )
             
             // Empty spacer on right for balance
             Spacer(modifier = Modifier.size(40.dp))
@@ -355,7 +346,7 @@ fun ModernProfileHeader(
                         color = AppColors.blue700
                     )
                 }
-                
+
                 Spacer(modifier = Modifier.height(16.dp))
                 
                 // User name
@@ -512,6 +503,7 @@ fun ErrorProfileCard(error: String) {
 
 @Composable
 fun ProfileInfoCard(profile: EmployeeProfile) {
+    Spacer(modifier = Modifier.width(8.dp))
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -542,21 +534,6 @@ fun ProfileInfoCard(profile: EmployeeProfile) {
                         text = "Your basic profile details",
                         fontSize = 14.sp,
                         color = AppColors.gray500
-                    )
-                }
-                
-                // Edit button
-                IconButton(
-                    onClick = { /* Edit functionality */ },
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(AppColors.blue50)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Edit,
-                        contentDescription = "Edit",
-                        tint = AppColors.blue700
                     )
                 }
             }
@@ -597,6 +574,64 @@ fun ProfileInfoCard(profile: EmployeeProfile) {
             ProfileDataRow(
                 label = "Marital Status", 
                 value = profile.maritalStatus ?: "Not provided"
+            )
+        }
+    }
+}
+
+@Composable
+fun IdDetailsCard(profile: EmployeeProfile) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 8.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            // Card title
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = "Identification",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = AppColors.gray800
+                    )
+
+                    Text(
+                        text = "Your system identifiers",
+                        fontSize = 14.sp,
+                        color = AppColors.gray500
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Employee ID
+            ProfileDataRow(label = "Employee ID", value = profile.employeeId)
+
+            // ID Number
+            ProfileDataRow(
+                label = "ID Number",
+                value = profile.idNumber ?: "Not provided"
+            )
+
+            // Account Created
+            ProfileDataRow(
+                label = "Account Created",
+                value = profile.createdAt?.let {
+                    it.substring(0, it.indexOf('T'))
+                } ?: "Not available"
             )
         }
     }
@@ -662,64 +697,6 @@ fun EmploymentDetailsCard(profile: EmployeeProfile) {
             ProfileDataRow(
                 label = "Hire Date", 
                 value = profile.hireDate ?: "Not provided"
-            )
-        }
-    }
-}
-
-@Composable
-fun IdDetailsCard(profile: EmployeeProfile) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(bottom = 8.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            // Card title
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text(
-                        text = "Identification",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = AppColors.gray800
-                    )
-                    
-                    Text(
-                        text = "Your system identifiers",
-                        fontSize = 14.sp,
-                        color = AppColors.gray500
-                    )
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Employee ID
-            ProfileDataRow(label = "Employee ID", value = profile.employeeId)
-            
-            // ID Number
-            ProfileDataRow(
-                label = "ID Number", 
-                value = profile.idNumber ?: "Not provided"
-            )
-            
-            // Account Created
-            ProfileDataRow(
-                label = "Account Created", 
-                value = profile.createdAt?.let { 
-                    it.substring(0, it.indexOf('T')) 
-                } ?: "Not available"
             )
         }
     }
