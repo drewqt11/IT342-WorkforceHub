@@ -21,6 +21,7 @@ import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -47,38 +48,47 @@ public class AttendanceService {
      * Clock in an employee
      */
     @Transactional
-    public AttendanceRecordDTO clockIn(ClockInRequestDTO clockInRequest) {
-        EmployeeEntity employee = getCurrentEmployee();
-        LocalDate today = LocalDate.now();
+    public AttendanceRecordDTO clockIn(ClockInRequestDTO request) {
+        // Get current employee
+        EmployeeEntity employee = employeeRepository.findById(request.getEmployeeId())
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee not found"));
 
         // Check if employee has already clocked in today
+        LocalDate today = LocalDate.now();
         Optional<AttendanceRecordEntity> existingRecord = attendanceRepository.findByEmployeeAndDate(employee, today);
         if (existingRecord.isPresent() && existingRecord.get().getClockInTime() != null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "You have already clocked in today");
         }
 
-        // Create or update attendance record
+        // Create new attendance record
         AttendanceRecordEntity record = existingRecord.orElse(new AttendanceRecordEntity());
         if (record.getAttendanceId() == null) {
             record.setEmployee(employee);
             record.setDate(today);
         }
 
-        LocalTime currentTime = LocalTime.now();
+        // Set clock in time and status - Truncate to seconds to avoid nanosecond issues
+        LocalTime currentTime = LocalTime.now().truncatedTo(ChronoUnit.SECONDS);
         record.setClockInTime(currentTime);
+        record.setStatus("CLOCKED_IN");
         
-        // Set status based on time
-        LocalTime startOfDay = LocalTime.of(9, 0); // 9:00 AM
-        if (currentTime.isAfter(startOfDay.plusMinutes(15))) {
-            record.setStatus("LATE");
-        } else {
-            record.setStatus("PRESENT");
+        // Calculate tardiness minutes if scheduled time is set
+        if (employee.getWorkTimeInSched() != null) {
+            // If current time is after scheduled time, calculate tardiness
+            if (currentTime.isAfter(employee.getWorkTimeInSched())) {
+                long tardiness = ChronoUnit.MINUTES.between(employee.getWorkTimeInSched(), currentTime);
+                record.setTardinessMinutes((int) tardiness);
+            } else {
+                record.setTardinessMinutes(0);
+            }
         }
         
-        if (clockInRequest.getRemarks() != null && !clockInRequest.getRemarks().isEmpty()) {
-            record.setRemarks(clockInRequest.getRemarks());
+        // Set remarks if provided
+        if (request.getRemarks() != null && !request.getRemarks().isEmpty()) {
+            record.setRemarks(request.getRemarks());
         }
 
+        // Save the record
         AttendanceRecordEntity savedRecord = attendanceRepository.save(record);
         return convertToDTO(savedRecord);
     }
@@ -109,9 +119,16 @@ public class AttendanceService {
         
         // Calculate total hours
         Duration duration = Duration.between(record.getClockInTime(), currentTime);
-        double hours = duration.toMinutes() / 60.0;
+        double totalMinutes = duration.toMinutes();
+        
+        // Deduct 1 hour (60 minutes) for break time
+        double hours = (totalMinutes - 60) / 60.0;
         BigDecimal totalHours = BigDecimal.valueOf(hours).setScale(2, RoundingMode.HALF_UP);
-        record.setTotalHours(totalHours);
+        if (totalHours.compareTo(BigDecimal.ZERO) > 0) {
+            record.setTotalHours(totalHours);
+        }else{
+            record.setTotalHours(BigDecimal.ZERO);
+        }
         
         // Calculate overtime hours (anything over 8 hours)
         if (hours > 8) {
@@ -119,6 +136,25 @@ public class AttendanceService {
             record.setOvertimeHours(overtimeHours);
         } else {
             record.setOvertimeHours(BigDecimal.ZERO);
+        }
+
+        // Calculate undertime minutes if scheduled time is set
+        if (employee.getWorkTimeOutSched() != null) {
+            // If clock out time is before scheduled time, calculate undertime
+            if (currentTime.isBefore(employee.getWorkTimeOutSched())) {
+                // Calculate minutes from clock out time to scheduled end time
+                long undertime = ChronoUnit.MINUTES.between(currentTime, employee.getWorkTimeOutSched());
+                // Only set undertime if it's a positive value
+                if (undertime > 0) {
+                    record.setUndertimeMinutes((int) undertime);
+                } else {
+                    record.setUndertimeMinutes(0);
+                }
+            } else {
+                record.setUndertimeMinutes(0);
+            }
+        } else {
+            record.setUndertimeMinutes(0);
         }
         
         if (clockOutRequest.getRemarks() != null && !clockOutRequest.getRemarks().isEmpty()) {
@@ -248,6 +284,89 @@ public class AttendanceService {
     }
 
     /**
+     * Update clock-out time and related fields for an existing attendance record
+     * Only updates the clock-out time, status, and total hours
+     */
+    @Transactional
+    public AttendanceRecordDTO updateClockOut(String attendanceId, ClockInRequestDTO clockOutRequest) {
+        AttendanceRecordEntity record = attendanceRepository.findById(attendanceId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Attendance record not found"));
+
+        if (record.getClockInTime() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot clock out without clocking in first");
+        }
+
+        if (record.getClockOutTime() != null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "You have already clocked out today");
+        }
+
+        // Update clock out time
+        LocalTime currentTime = LocalTime.now().truncatedTo(ChronoUnit.SECONDS);
+        record.setClockOutTime(currentTime);
+        
+        // Calculate total hours
+        Duration duration = Duration.between(record.getClockInTime(), currentTime);
+        double totalMinutes = duration.toMinutes();
+        
+        // Deduct 1 hour (60 minutes) for break time
+        double hours = (totalMinutes - 60) / 60.0;
+        BigDecimal totalHours = BigDecimal.valueOf(hours).setScale(2, RoundingMode.HALF_UP);
+        record.setTotalHours(totalHours);
+        
+        // Calculate overtime hours (anything over 8 hours)
+        if (hours > 8) {
+            BigDecimal overtimeHours = BigDecimal.valueOf(hours - 8).setScale(2, RoundingMode.HALF_UP);
+            record.setOvertimeHours(overtimeHours);
+        } else {
+            record.setOvertimeHours(BigDecimal.ZERO);
+        }
+
+        // Calculate undertime minutes if scheduled time is set
+        EmployeeEntity employee = record.getEmployee();
+        if (employee.getWorkTimeOutSched() != null) {
+            // If clock out time is before scheduled time, calculate undertime
+            if (currentTime.isBefore(employee.getWorkTimeOutSched())) {
+                // Calculate minutes from clock out time to scheduled end time
+                long undertime = ChronoUnit.MINUTES.between(currentTime, employee.getWorkTimeOutSched());
+                // Only set undertime if it's a positive value
+                if (undertime > 0) {
+                    record.setUndertimeMinutes((int) undertime);
+                } else {
+                    record.setUndertimeMinutes(0);
+                }
+            } else {
+                record.setUndertimeMinutes(0);
+            }
+        } else {
+            record.setUndertimeMinutes(0);
+        }
+        
+        // Update status
+        record.setStatus("CLOCKED_OUT");
+        record.setRemarks("PRESENT");
+        
+        // Update remarks if provided
+        if (clockOutRequest.getRemarks() != null && !clockOutRequest.getRemarks().isEmpty()) {
+            String combinedRemarks = record.getRemarks() != null 
+                ? record.getRemarks() + " | " + clockOutRequest.getRemarks()
+                : clockOutRequest.getRemarks();
+            record.setRemarks(combinedRemarks);
+        }
+
+        AttendanceRecordEntity savedRecord = attendanceRepository.save(record);
+        return convertToDTO(savedRecord);
+    }
+
+    /**
+     * Get all attendance records with pagination (HR only)
+     */
+    @Transactional(readOnly = true)
+    public Page<AttendanceRecordDTO> getAllAttendanceRecords(Pageable pageable) {
+        return attendanceRepository.findAll(pageable)
+                .map(this::convertToDTO);
+    }
+
+    /**
      * Convert AttendanceRecordEntity to AttendanceRecordDTO
      */
     private AttendanceRecordDTO convertToDTO(AttendanceRecordEntity entity) {
@@ -266,6 +385,8 @@ public class AttendanceService {
         dto.setStatus(entity.getStatus());
         dto.setRemarks(entity.getRemarks());
         dto.setOvertimeHours(entity.getOvertimeHours());
+        dto.setTardinessMinutes(entity.getTardinessMinutes());
+        dto.setUndertimeMinutes(entity.getUndertimeMinutes());
         dto.setReasonForAbsence(entity.getReasonForAbsence());
         dto.setApprovedByManager(entity.isApprovedByManager());
         

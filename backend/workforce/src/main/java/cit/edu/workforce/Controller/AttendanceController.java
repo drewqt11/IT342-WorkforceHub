@@ -2,6 +2,7 @@ package cit.edu.workforce.Controller;
 
 import cit.edu.workforce.DTO.AttendanceRecordDTO;
 import cit.edu.workforce.DTO.ClockInRequestDTO;
+import cit.edu.workforce.Entity.AttendanceRecordEntity;
 import cit.edu.workforce.Service.AttendanceService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -21,7 +22,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * AttendanceController - Provides API endpoints for attendance management
@@ -64,6 +64,19 @@ public class AttendanceController {
     @PreAuthorize("hasAnyRole('ROLE_EMPLOYEE', 'ROLE_HR', 'ROLE_ADMIN')")
     public ResponseEntity<AttendanceRecordDTO> clockOut(@Valid @RequestBody ClockInRequestDTO clockOutRequest) {
         return ResponseEntity.ok(attendanceService.clockOut(clockOutRequest));
+    }
+
+    /**
+     * Update clock-out time and related fields
+     * Updates only the clock-out time, status, and total hours for an existing attendance record
+     */
+    @PutMapping("/employee/attendance/{id}/clock-out")
+    @Operation(summary = "Update clock-out time", description = "Update only the clock-out time, status, and total hours for an existing attendance record")
+    @PreAuthorize("hasAnyRole('ROLE_EMPLOYEE', 'ROLE_HR', 'ROLE_ADMIN') or @attendanceService.isOwnAttendance(#id)")
+    public ResponseEntity<AttendanceRecordDTO> updateClockOut(
+            @PathVariable String id,
+            @Valid @RequestBody ClockInRequestDTO clockOutRequest) {
+        return ResponseEntity.ok(attendanceService.updateClockOut(id, clockOutRequest));
     }
 
     /**
@@ -204,5 +217,48 @@ public class AttendanceController {
             @RequestParam(required = false) String remarks) {
 
         return ResponseEntity.ok(attendanceService.updateAttendanceStatus(id, status, remarks));
+    }
+
+    /**
+     * Get all attendance records with pagination
+     * Admin/HR only endpoint
+     */
+    @GetMapping("/hr/attendance/all")
+    @Operation(summary = "Get all attendance records", description = "Get all attendance records with pagination")
+    @PreAuthorize("hasAnyRole('ROLE_HR', 'ROLE_ADMIN')")
+    public ResponseEntity<Page<AttendanceRecordDTO>> getAllAttendanceRecords(
+            @Parameter(description = "Page number (0-based)") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Page size") @RequestParam(defaultValue = "10") int size,
+            @Parameter(description = "Sort field") @RequestParam(defaultValue = "date") String sortBy,
+            @Parameter(description = "Sort direction") @RequestParam(defaultValue = "desc") String direction) {
+
+        Sort sort = "desc".equalsIgnoreCase(direction) ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        return ResponseEntity.ok(attendanceService.getAllAttendanceRecords(pageable));
+    }
+
+    private AttendanceRecordDTO convertToDTO(AttendanceRecordEntity entity) {
+        if (entity == null) {
+            return null;
+        }
+        
+        AttendanceRecordDTO dto = new AttendanceRecordDTO();
+        dto.setAttendanceId(entity.getAttendanceId());
+        dto.setEmployeeId(entity.getEmployee().getEmployeeId());
+        dto.setEmployeeName(entity.getEmployee().getFirstName() + " " + entity.getEmployee().getLastName());
+        dto.setDate(entity.getDate());
+        dto.setClockInTime(entity.getClockInTime());
+        dto.setClockOutTime(entity.getClockOutTime());
+        dto.setTotalHours(entity.getTotalHours());
+        dto.setStatus(entity.getStatus());
+        dto.setRemarks(entity.getRemarks());
+        dto.setOvertimeHours(entity.getOvertimeHours());
+        dto.setTardinessMinutes(entity.getTardinessMinutes());
+        dto.setUndertimeMinutes(entity.getUndertimeMinutes());
+        dto.setReasonForAbsence(entity.getReasonForAbsence());
+        dto.setApprovedByManager(entity.isApprovedByManager());
+        
+        return dto;
     }
 } 

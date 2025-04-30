@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -229,6 +230,8 @@ public class EmployeeService {
         employee.setStatus(false);
         employee.setEmploymentStatus("PENDING"); // New employees start as pending until approved
         employee.setRole(role);
+        employee.setWorkTimeInSched(registrationDTO.getWorkTimeInSched());
+        employee.setWorkTimeOutSched(registrationDTO.getWorkTimeOutSched());
         employee.setUserAccount(userAccount);
 
         EmployeeEntity savedEmployee = employeeRepository.save(employee);
@@ -290,6 +293,9 @@ public class EmployeeService {
         employee.setRole(role);
         employee.setDepartment(department);
         employee.setJobTitle(jobTitle);
+        employee.setWorkTimeInSched(employeeDTO.getWorkTimeInSched());
+        employee.setWorkTimeOutSched(employeeDTO.getWorkTimeOutSched());
+
 
         EmployeeEntity savedEmployee = employeeRepository.save(employee);
         return convertToDTO(savedEmployee);
@@ -334,6 +340,8 @@ public class EmployeeService {
         employee.setStatus(employeeDTO.getStatus() != null ? employeeDTO.getStatus() : true);
         employee.setEmploymentStatus(
                 employeeDTO.getEmploymentStatus() != null ? employeeDTO.getEmploymentStatus() : "FULL_TIME");
+        employee.setWorkTimeInSched(employeeDTO.getWorkTimeInSched());
+        employee.setWorkTimeOutSched(employeeDTO.getWorkTimeOutSched());
 
         // Update role if specified
         if (employeeDTO.getRoleId() != null) {
@@ -431,6 +439,14 @@ public class EmployeeService {
                     employeeDTO.getEmploymentStatus() != null ? employeeDTO.getEmploymentStatus() : "FULL_TIME");
         }
 
+        if (employeeDTO.getWorkTimeInSched() != null) {
+            employee.setWorkTimeInSched(employeeDTO.getWorkTimeInSched());
+        }
+
+        if (employeeDTO.getWorkTimeOutSched() != null) {
+            employee.setWorkTimeOutSched(employeeDTO.getWorkTimeOutSched());
+        }
+
         EmployeeEntity updatedEmployee = employeeRepository.save(employee);
         return convertToDTO(updatedEmployee);
     }
@@ -515,6 +531,31 @@ public class EmployeeService {
         return convertToDTO(updatedEmployee);
     }
 
+    /**
+     * Update an employee's work time schedule
+     * 
+     * @param employeeId The ID of the employee to update
+     * @param workTimeInSched The new work time in schedule
+     * @param workTimeOutSched The new work time out schedule
+     * @return The updated employee DTO
+     */
+    @Transactional
+    public EmployeeDTO updateWorkTimeSchedule(String employeeId, LocalTime workTimeInSched, LocalTime workTimeOutSched) {
+        EmployeeEntity employee = employeeRepository.findById(employeeId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee not found"));
+
+        // Validate that work time out is after work time in
+        if (workTimeInSched != null && workTimeOutSched != null && workTimeOutSched.isBefore(workTimeInSched)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Work time out must be after work time in");
+        }
+
+        employee.setWorkTimeInSched(workTimeInSched);
+        employee.setWorkTimeOutSched(workTimeOutSched);
+        
+        EmployeeEntity updatedEmployee = employeeRepository.save(employee);
+        return convertToDTO(updatedEmployee);
+    }
+
     private EmployeeDTO convertToDTO(EmployeeEntity employee) {
         EmployeeDTO dto = new EmployeeDTO();
         dto.setEmployeeId(employee.getEmployeeId());
@@ -545,6 +586,14 @@ public class EmployeeService {
         if (employee.getRole() != null) {
             dto.setRoleId(employee.getRole().getRoleId());
             dto.setRoleName(employee.getRole().getRoleName());
+        }
+
+        if (employee.getWorkTimeInSched() != null) {
+            dto.setWorkTimeInSched(employee.getWorkTimeInSched());
+        }
+
+        if (employee.getWorkTimeOutSched() != null) {
+            dto.setWorkTimeOutSched(employee.getWorkTimeOutSched());
         }
 
         return dto;

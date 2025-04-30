@@ -20,6 +20,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalTime;
+import java.time.format.DateTimeParseException;
 import java.util.Map;
 
 @RestController
@@ -199,6 +201,29 @@ public class EmployeeController {
             // Update the employee's department
             EmployeeDTO updatedEmployee = employeeService.updateEmployeeDepartment(id, department);
             return ResponseEntity.ok(updatedEmployee);
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    @PatchMapping("/hr/employees/{id}/work-schedule")
+    @Operation(summary = "Update work schedule", description = "Update an employee's work time in and out schedule")
+    @PreAuthorize("hasAnyRole('ROLE_HR', 'ROLE_ADMIN')")
+    public ResponseEntity<EmployeeDTO> updateWorkTimeSchedule(
+            @PathVariable String id,
+            @RequestParam(required = false) String workTimeIn,
+            @RequestParam(required = false) String workTimeOut) {
+        
+        try {
+            // Parse the time strings to LocalTime objects
+            LocalTime workTimeInSched = workTimeIn != null ? LocalTime.parse(workTimeIn) : null;
+            LocalTime workTimeOutSched = workTimeOut != null ? LocalTime.parse(workTimeOut) : null;
+            
+            // Update the employee's work schedule
+            EmployeeDTO updatedEmployee = employeeService.updateWorkTimeSchedule(id, workTimeInSched, workTimeOutSched);
+            return ResponseEntity.ok(updatedEmployee);
+        } catch (DateTimeParseException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid time format. Please use HH:mm format");
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }

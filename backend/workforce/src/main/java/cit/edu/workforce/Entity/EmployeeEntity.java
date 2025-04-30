@@ -8,6 +8,7 @@ import org.hibernate.annotations.GenericGenerator;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @Entity
 @Table(name = "employee")
@@ -60,6 +61,14 @@ public class EmployeeEntity {
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
+
+    @Column(name = "work_time_in_sched")
+    @Temporal(TemporalType.TIME)
+    private LocalTime workTimeInSched;
+
+    @Column(name = "work_time_out_sched")
+    @Temporal(TemporalType.TIME)
+    private LocalTime workTimeOutSched;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "department_id")

@@ -224,7 +224,7 @@ export function AppSidebar({ isMobile, onClose }: AppSidebarProps) {
         </div>
 
       {/* Navigation menu */}
-      <div className="flex-1 overflow-auto py-4">
+      <div className="flex-1 overflow-auto py-4 scrollbar-hide">
         <nav className="grid items-start px-4 text-sm font-medium gap-1">
           {menuItems.map((item) => (
             <div key={item.href} className="flex flex-col">

@@ -231,7 +231,14 @@ export const authService = {
     },
 
     getToken(): string | null {
-        return document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1] || null;
+        if (typeof window === 'undefined') {
+            // Server-side: Get token from cookies using Next.js headers
+            const { cookies } = require('next/headers');
+            return cookies().get('token')?.value || null;
+        } else {
+            // Client-side: Get token from document.cookie
+            return document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1] || null;
+        }
     },
 
     getRefreshToken(): string | null {

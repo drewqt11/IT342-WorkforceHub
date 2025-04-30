@@ -10,6 +10,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
 
 /**
  * AttendanceRecordEntity - Represents an employee's attendance record for a specific date
@@ -37,9 +38,11 @@ public class AttendanceRecordEntity {
     private LocalDate date;
 
     @Column(name = "clock_in_time")
+    @Temporal(TemporalType.TIME)
     private LocalTime clockInTime;
 
     @Column(name = "clock_out_time")
+    @Temporal(TemporalType.TIME)
     private LocalTime clockOutTime;
 
     @Column(name = "total_hours", precision = 5, scale = 2)
@@ -53,6 +56,12 @@ public class AttendanceRecordEntity {
 
     @Column(name = "overtime_hours", precision = 5, scale = 2)
     private BigDecimal overtimeHours;
+
+    @Column(name = "tardiness_minutes")
+    private Integer tardinessMinutes;
+
+    @Column(name = "undertime_minutes")
+    private Integer undertimeMinutes;
 
     @Column(name = "reason_for_absence")
     private String reasonForAbsence;
@@ -69,10 +78,22 @@ public class AttendanceRecordEntity {
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
+        if (clockInTime != null) {
+            clockInTime = clockInTime.truncatedTo(ChronoUnit.SECONDS);
+        }
+        if (clockOutTime != null) {
+            clockOutTime = clockOutTime.truncatedTo(ChronoUnit.SECONDS);
+        }
     }
     
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
+        if (clockInTime != null) {
+            clockInTime = clockInTime.truncatedTo(ChronoUnit.SECONDS);
+        }
+        if (clockOutTime != null) {
+            clockOutTime = clockOutTime.truncatedTo(ChronoUnit.SECONDS);
+        }
     }
 } 

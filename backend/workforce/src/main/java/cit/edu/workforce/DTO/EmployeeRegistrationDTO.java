@@ -9,6 +9,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 
 @Data
 @NoArgsConstructor
@@ -35,4 +36,8 @@ public class EmployeeRegistrationDTO {
     private String phoneNumber;
 
     private String maritalStatus;
+
+    private LocalTime workTimeInSched;
+
+    private LocalTime workTimeOutSched;
 }

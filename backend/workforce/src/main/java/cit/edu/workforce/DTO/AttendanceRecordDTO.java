@@ -27,6 +27,8 @@ public class AttendanceRecordDTO {
     private String status;
     private String remarks;
     private BigDecimal overtimeHours;
+    private Integer tardinessMinutes;
+    private Integer undertimeMinutes;
     private String reasonForAbsence;
     private boolean approvedByManager;
 } 

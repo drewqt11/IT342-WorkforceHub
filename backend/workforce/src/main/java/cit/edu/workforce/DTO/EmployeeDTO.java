@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @Data
 @NoArgsConstructor
@@ -59,4 +60,8 @@ public class EmployeeDTO {
     private String roleName;
 
     private LocalDateTime createdAt;
+
+    private LocalTime workTimeInSched;
+
+    private LocalTime workTimeOutSched;
 }

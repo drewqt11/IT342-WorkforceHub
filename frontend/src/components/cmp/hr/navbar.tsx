@@ -285,17 +285,6 @@ export function Navbar({ onMobileMenuToggle }: NavbarProps) {
               <span>Profile</span>
             </DropdownMenuItem>
             <DropdownMenuItem className="cursor-pointer rounded-lg px-3 py-2 hover:bg-blue-50 dark:hover:bg-blue-900/50 text-gray-900 dark:text-gray-100 focus:bg-blue-100 dark:focus:bg-blue-800 focus:text-gray-900 dark:focus:text-white transition-colors">
-              <Bell className="mr-2 h-4 w-4" />
-              <span>Notifications</span>
-              <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30 text-xs font-medium text-red-600 dark:text-red-400">
-                {notifications}
-              </span>
-            </DropdownMenuItem>
-            <DropdownMenuItem className="cursor-pointer rounded-lg px-3 py-2 hover:bg-blue-50 dark:hover:bg-blue-900/50 text-gray-900 dark:text-gray-100 focus:bg-blue-100 dark:focus:bg-blue-800 focus:text-gray-900 dark:focus:text-white transition-colors">
-              <Settings className="mr-2 h-4 w-4" />
-              <span>Settings</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem className="cursor-pointer rounded-lg px-3 py-2 hover:bg-blue-50 dark:hover:bg-blue-900/50 text-gray-900 dark:text-gray-100 focus:bg-blue-100 dark:focus:bg-blue-800 focus:text-gray-900 dark:focus:text-white transition-colors">
               <HelpCircle className="mr-2 h-4 w-4" />
               <span>Help & Support</span>
             </DropdownMenuItem>

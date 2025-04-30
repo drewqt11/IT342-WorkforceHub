@@ -17,6 +17,15 @@ import {
   GraduationCap,
   ChevronDown,
   ChevronRight,
+  Clock8,
+  CalendarClock,
+  CalendarClockIcon,
+  Briefcase,
+  PenLine,
+  MessageSquare,
+  BarChart2,
+  Target,
+  AlertTriangle,
 } from "lucide-react"
 
 interface SubMenuItem {
@@ -31,6 +40,7 @@ interface MenuItem {
   icon: React.ElementType
   disabled?: boolean
   subItems?: SubMenuItem[]
+  isDivider?: boolean
 }
 
 export function AppSidebar() {
@@ -50,26 +60,18 @@ export function AppSidebar() {
       href: "/employee/dashboard",
       icon: LayoutDashboard,
     },
+    {
+      title: "Main",
+      href: "#main-divider",
+      icon: LayoutDashboard,
+      isDivider: true,
+    },
     ...(isActive
       ? [
           {
-            title: "Profile",
+            title: "My Profile",
             href: "/employee/profile",
             icon: User,
-            subItems: [
-              {
-                title: "Personal Info",
-                href: "/employee/profile/personal",
-              },
-              {
-                title: "Employment Details",
-                href: "/employee/profile/employment",
-              },
-              {
-                title: "Account Settings",
-                href: "/employee/profile/account",
-              },
-            ],
           },
           {
             title: "Benefits",
@@ -77,12 +79,16 @@ export function AppSidebar() {
             icon: Heart,
             subItems: [
               {
-                title: "Health Insurance",
-                href: "/employee/benefits/health",
+                title: "Philhealth",
+                href: "/employee/benefits/philhealth",
               },
               {
-                title: "Retirement",
-                href: "/employee/benefits/retirement",
+                title: "Social Security",
+                href: "/employee/benefits/social-security",
+              },
+              {
+                title: "Pag-ibig",
+                href: "/employee/benefits/pag-ibig",
               },
               {
                 title: "Other Benefits",
@@ -91,25 +97,100 @@ export function AppSidebar() {
             ],
           },
           {
-            title: "Career",
-            href: "/employee/career",
-            icon: GraduationCap,
+            title: "Work & Schedule",
+            href: "#work-divider",
+            icon: LayoutDashboard,
+            isDivider: true,
           },
           {
-            title: "Documents",
-            href: "/employee/documents",
-            icon: FileText,
+            title: "Attendance Logs",
+            href: "/employee/attendance-logs",
+            icon: Clock8,
           },
           {
             title: "Schedule",
             href: "/employee/schedule",
             icon: Calendar,
-            disabled: isInactive,
           },
           {
-            title: "Settings",
-            href: "/employee/settings",
-            icon: Settings,
+            title: "Requests",
+            href: "/employee/requests",
+            icon: CalendarClockIcon,
+            subItems: [
+              {
+                title: "Leave",
+                href: "/employee/requests/leave",
+              },
+              {
+                title: "Overtime",
+                href: "/employee/requests/overtime",
+              },
+              {
+                title: "Reimbursement",
+                href: "/employee/requests/reimbursement",
+              },
+            ],
+          },
+          {
+            title: "Career & Development",
+            href: "#career-divider",
+            icon: LayoutDashboard,
+            isDivider: true,
+          },
+          {
+            title: "Training & Events",
+            href: "/employee/training-events",
+            icon: GraduationCap,
+          },
+          {
+            title: "Careers",
+            href: "/employee/career",
+            icon: Briefcase,
+          },
+          {
+            title: "My Applications",
+            href: "/employee/applications",
+            icon: PenLine,
+            subItems: [
+              {
+                title: "Benefits",
+                href: "/employee/applications/benefits",
+              },
+              {
+                title: "Jobs",
+                href: "/employee/applications/jobs",
+              },
+              {
+                title: "Trainings & Events",
+                href: "/employee/applications/training",
+              }, 
+            ],
+          },
+          {
+            title: "Performance & Feedback",
+            href: "#performance-divider",
+            icon: LayoutDashboard,
+            isDivider: true,
+          },
+          {
+            title: "Performance Evaluation",
+            href: "/employee/performance/evaluation",
+            icon: BarChart2,
+          },
+          {
+            title: "Improvement Plan",
+            href: "/employee/performance/improvement",
+            icon: Target,
+          },
+          {
+            title: "Feedbacks & Complaints",
+            href: "/employee/performance/feedbacks",
+            icon: MessageSquare,
+          },
+          {
+            title: "Sanction Reports",
+            href: "/employee/performance/sanction-reports",
+            icon: AlertTriangle,
           },
         ]
       : []),
@@ -135,75 +216,83 @@ export function AppSidebar() {
         </div>
 
       {/* Navigation menu */}
-      <div className="flex-1 overflow-auto py-4">
+      <div className="flex-1 overflow-auto py-4 scrollbar-hide">
         <nav className="grid items-start px-4 text-sm font-medium gap-1">
           {menuItems.map((item) => (
             <div key={item.href} className="flex flex-col">
-              {/* Main menu item */}
-              {item.subItems ? (
-                <button
-                  onClick={() => toggleSubMenu(item.title)}
-                  className={cn(
-                    "flex items-center justify-between rounded-lg px-3 py-2.5 transition-all",
-                    item.disabled
-                      ? "text-blue-300 cursor-not-allowed opacity-60"
-                      : pathname === item.href || pathname.startsWith(`${item.href}/`) || openSubMenu === item.title
-                        ? "bg-white dark:bg-blue-900 text-blue-600 dark:text-blue-300 shadow-sm"
-                        : "text-blue-800 dark:text-blue-200 hover:bg-white hover:text-blue-600 dark:hover:bg-blue-900 dark:hover:text-blue-300",
-                  )}
-                  disabled={item.disabled}
-                >
-                  <div className="flex items-center gap-3">
-                    <item.icon className="h-5 w-5" />
-                    <span>{item.title}</span>
-                  </div>
-                  {openSubMenu === item.title ? (
-                    <ChevronDown className="h-4 w-4" />
-                  ) : (
-                    <ChevronRight className="h-4 w-4" />
-                  )}
-                </button>
+              {item.isDivider ? (
+                <div className="px-3 py-2 text-xs font-medium text-neutral-600 dark:text-blue-300 uppercase tracking-wider">
+                  {item.title}
+                </div>
               ) : (
-                <Link
-                  href={item.disabled ? "#" : item.href}
-                  className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all",
-                    item.disabled
-                      ? "text-blue-300 cursor-not-allowed opacity-60"
-                      : pathname === item.href
-                        ? "bg-white dark:bg-blue-900 text-blue-600 dark:text-blue-300 shadow-sm"
-                        : "text-blue-800 dark:text-blue-200 hover:bg-white hover:text-blue-600 dark:hover:bg-blue-900 dark:hover:text-blue-300",
-                  )}
-                  onClick={(e) => item.disabled && e.preventDefault()}
-                >
-                  <item.icon className="h-5 w-5" />
-                  <span>{item.title}</span>
-                    </Link>
-              )}
-
-              {/* Sub menu items */}
-              {item.subItems && openSubMenu === item.title && (
-                <div className="ml-9 mt-1 space-y-1 border-l-2 border-blue-200 dark:border-blue-800 pl-2">
-                  {item.subItems.map((subItem) => (
-                    <Link
-                      key={subItem.href}
-                      href={subItem.disabled ? "#" : subItem.href}
+                <>
+                  {/* Main menu item */}
+                  {item.subItems ? (
+                    <button
+                      onClick={() => toggleSubMenu(item.title)}
                       className={cn(
-                        "block rounded-lg px-3 py-2 text-sm transition-all",
-                        subItem.disabled
+                        "flex items-center justify-between rounded-lg px-3 py-2.5 transition-all",
+                        item.disabled
                           ? "text-blue-300 cursor-not-allowed opacity-60"
-                          : pathname === subItem.href
+                          : pathname === item.href || pathname.startsWith(`${item.href}/`) || openSubMenu === item.title
                             ? "bg-white dark:bg-blue-900 text-blue-600 dark:text-blue-300 shadow-sm"
                             : "text-blue-800 dark:text-blue-200 hover:bg-white hover:text-blue-600 dark:hover:bg-blue-900 dark:hover:text-blue-300",
                       )}
-                      onClick={(e) => subItem.disabled && e.preventDefault()}
+                      disabled={item.disabled}
                     >
-                      {subItem.title}
+                      <div className="flex items-center gap-3">
+                        <item.icon className="h-5 w-5" />
+                        <span>{item.title}</span>
+                      </div>
+                      {openSubMenu === item.title ? (
+                        <ChevronDown className="h-4 w-4" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4" />
+                      )}
+                    </button>
+                  ) : (
+                    <Link
+                      href={item.disabled ? "#" : item.href}
+                      className={cn(
+                        "flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all",
+                        item.disabled
+                          ? "text-blue-300 cursor-not-allowed opacity-60"
+                          : pathname === item.href
+                            ? "bg-white dark:bg-blue-900 text-blue-600 dark:text-blue-300 shadow-sm"
+                            : "text-blue-800 dark:text-blue-200 hover:bg-white hover:text-blue-600 dark:hover:bg-blue-900 dark:hover:text-blue-300",
+                      )}
+                      onClick={(e) => item.disabled && e.preventDefault()}
+                    >
+                      <item.icon className="h-5 w-5" />
+                      <span>{item.title}</span>
                     </Link>
-                  ))}
-                </div>
+                  )}
+
+                  {/* Sub menu items */}
+                  {item.subItems && openSubMenu === item.title && (
+                    <div className="ml-9 mt-1 space-y-1 border-l-2 border-blue-200 dark:border-blue-800 pl-2">
+                      {item.subItems.map((subItem) => (
+                        <Link
+                          key={subItem.href}
+                          href={subItem.disabled ? "#" : subItem.href}
+                          className={cn(
+                            "block rounded-lg px-3 py-2 text-sm transition-all",
+                            subItem.disabled
+                              ? "text-blue-300 cursor-not-allowed opacity-60"
+                              : pathname === subItem.href
+                                ? "bg-white dark:bg-blue-900 text-blue-600 dark:text-blue-300 shadow-sm"
+                                : "text-blue-800 dark:text-blue-200 hover:bg-white hover:text-blue-600 dark:hover:bg-blue-900 dark:hover:text-blue-300",
+                          )}
+                          onClick={(e) => subItem.disabled && e.preventDefault()}
+                        >
+                          {subItem.title}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </>
               )}
-          </div>
+            </div>
           ))}
         </nav>
           </div>
