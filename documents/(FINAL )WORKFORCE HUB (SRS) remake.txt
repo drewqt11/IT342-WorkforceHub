@@ -1,0 +1,470 @@
+﻿CEBU INSTITUTE OF TECHNOLOGY
+UNIVERSITY
+
+COLLEGE OF COMPUTER STUDIES
+
+Software Requirements Specification
+for
+Workforce Hub – HR Information System
+
+
+Developers:
+Amores, Katrina T.
+Apas, Andri M.
+Caaway, Levi Ray
+Paden, Arnel
+Change History
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Table of Contents
+Change History	2
+Table of Contents	3
+1.	Introduction	4
+1.1.	Purpose	4
+1.2.	Scope	5
+1.3.	Definitions, Acronyms, and Abbreviations	9
+1.4.	References	11
+2.	Overall Description	12
+2.1.	Product perspective	12
+2.2.	User characteristics	15
+2.3.	Constraints	16
+2.4.	Assumptions and Dependencies	20
+3.	Specific Requirements	24
+3.1.	External Interface Requirements	24
+3.1.1.	Hardware Interfaces	24
+3.1.2.	Software Interfaces	25
+3.1.3.	Communications Interfaces	27
+3.2.	Functional Requirements	28
+3.2.1.	User Roles and Permissions	28
+3.2.2.	Functionalities	29
+3.2.3.	Business Rules	30
+3.3.	Non-functional Requirements	31
+3.3.1.	Performance	32
+3.3.2.	Security	32
+3.3.3.	Reliability	32
+
+Capstone and Software Engineering Proposal
+WildWatchDocument Version: 1
+Published Date: 22 – 02 - 2025
+1. Introduction
+
+The Workforce Hub is an advanced Human Resource Information System (HRIS) designed to streamline and enhance the various human resource management processes within an organization. In today's fast-paced and ever-evolving business environment, managing human resources effectively is crucial for maintaining a competitive edge and ensuring employee satisfaction. Workforce Hub aims to provide a comprehensive and user-friendly solution for HR departments, offering a wide range of functionalities that cater to the needs of both HR professionals and employees.
+
+1.1. Purpose
+
+
+       	The purpose of this Software Requirements Specification (SRS) document for Workforce Hub HR Information System (HRIS) is to provide a detailed and clear description of the system’s intended functionalities and operational requirements. It serves as a blueprint for the development and implementation of the system, ensuring that all stakeholders, including developers, HR professionals, and project managers, have a shared understanding of the system's capabilities and limitations. The SRS also acts as a reference for testing, validation, and future enhancements of the system. By outlining both functional and non-functional requirements, it helps in setting expectations and defining how the system will interact with users, other systems, and external hardware.
+
+The intended audience for this SRS includes:
+1. Developers and Engineers: The SRS provides a detailed technical guide for the development team to follow while building and integrating the system components.
+2. HR Department: HR professionals are key users of the system. The SRS informs them of the features available for managing employee records, attendance, leave requests, and other HR-related processes.
+3. Project Managers: The SRS serves as a communication tool for project managers, helping them ensure the project stays on track, within scope, and meets the desired functional and non-functional requirements.
+4. Quality Assurance (QA) Testers: QA testers will use the SRS to understand the expected behavior of the system, enabling them to create effective test cases for system validation.
+5. End Users (HR Staff and Employees): While the primary user interface and system interactions will be driven by the functionalities outlined in the SRS, the document also serves as a reference for ensuring the system meets the needs of both HR staff and employees, providing smooth and efficient user experience.
+
+1.2. Scope
+
+       The Workforce Hub HR Information System (HRIS) is a comprehensive software solution designed to streamline and automate human resource management processes for organizations. This system will enable HR professionals to manage various tasks such as employee data management, time and attendance tracking, leave requests, recruitment, training and development tracking, and more. Additionally, the system provides employees with self-service features to manage their profiles, apply for leave, view attendance, and access training progress.
+
+The Workforce Hub HRIS includes the following software components:
+
+1. Web Application: A fully functional web platform that HR staff and employees can access through a browser. It will allow HR staff to manage employee profiles, track attendance and leave, handle recruitment, and monitor training. Employees will use the web app to manage their personal profiles, request leave, and track training progress.
+2. Mobile Application: A mobile app designed to enhance user experience with biometric login, real-time notifications, and limited access to key features such as leave requests, attendance tracking, and feedback surveys.
+3. Database: A centralized, secure database system to store and manage employee information, attendance records, payroll data, training records, and other HR-related data.
+4. Notification System: A notification engine integrated into the web and mobile platforms to send updates on leave requests, training schedules, company policies, and more.
+
+The Workforce Hub HRIS will provide the following functionalities:
+
+· Employee Data Management: HR staff will have the ability to create, update, and manage employee records, including personal details, job titles, training certifications, and compliance documents.
+· Time and Attendance Tracking: Employees can log their attendance, and HR can monitor attendance records, approve leave requests, and ensure compliance with company policies.
+· Leave Management: Employees can request leave, and HR staff can approve or deny those requests based on predefined policies.
+· Recruitment and Applicant Tracking: HR staff can post job openings, manage applicant data, and track the progress of candidates through the recruitment process.
+· Training and Development: HR staff can manage training programs and certifications, while employees can view and track their training progress.
+· Employee Self-Service: Employees can access and update their personal profiles, apply for leave, and view their attendance records, training progress, and pay slips.
+· Real-time Notifications: Both HR staff and employees will receive notifications about leave approvals, training sessions, policy changes, and HR-related events.
+· Survey and Feedback Collection: HR staff can create and distribute surveys, and employees can submit feedback on workplace satisfaction and training effectiveness.
+
+
+
+The Workforce Hub HRIS will not:
+
+· Payroll Management: Although the system will store employee salary data and leave balances, it will not handle payroll processing or tax calculations directly. Payroll data will be integrated with other systems used by the finance department.
+· Full Financial Management: The system will not manage general financial data like budgeting or accounting beyond payroll-related information.
+· Advanced Analytics and Reporting: The system will not provide advanced analytics or custom reporting capabilities beyond the predefined dashboards and reports available for HR staff and employees.
+
+       The Workforce Hub HRIS is designed to enhance the efficiency and productivity of HR departments by automating and streamlining various processes. It will significantly reduce administrative overhead and improve accuracy by consolidating employee data, attendance, leave requests, recruitment processes, and training progress in a single, easy-to-use system.
+
+Benefits, Objectives, and Goals:
+· Centralized Data Management: The system consolidates all HR data into a single platform, reducing the risk of errors and inconsistencies.
+· Improved Efficiency: By automating routine HR tasks, the system frees up HR staff to focus on more strategic initiatives.
+· Enhanced Employee Engagement: The self-service features give employees greater control over their personal information, leave requests, and training progress, leading to higher satisfaction and engagement.
+· Data Security and Compliance: The system ensures role-based access control, data encryption, and compliance with labor laws and regulations.
+
+The Workforce Hub HRIS is aimed at improving organizational efficiency, employee satisfaction, and HR process management while also reducing administrative time and enhancing data accuracy. It aligns with the goal of providing a modern, user-friendly platform for managing HR functions and meeting the needs of both HR staff and employees.
+1.3. Definitions, Acronyms, and Abbreviations
+
+Definitions
+1. HRIS (Human Resource Information System): A software solution designed to manage human resources functions, including employee data management, time and attendance tracking, leave requests, recruitment, and training management.
+2. Employee Profile: A collection of personal, professional, and administrative information about an employee, such as job title, department, training records, and performance reviews.
+3. Leave Request: A formal request submitted by an employee to take time off, which can be approved or denied by HR staff based on company policies.
+4. Time and Attendance Management: The process of tracking and recording employee work hours, attendance, and leave balances.
+5. Recruitment: The process of attracting, screening, and selecting qualified candidates for open job positions.
+6. Training and Development: Programs provided by the organization to improve the skills, knowledge, and performance of employees.
+7. Self-Service Portal: A feature allowing employees to manage their personal information, request leave, and track attendance and training.
+8. Notification System: A system that sends real-time updates about important events, such as leave approvals, training schedules, and policy updates.
+9. Role-based Access Control (RBAC): A security model that restricts access to system resources based on the roles assigned to users.
+10. Two-Factor Authentication (2FA): A security feature that requires two forms of identification for user login: something they know (password) and something they have (a verification code).
+11. OAuth Integration: A protocol allowing secure third-party authentication, enabling users to log in using their organizational credentials.
+12. System Admin: A user role with full access to all system features, responsible for managing the overall HRIS system.
+13. HR Admin: A user role with access to employee data management, benefits administration, time and attendance tracking, and recruitment.
+14. Employee (User): A user role with access to view and manage their personal profile, request leave, and track attendance and training.
+
+
+Acronyms
+· HRIS: Human Resource Information System
+· RBAC: Role-Based Access Control
+· 2FA: Two-Factor Authentication
+· OAuth: Open Authorization
+· API: Application Programming Interface
+· UI/UX: User Interface/User Experience
+· DBMS: Database Management System
+Abbreviations
+· HR: Human Resources
+· SRS: Software Requirements Specification
+· DB: Database
+· JSON: JavaScript Object Notation
+· SMTP: Simple Mail Transfer Protocol (used for email notifications)
+1.4. References
+
+2. Overall Description
+
+Workforce Hub HRIS system is a comprehensive web and mobile platform designed to streamline human resource management for both HR staff and employees. It offers secure login functionality with optional two-factor authentication and OAuth integration for simplified access. HR staff can manage employee profiles, track attendance and leave requests, handle recruitment processes, and monitor employee training and development, with role-based access ensuring data security. Employees have access to their personal profiles, can request time off, view attendance, and track their training progress. The mobile app enhances convenience by offering biometric login options and enabling real-time notifications. It also features survey and feedback collection tools for HR to gather insights into workplace satisfaction and training effectiveness. With role-specific dashboards and data management, this system optimizes HR processes, enhances communication, and ensures seamless experience for both employees and HR staff.
+
+2.1. Product perspective
+
+	       The Workforce Hub HR Information System (HRIS) is a comprehensive, self-contained software product designed to streamline and optimize HR management tasks. It integrates several HR functionalities and serves both HR professionals and employees. While it operates as an independent product, it can also interface with larger enterprise systems, including payroll, finance, and recruitment software, through well-defined APIs. The system is built to enhance HR efficiency, improve data accessibility, and ensure compliance with labor laws and internal policies.
+
+The system includes modules for:
+· Employee Data Management: Centralized management of employee records, job titles, certifications, training, and compliance documents.
+· Time and Attendance Management: Tracks employee work hours, attendance, and leave requests, ensuring labor law compliance.
+· Benefits Administration: Allows employees to manage health plans, leave balances, and reimbursements.
+· Talent Management & Recruitment: Facilitates job postings, applicant tracking, and employee career progression.
+· Performance Management: Tracks employee performance, sets goals, and manages performance improvement plans (PIPs).
+· Training & Development: Manages employee training assignments, completion, and certifications.
+
+The major components and interfaces of the system include:
+· HR Management Platform: Central system for data processing, user interface, and workflow management.
+o Employee Data Management
+o Time and Attendance Management 
+o Benefit Administration
+· External Interfaces:
+o Finance Systems: Integration for payroll calculations and financial reporting.
+o Applicant Tracking Systems (ATS): External interfaces for recruitment management.
+Module 1: Authentication and User Management
+· Transaction 1.1: Login (Employees and HR Admins)
+· Transaction 1.2: Self Enrollment Sign-up (All Employees)
+· Transaction 1.3: HR Employee Admin Role Assignment by System Admin 
+Module 2: Employee Data Management
+· Transaction 2.1: Create, update, and deactivate employee records.
+· Transaction 2.2: Assign roles, job titles, and departments.
+· Transaction 2.3: Track certifications, training, and compliance documents.
+Module 3: Attendance and Time Management
+· Transaction 3.1: Attendance clock-in/out.
+· Transaction 3.2: View leave balances
+· Transaction 3.3: Approve leave and overtime requests.
+Module 4: Benefits Administration
+· Transaction 5.1: Configure employee benefit plans.
+· Transaction 5.2: Manage reimbursement requests.
+· Transaction 5.3: Enroll in and track benefits.
+Module 5: Talent Management & Recruitment
+· Transaction 6.1: Post internal and external job listings.
+· Transaction 6.2: Track applicant progress (Sourced, Applied, Interviewed, Hired).
+· Transaction 6.3: View and apply for internal job openings.
+Module 6: Performance Management
+· Transaction 7.1: Create and Assign performance evaluations, self-assessments, and peer evaluations.
+· Transaction 7.2: Create and Track employee performance improvement plans.
+· Transaction 7.3: Receive reports and provide feedback/Sanctions and evaluate employee performances
+Module 7: Training & Development
+· Transaction 8.1: Assign employees to training programs, event (e.g. Webinars etc.).
+· Transaction 8.2: Track training completion and certifications.
+· Transaction 8.3: Enroll in courses, events, or programs and upload certifications.
+Module 8: Mobile Application
+· Transaction 9.1: Employee Data Management
+· Approve or reject profile change requests
+· View and search employee records
+· Edit personal details (phone, address, emergency contacts)
+· Upload certifications and compliance documents for approval
+· Transaction 9.2: Benefits Administration
+· Approve or reject leave applications
+· Track leave balances and employee absence trends
+· Apply for leave and track approval status
+· Transaction 9.3: Talent Management & Recruitment
+· View applicant progress (Sourced, Applied, Screening, Assessment, Interview, Offer, Hired)
+· View and apply for internal job postings
+· Transaction 9.4: Performance Management
+· Approve performance reviews and track KPI progress
+· View performance ratings and feedback
+· Transaction 9.5: Training & Development
+· Approve training enrollments and certifications
+· Enrolling in training courses
+· Transaction 9.6: Time and Attendance Management
+· View employee attendance trends and compliance reports
+· View personal attendance records and remaining leave balances
+
+
+
+2.2. User characteristics
+
+The Workforce Hub is designed to cater to different types of users, each with specific access levels and functionalities: 
+· System Admin: This role has full access to all features and settings within the system, responsible for managing the overall HRIS and ensuring its smooth operation. 
+· HR Admin: This role is focused on managing employee records and HR processes, including employee data management, benefits administration, talent management, performance management, training and development, time and attendance management, and payroll management. 
+
+· Regular Employees: Also referred to as "Users," regular employees have limited access to self-service features, such as viewing and updating personal details, enrolling in benefits, applying for leave, clocking in and out, viewing shift schedules, and accessing pay slips and salary breakdowns. Employees also benefit from the mobile app, which offers biometric login options, real-time notifications, and tools for survey and feedback collection. 
+
+2.3. Constraints
+
+The following constraints will limit the developer’s options and shape the development of the Workforce Hub HRIS system:
+Regulatory Policies
+1. Data Privacy and Protection Regulations: The system must adhere to local and international data privacy laws such as the Data Privacy Act of 2012 (Republic Act No. 10173) in the Philippines, and GDPR (General Data Protection Regulation) if applicable. This includes ensuring the protection of personal and sensitive employee data and incorporating secure data storage and access protocols.
+2. Labor Laws Compliance: The system must comply with labor regulations regarding timekeeping, leave management, employee benefits, and payroll processes to ensure the organization meets legal obligations related to employment standards.
+
+Hardware Limitations
+1. Mobile Device Compatibility: The mobile version of the application will be limited by the specifications and operating systems of target devices (Android and iOS). Developers must ensure compatibility with a wide range of mobile devices, particularly those commonly used within the organization.
+2. Server Specifications: The system must be designed to operate within the constraints of available server resources, including storage, processing power, and memory. These resources should be scaled according to user volume and expected growth.
+
+Interfaces to Other Applications
+1. Third-Party Integrations: The system must be able to integrate with third-party applications such as payroll systems, email servers (for notifications), and recruitment tools. These integrations must be robust and secure to ensure smooth data exchange and functionality.
+2. OAuth and Two-Factor Authentication Integration: The system will need to integrate with existing authentication systems, including OAuth and optional two-factor authentication, for user login and verification. The integration must be secure and user-friendly.
+
+Audit Functions
+1. Audit Trails: The system must maintain detailed audit trails for all critical actions performed within the platform (e.g., employee profile updates, leave approvals, recruitment activity). These logs must be stored securely and be accessible to authorized personnel for compliance and accountability purposes.
+2. Reporting Capabilities: The HRIS must include functionality for generating reports related to HR operations, such as leave balances, employee attendance, and training progress, and ensure these reports are customizable.
+
+Control Functions
+1. Role-based Access Control (RBAC): The system will implement RBAC to ensure that only authorized users have access to sensitive data and functionality. Developers must ensure that control functions are secure and prevent unauthorized access.
+2. Approval Workflow: For activities like leave requests and recruitment, the system must include multi-level approval workflows, where HR staff or managers must review and approve actions before they are finalized.
+
+Reliability Requirements
+1. System Availability: The HRIS must ensure high availability and uptime, with minimal downtime for maintenance. Ideally, the system should offer 99.9% uptime and be able to handle peak user loads without performance degradation.
+2. Data Backup and Recovery: The system must have a reliable backup and disaster recovery mechanism to ensure that data is not lost in case of a system failure.
+
+Criticality of the Application
+1. Business Continuity: Given that the Workforce Hub HRIS directly impacts HR operations, the application is critical for maintaining business continuity. Any downtime or malfunction could hinder employee management processes, such as payroll, attendance, and leave, which could lead to operational disruptions.
+
+Safety and Security Considerations
+1. Data Encryption: All sensitive data, including employee personal information, leave requests, and payroll data, must be encrypted both at rest and in transit to prevent unauthorized access.
+2. User Authentication: The system will implement strong user authentication mechanisms, including optional two-factor authentication (2FA), to prevent unauthorized login attempts and ensure the security of user accounts.
+3. Compliance with Security Standards: The system must comply with industry-standard security frameworks such as ISO 27001 for information security management to ensure the protection of organizational and employee data.
+4. Mobile Security: Given the mobile app's role, security measures such as biometric authentication and encryption of app data must be implemented to prevent data breaches on mobile devices.
+2.4. Assumptions and Dependencies
+
+The following assumptions and dependencies are crucial factors that may affect the requirements stated in this Software Requirements Specification (SRS) for the Workforce Hub HRIS. These assumptions and dependencies are not design constraints but represent underlying conditions that must hold true for the project to proceed as planned. Any changes to these factors may necessitate adjustments to the SRS.
+Assumptions
+1. Availability of the Operating System
+· The system assumes that the target hardware will support common operating systems such as Windows, macOS, Android, and iOS. If any of these operating systems are unavailable or incompatible with the hardware, adjustments to the system’s design and functionality may be required.
+2. Internet Connectivity
+· The Workforce Hub HRIS is designed to be an online platform requiring stable internet connectivity for both the web and mobile applications. If users do not have reliable internet access, certain features (such as real-time notifications, employee self-service, or data synchronization) may be limited.
+3. Mobile Device Availability
+· The system assumes that employees and HR staff will have access to mobile devices running compatible operating systems (Android or iOS). Any significant deviation from this assumption (e.g., users lacking smartphones) may require an alternative method of access to the system.
+4. Availability of Third-Party Services
+· The system depends on the availability of third-party services such as email servers for notifications and OAuth for authentication. If these services become unavailable or are not compatible, the system may need to implement alternate methods for communication and user authentication.
+5. User Familiarity with Basic HR Processes
+· The system assumes that users (HR staff and employees) will have a basic understanding of common HR processes (such as leave requests, attendance tracking, and profile management). If users lack this knowledge, additional training or system modifications may be necessary.
+6. Security Compliance
+· It is assumed that the necessary regulatory compliance frameworks (such as GDPR, the Data Privacy Act of 2012) will be in place and enforced within the organization. If the compliance requirements change or new regulations are introduced, the system may need to be updated to stay compliant.
+7. User Training
+· It is assumed that HR staff and employees will receive adequate training in using the Workforce Hub HRIS system. Lack of training could result in inefficiencies or misuse of the system, which could impact the system’s success.
+Dependencies
+1. Database Management System (DBMS)
+· The system depends on the availability and functionality of a reliable DBMS (such as MySQL, PostgreSQL, or SQL Server). Any changes in the DBMS version or its configuration could affect the data storage and retrieval performance.
+2. Authentication and Authorization Services
+· The system depends on external authentication services (such as OAuth and Two-Factor Authentication) to verify user identities. Changes in these services or authentication protocols could require modifications to the system’s security features.
+3. HR Policies and Regulations
+· The design and functionality of the system depend on the organization’s HR policies (e.g., leave policies, attendance rules, and payroll management). If there are changes in these policies, updates to the system’s features or workflows may be required.
+4. Employee and HR Data Availability
+· The system depends on the availability and accuracy of employee data (such as job titles, leave balances, and attendance records). Any delays or inaccuracies in data input could affect the functionality and integrity of the system.
+5. External Payroll System
+· The system assumes integration with an external payroll system for processing employee compensation. Changes in the payroll system or its interface could require updates to the integration points in the HRIS.
+6. External Survey and Feedback Tools
+· The system assumes integration with external survey and feedback tools for collecting employee feedback. Any changes to these external tools, such as API deprecation or service discontinuation, could impact the feedback collection functionality in the system.
+7. Mobile Device Security Features
+· The mobile app’s security features depend on the mobile device’s built-in capabilities, such as biometric authentication (fingerprint or facial recognition). Any changes in mobile operating systems or security standards (such as deprecation of biometric features) could necessitate adjustments to the mobile application’s security protocols.
+8. Scalability of Hardware Resources
+· The system’s performance relies on the scalability of hardware resources, such as server infrastructure and storage capacity, to handle increasing data volume and user load. Any constraints in hardware scalability could impact the system’s ability to scale efficiently as the user base grows.
+
+3. Specific Requirements
+
+3.1. External Interface Requirements
+
+3.1.1.    Hardware Interfaces
+The Workforce Hub HRIS system interacts with various hardware components to facilitate user access, biometric authentication, and attendance management. Below are the hardware interface specifications:
+· Device Support:
+o Mobile Devices: Android smartphones and tablets running the Android OS, developed using Kotlin in Android Studio.
+o Desktop Devices: PCs and laptops running modern web browsers (e.g., Google Chrome, Firefox, Safari) for web-based access.
+· Input Devices:
+o Keyboard: Used for data entry, navigation, and login.
+o Mouse: For selecting options and navigating through the HRIS interface.
+o Touchscreen: Mobile devices use touchscreens for interaction.
+· Output Devices:
+o Monitor: Displays HRIS data, reports, and employee dashboards on the web.
+o Printer: Optional interface for printing reports, pay slips, and other employee documents.
+· Biometric Devices:
+o Fingerprint Scanners: Used for biometric authentication in the mobile app, if implemented.
+o Face Recognition: Optional biometric authentication supported on mobile platforms.
+· Ports:
+o USB Ports: For connecting biometric devices (e.g., fingerprint scanners).
+o Wi-Fi/Bluetooth: Mobile communication for real-time syncing and interaction with biometric devices.
+· Communication Protocols:
+o Bluetooth: Supports communication with mobile biometric devices.
+o Wi-Fi: Ensures real-time syncing and communication between the mobile app and the central HRIS database.
+
+3.1.2.    Software Interfaces
+The Workforce Hub HRIS system integrates with several software platforms and external services to enhance its functionality:
+· Backend Frameworks:
+o Spring Boot (Java): Used for backend development and managing the system's core functionalities and RESTful APIs.
+o Kotlin: Used for Android mobile application development, providing concise and safe code.
+· Database Management:
+o PostgreSQL: Relational database management system used to store all HR-related data (employee profiles, attendance, payroll, etc.).
+· Mobile Development:
+o Android Studio: IDE for developing the mobile application using Kotlin for Android-based devices.
+· API Development & Testing:
+o Postman: Used for testing and documenting the RESTful APIs exposed by the Spring Boot backend.
+o REST API: Provides interfaces for data exchange between the mobile app, web frontend, and backend systems.
+· Frontend Development:
+o React: JavaScript library used for building the web-based frontend interface of the HRIS.
+o Next.js: A React-based framework for server-side rendering and building optimized web applications.
+· External System Integrations:
+o Payroll Systems: Optional Integration with external payroll systems for salary and deduction calculations.
+o Applicant Tracking Systems (ATS): Optional Integration with external systems for managing job postings, applications, and recruitment tracking.
+
+3.1.3.    Communications Interfaces
+The system uses various communication protocols to ensure seamless data transfer across devices and services:
+· Network Protocols:
+o HTTP/HTTPS: Used for communication between the web application and backend server, ensuring secure data transmission via SSL/TLS encryption.
+· Mobile Communication:
+o Push Notifications: Sent to users for real-time updates on employee performance, leave approvals, etc.
+o Email Notifications: Alerts for leave requests, updates, and other HR-related activities sent via SMS or email.
+· API Communication:
+o RESTful API: Used to facilitate data exchange between the Spring Boot backend, React/Next.js frontend, and external systems. APIs handle operations such as creating, updating, and retrieving employee records, attendance logs, and payroll data.
+· Biometric Device Communication:
+o Bluetooth: Supports real-time communication with fingerprint scanners or other biometric devices connected to mobile devices.
+
+3.2. Functional Requirements
+
+3.2.1.    User Roles and Permissions
+
+1. HR Staff 
+· Permissions 
+§ View and update their own profiles. 
+§ Request time off and view attendance records. 
+§ View their training progress and certifications. 
+§ Respond to surveys and feedback requests. 
+§ Access to their personal dashboard. 
+2. Employees 
+· Permissions 
+§ View and update their own profiles. 
+§ Request time off and view attendance records. 
+§ View their training progress and certifications. 
+§ Respond to surveys and feedback requests. 
+§ Access to their personal dashboard. 
+3. System Administrator 
+· Permissions 
+§ View and update their own profiles. 
+§ Request time off and view attendance records. 
+§ View their training progress and certifications. 
+§ Respond to surveys and feedback requests. 
+§ Access to their personal dashboard. 
+3.2.2.    Functionalities
+Module 1: Authentication and User Management
+1.1. Login (Employees and HR Admins)
+· Use Case Diagram
+
+The Login via Gmail OAuth with Domain Validation use case allows employees and HR admins to authenticate into the system using their Gmail accounts. Upon clicking the "Login with Gmail" button, users are redirected to the Gmail OAuth authentication page where they enter their Gmail credentials. After authentication, the system retrieves the user's email address and checks if the email domain matches the organization's allowed domain (e.g., @company.com). If the domain is valid, the user is directed to their respective dashboard: employees are redirected to the Employee Dashboard, while HR admins are sent to the Admin Dashboard. If the email domain does not match the allowed domain, the user is shown an error message stating "Invalid email domain" and is not granted access. This process ensures that only authorized users with valid organizational email addresses can access the system. The system also integrates optional two-factor authentication (2FA) for added security. This streamlined login process enhances user convenience and ensures secure access to the system.
+
+
+
+
+
+· Activity Diagram
+
+· Wireframe
+
+1.2 HR Employee Admin Role Assignment by System Admin
+· Use Case Diagram
+· Use Case Description
+· Activity Diagram
+· Wireframe
+
+
+3.2.3.    Business Rules
+
+1. Login and Authentication: 
+· Users must log in with valid credentials. 
+· Two-factor authentication (2FA) is optional but recommended for enhanced security. 
+· OAuth integration is available for simplified login using work emails. 
+2. Employee Profile Management: 
+· HR staff can create, update, and delete employee profiles. 
+· Employees can only view and update their own profiles. 
+· Role-based access control (RBAC) ensures data security. 
+3. Attendance and Leave Management: 
+· Employees can request time off within their allowable leave balances. 
+· HR staff can approve or deny leave requests based on company policies. 
+· Attendance records are updated in real-time. 
+4. Recruitment and Applicant Tracking: 
+· HR staff can post job openings on external job boards (e.g., LinkedIn) via API integration. 
+· Candidate data is protected with role-based access control. 
+5. Employee Training and Development Tracking: 
+· HR staff can track employee training programs and certifications. 
+· Employees can view their training progress but cannot modify records. 
+6. Notification System: 
+· Notifications are sent based on user roles and actions taken within the system. 
+· Notifications can be delivered via push notifications, email, or SMS. 
+7. Mobile Application: 
+· Biometric authentication is available for mobile login. 
+· Employees can view their profiles and attendance records but cannot edit them on mobile. 
+· HR staff can update employee data, but some fields are restricted on mobile due to screen size limitations. 
+
+3.3. Non-functional Requirements  
+
+3.3.1.    Performance
+3.3.2.    Security
+3.3.3.    Reliability
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Page 12 of 12
