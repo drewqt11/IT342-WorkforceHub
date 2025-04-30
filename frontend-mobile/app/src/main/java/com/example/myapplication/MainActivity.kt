@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
@@ -17,9 +18,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.lifecycleScope
 import com.example.myapplication.api.ApiHelper
 import com.example.myapplication.auth.AuthManager
+import com.example.myapplication.auth.OAuthWebViewActivity
 import com.example.myapplication.presentation.components.AppScreen
 import com.example.myapplication.presentation.screens.DashboardScreen
 import com.example.myapplication.presentation.screens.MainScreen
+import com.example.myapplication.presentation.screens.ProfileScreen
 import com.example.myapplication.presentation.screens.TimeAttendanceScreen
 import com.example.myapplication.presentation.theme.AppTheme
 import kotlinx.coroutines.launch
@@ -32,6 +35,30 @@ class MainActivity : ComponentActivity() {
     
     // Authentication manager
     private lateinit var authManager: AuthManager
+    
+    // Request code for OAuth activity
+    private val OAUTH_REQUEST_CODE = 1001
+    
+    // Activity result launcher for OAuth
+    private val oauthActivityResultLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            val data = result.data
+            val success = data?.getBooleanExtra(OAuthWebViewActivity.EXTRA_AUTH_SUCCESS, false) ?: false
+            
+            if (success) {
+                // Update UI state to reflect successful login
+                isLoggedInState.value = true
+                currentScreenState.value = AppScreen.DASHBOARD
+                Toast.makeText(this, "Authentication successful!", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "Authentication failed", Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            Toast.makeText(this, "Authentication cancelled", Toast.LENGTH_SHORT).show()
+        }
+    }
     
     @RequiresApi(Build.VERSION_CODES.S)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -51,7 +78,7 @@ class MainActivity : ComponentActivity() {
                 WorkforceHubApp(
                     isLoggedIn = isLoggedInState.value,
                     currentScreen = currentScreenState.value,
-                    onMicrosoftLoginClick = { startMicrosoftOAuth() },
+                    onMicrosoftLoginClick = { startWebViewOAuth() },
                     onLogout = { handleLogout() },
                     onScreenChange = { screen -> 
                         currentScreenState.value = screen 
@@ -85,15 +112,40 @@ class MainActivity : ComponentActivity() {
         }
     }
     
-    private fun startMicrosoftOAuth() {
-        // Start the OAuth flow with Microsoft using the Activity context
-        authManager.startMicrosoftOAuth(this)
+    /**
+     * Start OAuth flow using WebView-based approach
+     */
+    private fun startWebViewOAuth() {
+        val intent = Intent(this, OAuthWebViewActivity::class.java)
+        oauthActivityResultLauncher.launch(intent)
     }
     
     private fun handleLogout() {
         lifecycleScope.launch {
             authManager.logout()
             isLoggedInState.value = false
+        }
+    }
+    
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        
+        if (requestCode == OAUTH_REQUEST_CODE) {
+            if (resultCode == RESULT_OK) {
+                val success = data?.getBooleanExtra(OAuthWebViewActivity.EXTRA_AUTH_SUCCESS, false) ?: false
+                
+                if (success) {
+                    // Update UI state to reflect successful login
+                    isLoggedInState.value = true
+                    currentScreenState.value = AppScreen.DASHBOARD
+                    Toast.makeText(this, "Authentication successful!", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(this, "Authentication failed", Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                Toast.makeText(this, "Authentication cancelled", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 }
@@ -150,6 +202,26 @@ fun WorkforceHubApp(
                     },
                     onNavigateToProfile = {
                         onScreenChange(AppScreen.PROFILE)
+                    }
+                )
+            }
+            AppScreen.PROFILE -> {
+                ProfileScreen(
+                    onLogout = onLogout,
+                    onNavigateToDashboard = {
+                        onScreenChange(AppScreen.DASHBOARD)
+                    },
+                    onNavigateToAttendance = {
+                        onScreenChange(AppScreen.TIME_ATTENDANCE)
+                    },
+                    onNavigateToLeaveRequests = {
+                        onScreenChange(AppScreen.LEAVE_REQUESTS)
+                    },
+                    onNavigateToPerformance = {
+                        onScreenChange(AppScreen.PERFORMANCE)
+                    },
+                    onNavigateToTraining = {
+                        onScreenChange(AppScreen.TRAINING)
                     }
                 )
             }

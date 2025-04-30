@@ -9,6 +9,7 @@ import androidx.browser.customtabs.CustomTabsIntent
 import com.example.myapplication.api.ApiEndpoints
 import com.example.myapplication.api.ApiHelper
 import com.example.myapplication.api.models.AuthResponse
+import com.example.myapplication.utils.WebViewUtil
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.Date
@@ -21,8 +22,8 @@ class AuthManager(private val context: Context) {
         private const val TAG = "AuthManager"
         
         // OAuth constants
-        private const val OAUTH_PATH = "oauth2/authorization/microsoft"
-        private const val OAUTH_CALLBACK_PATH = "oauth2/redirect"
+        private const val OAUTH_PATH = "/login/oauth2/authorization/microsoft"
+        private const val OAUTH_CALLBACK_PATH = "/oauth2/redirect"
         
         // App scheme for redirect URI
         private const val APP_SCHEME = "workforcehub://oauth2redirect"
@@ -258,8 +259,15 @@ class AuthManager(private val context: Context) {
     
     /**
      * Logout the current user
+     * Clears tokens, cookies, and all WebView data
      */
     suspend fun logout(): Result<Unit> {
+        Log.d(TAG, "Logging out user and clearing session data")
+        
+        // Clear WebView cookies and session data
+        WebViewUtil.clearWebViewData(context)
+        
+        // Call API logout endpoint and clear stored token
         return ApiHelper.logout()
     }
 } 

@@ -5,9 +5,11 @@ import com.example.myapplication.api.models.AuthRequest
 import com.example.myapplication.api.models.AuthResponse
 import com.example.myapplication.api.models.RefreshTokenRequest
 import com.example.myapplication.api.models.RegisterRequest
+import com.example.myapplication.api.models.UserInfo
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.Header
 import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
@@ -46,4 +48,10 @@ interface AuthService {
      */
     @GET("auth/oauth2/token-info/{email}")
     suspend fun getOAuth2TokenInfo(@Path("email") email: String): Response<AuthResponse>
+    
+    /**
+     * Validate a token and get user information
+     */
+    @GET("api/auth/oauth2/user-info")
+    suspend fun validateToken(@Header("Authorization") authHeader: String): Response<UserInfo>
 } 

@@ -7,7 +7,7 @@ package com.example.myapplication.api
  */
 object ApiEndpoints {
     // Base URLs
-    const val BASE_URL = "http://10.0.2.2:8080/api/" // For Android Emulator pointing to localhost
+    const val BASE_URL = "https://api-workforcehub.aetherrflare.org" // Production
     // const val BASE_URL = "https://api.workforcehub.com/api/" // Production
     
     // Auth endpoints
@@ -17,7 +17,7 @@ object ApiEndpoints {
     const val LOGOUT = "auth/logout"
     
     // Employee endpoints
-    const val EMPLOYEE_PROFILE = "employee/profile"
+    const val EMPLOYEE_PROFILE = "/api/employee/profile"
     const val EMPLOYEE_ATTENDANCE = "employee/attendance"
     
     // HR endpoints

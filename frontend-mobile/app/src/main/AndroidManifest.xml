@@ -36,6 +36,13 @@
                     android:host="oauth2redirect" />
             </intent-filter>
         </activity>
+        
+        <!-- OAuth WebView Activity -->
+        <activity
+            android:name=".auth.OAuthWebViewActivity"
+            android:exported="false"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar"
+            android:windowSoftInputMode="adjustResize" />
     </application>
 
 </manifest>
