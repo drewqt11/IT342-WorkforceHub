@@ -1,68 +1,134 @@
 package com.example.myapplication
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.Handler
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.lifecycleScope
+import com.example.myapplication.api.ApiHelper
+import com.example.myapplication.auth.AuthManager
 import com.example.myapplication.presentation.components.AppScreen
 import com.example.myapplication.presentation.screens.DashboardScreen
 import com.example.myapplication.presentation.screens.MainScreen
 import com.example.myapplication.presentation.screens.TimeAttendanceScreen
 import com.example.myapplication.presentation.theme.AppTheme
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
+    
+    // State to track login status
+    private val isLoggedInState = mutableStateOf(false)
+    private val currentScreenState = mutableStateOf(AppScreen.DASHBOARD)
+    
+    // Authentication manager
+    private lateinit var authManager: AuthManager
+    
     @RequiresApi(Build.VERSION_CODES.S)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Initialize API Helper
+        ApiHelper.init(applicationContext)
+        
+        // Initialize Auth Manager
+        authManager = AuthManager.getInstance(applicationContext)
+        
+        // Check if user is already authenticated
+        isLoggedInState.value = authManager.isAuthenticated()
+        
         setContent {
             AppTheme {
-                WorkforceHubApp()
+                WorkforceHubApp(
+                    isLoggedIn = isLoggedInState.value,
+                    currentScreen = currentScreenState.value,
+                    onMicrosoftLoginClick = { startMicrosoftOAuth() },
+                    onLogout = { handleLogout() },
+                    onScreenChange = { screen -> 
+                        currentScreenState.value = screen 
+                    }
+                )
             }
+        }
+        
+        // Check if this activity was started from a deep link
+        handleIntent(intent)
+    }
+    
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleIntent(intent)
+    }
+    
+    private fun handleIntent(intent: Intent) {
+        // Check if this intent has data (from a deep link)
+        val data: Uri? = intent.data
+        if (data != null) {
+            lifecycleScope.launch {
+                val success = authManager.handleOAuthRedirect(data)
+                if (success) {
+                    // Update UI state to reflect successful login
+                    isLoggedInState.value = true
+                    currentScreenState.value = AppScreen.DASHBOARD
+                    Toast.makeText(this@MainActivity, "Authentication successful!", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+    
+    private fun startMicrosoftOAuth() {
+        // Start the OAuth flow with Microsoft using the Activity context
+        authManager.startMicrosoftOAuth(this)
+    }
+    
+    private fun handleLogout() {
+        lifecycleScope.launch {
+            authManager.logout()
+            isLoggedInState.value = false
         }
     }
 }
 
 @Composable
-fun WorkforceHubApp() {
+fun WorkforceHubApp(
+    isLoggedIn: Boolean,
+    currentScreen: AppScreen,
+    onMicrosoftLoginClick: () -> Unit,
+    onLogout: () -> Unit,
+    onScreenChange: (AppScreen) -> Unit
+) {
     val context = LocalContext.current
-    // State to control whether to show login screen or dashboard
-    var isLoggedIn by remember { mutableStateOf(false) }
-    // State to track current screen using AppScreen enum instead of strings
-    var currentScreen by remember { mutableStateOf(AppScreen.DASHBOARD) }
     
     if (isLoggedIn) {
         when (currentScreen) {
             AppScreen.DASHBOARD -> {
                 // Show dashboard when logged in
                 DashboardScreen(
-                    onLogout = {
-                        // Handle logout - set isLoggedIn to false to return to login screen
-                        isLoggedIn = false
-                    },
+                    onLogout = onLogout,
                     onNavigateToAttendance = {
                         // Navigate to Time & Attendance screen
-                        currentScreen = AppScreen.TIME_ATTENDANCE
+                        onScreenChange(AppScreen.TIME_ATTENDANCE)
                     },
                     onNavigateToLeaveRequests = {
-                        currentScreen = AppScreen.LEAVE_REQUESTS
+                        onScreenChange(AppScreen.LEAVE_REQUESTS)
                     },
                     onNavigateToPerformance = {
-                        currentScreen = AppScreen.PERFORMANCE
+                        onScreenChange(AppScreen.PERFORMANCE)
                     },
                     onNavigateToTraining = {
-                        currentScreen = AppScreen.TRAINING
+                        onScreenChange(AppScreen.TRAINING)
                     },
                     onNavigateToProfile = {
-                        currentScreen = AppScreen.PROFILE
+                        onScreenChange(AppScreen.PROFILE)
                     }
                 )
             }
@@ -70,57 +136,33 @@ fun WorkforceHubApp() {
                 TimeAttendanceScreen(
                     onBack = {
                         // Navigate back to dashboard
-                        currentScreen = AppScreen.DASHBOARD
+                        onScreenChange(AppScreen.DASHBOARD)
                     },
-                    onLogout = {
-                        // Handle logout
-                        isLoggedIn = false
-                    },
+                    onLogout = onLogout,
                     onNavigateToLeaveRequests = {
-                        currentScreen = AppScreen.LEAVE_REQUESTS
+                        onScreenChange(AppScreen.LEAVE_REQUESTS)
                     },
                     onNavigateToPerformance = {
-                        currentScreen = AppScreen.PERFORMANCE
+                        onScreenChange(AppScreen.PERFORMANCE)
                     },
                     onNavigateToTraining = {
-                        currentScreen = AppScreen.TRAINING
+                        onScreenChange(AppScreen.TRAINING)
                     },
                     onNavigateToProfile = {
-                        currentScreen = AppScreen.PROFILE
+                        onScreenChange(AppScreen.PROFILE)
                     }
                 )
             }
             // For now, other screens can just redirect to Dashboard
             else -> {
                 // Placeholder - in the future, you'll implement these screens
-                currentScreen = AppScreen.DASHBOARD
+                onScreenChange(AppScreen.DASHBOARD)
             }
         }
     } else {
         // Show login screen when not logged in
         MainScreen(
-            onMicrosoftLoginClick = {
-                // Handle Microsoft login click
-                Toast.makeText(
-                    context,
-                    "Microsoft Login Initiated",
-                    Toast.LENGTH_SHORT
-                ).show()
-                
-                // Here you would implement the actual authentication logic
-                // This simulates a successful login after a delay
-                Handler(context.mainLooper).postDelayed({
-                    Toast.makeText(
-                        context,
-                        "Authentication successful!",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    
-                    // Set logged in to true to navigate to dashboard
-                    isLoggedIn = true
-                    currentScreen = AppScreen.DASHBOARD
-                }, 1500)
-            }
+            onMicrosoftLoginClick = onMicrosoftLoginClick
         )
     }
 }
