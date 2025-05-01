@@ -1,5 +1,7 @@
 package com.example.myapplication.presentation.screens
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -399,6 +401,7 @@ fun BenefitItem(text: String) {
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.S)
 @Preview(showBackground = true)
 @Composable
 fun MainScreenPreview() {

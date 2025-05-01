@@ -7,8 +7,8 @@ package com.example.myapplication.api
  */
 object ApiEndpoints {
     // Base URLs
-    const val BASE_URL = "https://api-workforcehub.aetherrflare.org" // Production
-    // const val BASE_URL = "https://api.workforcehub.com/api/" // Production
+    //const val BASE_URL = "https://api-workforcehub.aetherrflare.org" // brian
+    const val BASE_URL = "https://java-app-6sj5.onrender.com" // render
     
     // Auth endpoints
     const val LOGIN = "auth/login"

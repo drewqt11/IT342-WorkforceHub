@@ -1,6 +1,11 @@
 package com.example.myapplication.presentation.screens
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -22,16 +27,22 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.AccountBox
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -59,6 +70,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
@@ -70,6 +83,12 @@ import com.example.myapplication.presentation.components.UniversalDrawer
 import com.example.myapplication.presentation.theme.AppColors
 import kotlinx.coroutines.launch
 
+// Define missing colors if they don't exist in the AppColors
+object ExtendedAppColors {
+    val gray600 = Color(0xFF6C757D)  // Standard Bootstrap gray-600
+}
+
+@Preview(showBackground = true)
 @Composable
 fun ProfileScreen(
     onLogout: () -> Unit = {},
@@ -112,9 +131,9 @@ fun ProfileScreen(
 
     Surface(
         modifier = Modifier.fillMaxSize(),
-        color = AppColors.gray50
+        color = Color(0xFFF5F7FA) // Lighter background for more modern feel
     ) {
-        // Using the Universal Drawer instead of directly using ModalNavigationDrawer
+        // Using the Universal Drawer
         UniversalDrawer(
             drawerState = drawerState,
             currentScreen = AppScreen.PROFILE,
@@ -124,377 +143,506 @@ fun ProfileScreen(
             onNavigateToLeaveRequests = onNavigateToLeaveRequests,
             onNavigateToPerformance = onNavigateToPerformance,
             onNavigateToTraining = onNavigateToTraining,
-            onNavigateToProfile = {} // Already on profile, no need to navigate
+            onNavigateToProfile = {} // Already on profile
         ) {
-            Box(modifier = Modifier.fillMaxSize()) {
-                // Background grid pattern
-                Canvas(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .alpha(0.05f)
-                ) {
-                    val gridSpacing = 50f
-                    val strokeWidth = 1f
-                    
-                    for (i in 0..(size.width / gridSpacing).toInt()) {
-                        drawLine(
-                            color = AppColors.blue300,
-                            start = Offset(i * gridSpacing, 0f),
-                            end = Offset(i * gridSpacing, size.height),
-                            strokeWidth = strokeWidth
-                        )
-                    }
-                    
-                    for (i in 0..(size.height / gridSpacing).toInt()) {
-                        drawLine(
-                            color = AppColors.blue300,
-                            start = Offset(0f, i * gridSpacing),
-                            end = Offset(size.width, i * gridSpacing),
-                            strokeWidth = strokeWidth
-                        )
-                    }
-                }
-                
-                // New Profile Header
-                ModernProfileHeader(
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(scrollState)
+            ) {
+                // Header with gradient 
+                ProfileHeader(
                     profile = profileData,
                     isLoading = isLoading,
                     onMenuClick = {
                         scope.launch {
                             drawerState.open()
                         }
-                    },
-                    onBackClick = onNavigateToDashboard,
-                    modifier = Modifier.zIndex(1f)
+                    }
                 )
                 
-                // Scrollable content
-                Box(
-                    modifier = Modifier.fillMaxSize()
+                // Content
+                Spacer(modifier = Modifier.height(70.dp)) // Add space for the profile card overlap
+                
+                // Profile content
+                AnimatedVisibility(
+                    visible = !isLoading && error == null && profileData != null,
+                    enter = fadeIn(spring(stiffness = Spring.StiffnessMediumLow)),
+                    exit = fadeOut()
                 ) {
-                    // Content that scrolls underneath the header
                     Column(
                         modifier = Modifier
-                            .fillMaxSize()
-                            .padding(top = 260.dp) // Increased to accommodate larger header
-                            .verticalScroll(scrollState),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 8.dp),
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            if (isLoading) {
-                                LoadingProfileCard()
-                            } else if (error != null) {
-                                ErrorProfileCard(error = error!!)
-                            } else if (profileData != null) {
-                                // Profile info cards
-                                ProfileInfoCard(profile = profileData!!)
-
-                                IdDetailsCard(profile = profileData!!)
-                                
-                                EmploymentDetailsCard(profile = profileData!!)
-                            }
-                            
-                            // Bottom spacing
-                            Spacer(modifier = Modifier.height(24.dp))
+                        if (profileData != null) {
+                            // Main Information sections
+                            PersonalInfoCard(profile = profileData!!)
+                            WorkInfoCard(profile = profileData!!)
+                            AccountInfoCard(profile = profileData!!)
                         }
                     }
                 }
+                
+                // Loading and error states
+                if (isLoading) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        LoadingCard()
+                    }
+                } else if (error != null) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        ErrorCard(error = error!!)
+                    }
+                }
+                
+                // Bottom spacing
+                Spacer(modifier = Modifier.height(24.dp))
             }
         }
     }
 }
 
 @Composable
-fun ModernProfileHeader(
+fun ProfileHeader(
     profile: EmployeeProfile?,
     isLoading: Boolean,
-    onMenuClick: () -> Unit,
-    onBackClick: () -> Unit,
-    modifier: Modifier = Modifier
+    onMenuClick: () -> Unit
 ) {
     Box(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(bottomStart = 22.dp, bottomEnd = 22.dp))
-            .height(220.dp)
+            .height(200.dp) // Reduced height
     ) {
-        // Background with gradient
+        // Header background with gradient
         Box(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxWidth()
+                .height(160.dp) // Reduced height
                 .background(
-                    brush = Brush.horizontalGradient(
-                        colors = listOf(AppColors.blue500, AppColors.teal500),
-                        startX = 0f,
-                        endX = 1200f
+                    brush = Brush.linearGradient(
+                        colors = listOf(
+                            Color(0xFF3B82F6),  // Blue 500
+                            Color(0xFF2563EB)   // Darker blue for contrast
+                        )
                     )
                 )
-        )
-        
-        // Decorative circles
-        Canvas(
-            modifier = Modifier
-                .fillMaxSize()
-                .alpha(0.15f)
         ) {
-            // Large circle
-            drawCircle(
-                color = Color.White,
-                center = Offset(size.width * 0.8f, size.height * 0.2f),
-                radius = size.width * 0.3f
-            )
-            
-            // Small circle
-            drawCircle(
-                color = Color.White,
-                center = Offset(size.width * 0.2f, size.height * 0.7f),
-                radius = size.width * 0.1f
-            )
-        }
-        
-        // Top navigation row with only menu button
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Menu button on the left
-            IconButton(
-                onClick = onMenuClick,
+            // Decorative elements
+            Canvas(
                 modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.2f))
+                    .fillMaxSize()
+                    .alpha(0.1f)
             ) {
-                Icon(
-                    painter = painterResource(id = android.R.drawable.ic_menu_sort_by_size),
-                    contentDescription = "Menu",
-                    tint = AppColors.white,
-                    modifier = Modifier.size(20.dp)
+                // Subtle pattern
+                drawCircle(
+                    color = Color.White,
+                    center = Offset(size.width * 0.85f, size.height * 0.3f),
+                    radius = size.width * 0.2f
+                )
+                
+                drawCircle(
+                    color = Color.White,
+                    center = Offset(size.width * 0.15f, size.height * 0.6f),
+                    radius = size.width * 0.1f
                 )
             }
             
-            // Empty spacer on right for balance
-            Spacer(modifier = Modifier.size(40.dp))
+            // Menu button and title
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Menu button
+                IconButton(
+                    onClick = onMenuClick,
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(Color.White.copy(alpha = 0.2f), CircleShape)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Menu,
+                        contentDescription = "Menu",
+                        tint = Color.White
+                    )
+                }
+                
+                // Title
+                Text(
+                    text = "Profile",
+                    color = Color.White,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                
+                // Empty spacer to balance layout
+                Spacer(modifier = Modifier.size(40.dp))
+            }
         }
         
-        // Profile information centered
-        Column(
+        // Profile card with photo
+        ElevatedCard(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-                .align(Alignment.Center),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(horizontal = 16.dp)
+                .offset(y = 100.dp), // Position to overlap properly
+            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp),
+            colors = CardDefaults.elevatedCardColors(
+                containerColor = Color.White
+            ),
+            shape = RoundedCornerShape(16.dp)
         ) {
             if (isLoading) {
-                // Loading avatar placeholder
                 Box(
                     modifier = Modifier
-                        .size(100.dp)
-                        .clip(CircleShape)
-                        .background(Color.White.copy(alpha = 0.2f)),
+                        .fillMaxWidth()
+                        .padding(vertical = 40.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     CircularProgressIndicator(
-                        color = Color.White,
-                        modifier = Modifier.size(40.dp)
+                        color = AppColors.blue500,
+                        modifier = Modifier.size(36.dp)
                     )
                 }
-                
-                Spacer(modifier = Modifier.height(12.dp))
-                
-                // Loading text placeholders
-                Box(
-                    modifier = Modifier
-                        .width(150.dp)
-                        .height(24.dp)
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(Color.White.copy(alpha = 0.2f))
-                )
-                
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                Box(
-                    modifier = Modifier
-                        .width(100.dp)
-                        .height(18.dp)
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(Color.White.copy(alpha = 0.2f))
-                )
             } else if (profile != null) {
-                // Profile avatar
-                Box(
+                Column(
                     modifier = Modifier
-                        .size(100.dp)
-                        .clip(CircleShape)
-                        .background(Color.White)
-                        .border(3.dp, Color.White.copy(alpha = 0.5f), CircleShape)
-                        .shadow(5.dp, CircleShape),
-                    contentAlignment = Alignment.Center
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(
-                        text = "${profile.firstName.firstOrNull() ?: ""}${profile.lastName.firstOrNull() ?: ""}",
-                        fontSize = 36.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = AppColors.blue700
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                // User name
-                Text(
-                    text = "${profile.firstName} ${profile.lastName}",
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-                
-                // Job information
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    val jobInfo = if (profile.jobName != null) {
-                        profile.jobName
-                    } else if (profile.roleName != null) {
-                        profile.roleName
-                    } else {
-                        "Employee"
+                    // Profile photo
+                    Box(
+                        modifier = Modifier
+                            .size(80.dp) // Slightly smaller
+                            .clip(CircleShape)
+                            .border(2.dp, AppColors.blue500, CircleShape)
+                            .background(AppColors.gray800),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "${profile.firstName.firstOrNull() ?: ""}${profile.lastName.firstOrNull() ?: ""}",
+                            color = Color.White,
+                            fontSize = 28.sp,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                     
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    // Name
                     Text(
-                        text = jobInfo,
-                        fontSize = 16.sp,
-                        color = Color.White.copy(alpha = 0.85f),
-                        textAlign = TextAlign.Center
+                        text = "${profile.firstName} ${profile.lastName}",
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = AppColors.gray800
                     )
                     
-                    if (profile.departmentName != null) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    
+                    // Role
+                    Text(
+                        text = profile.roleName ?: "Employee",
+                        fontSize = 16.sp,
+                        color = ExtendedAppColors.gray600
+                    )
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    // Status indicator with improved style
+                    val statusColor = when (profile.employmentStatus) {
+                        "ACTIVE" -> AppColors.green
+                        "PENDING" -> AppColors.amber
+                        "INACTIVE" -> AppColors.red
+                        else -> AppColors.gray500
+                    }
+                    
+                    val statusText = when (profile.employmentStatus) {
+                        "ACTIVE" -> "Active"
+                        "PENDING" -> "Pending"
+                        "INACTIVE" -> "Inactive"
+                        else -> "Unknown"
+                    }
+                    
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(statusColor.copy(alpha = 0.1f))
+                            .padding(horizontal = 12.dp, vertical = 5.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(statusColor)
+                        )
+                        
+                        Spacer(modifier = Modifier.width(6.dp))
+                        
                         Text(
-                            text = " • ${profile.departmentName}",
-                            fontSize = 16.sp,
-                            color = Color.White.copy(alpha = 0.85f),
-                            textAlign = TextAlign.Center
+                            text = statusText,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = statusColor
                         )
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+fun PersonalInfoCard(profile: EmployeeProfile) {
+    ProfileSectionCard(
+        title = "Personal Information",
+        icon = Icons.Default.Person
+    ) {
+        ProfileDetailItem(
+            label = "Full Name",
+            value = "${profile.firstName} ${profile.lastName}",
+            icon = Icons.Default.Person
+        )
         
-        // Status badge (if applicable)
-        if (profile != null && profile.employmentStatus != null) {
-            val statusColor = when (profile.employmentStatus) {
-                "ACTIVE" -> AppColors.green
-                "PENDING" -> AppColors.amber
-                "INACTIVE" -> AppColors.red
-                else -> AppColors.gray500
-            }
-            
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .offset(y = 20.dp) // Overlap with content below
-                    .clip(RoundedCornerShape(50.dp))
-                    .background(Color.White)
-                    .border(1.dp, statusColor.copy(alpha = 0.3f), RoundedCornerShape(50.dp))
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
+        ProfileDetailItem(
+            label = "Email",
+            value = profile.email,
+            icon = Icons.Default.Email
+        )
+        
+        ProfileDetailItem(
+            label = "Phone",
+            value = profile.phoneNumber ?: "Not provided",
+            icon = Icons.Default.Phone
+        )
+        
+        ProfileDetailItem(
+            label = "Address",
+            value = profile.address ?: "Not provided",
+            icon = Icons.Default.LocationOn
+        )
+    }
+}
+
+@Composable
+fun WorkInfoCard(profile: EmployeeProfile) {
+    ProfileSectionCard(
+        title = "Work Information",
+        icon = Icons.Default.AccountCircle
+    ) {
+        ProfileDetailItem(
+            label = "Department",
+            value = profile.departmentName ?: "Not assigned",
+            icon = Icons.Default.AccountCircle
+        )
+        
+        ProfileDetailItem(
+            label = "Job Title",
+            value = profile.jobName ?: "Not assigned",
+            icon = Icons.Default.AccountCircle
+        )
+        
+        ProfileDetailItem(
+            label = "Employee ID",
+            value = profile.employeeId,
+            icon = Icons.Default.Person
+        )
+        
+        ProfileDetailItem(
+            label = "Hire Date",
+            value = profile.hireDate ?: "Not provided",
+            icon = Icons.Default.DateRange
+        )
+    }
+}
+
+@Composable
+fun AccountInfoCard(profile: EmployeeProfile) {
+    ProfileSectionCard(
+        title = "Account Information",
+        icon = Icons.Default.AccountBox
+    ) {
+        ProfileDetailItem(
+            label = "ID Number",
+            value = profile.idNumber ?: "Not provided",
+            icon = Icons.Default.Person
+        )
+        
+        ProfileDetailItem(
+            label = "Role",
+            value = profile.roleName ?: "Not assigned",
+            icon = Icons.Default.Settings
+        )
+        
+        ProfileDetailItem(
+            label = "Account Created",
+            value = profile.createdAt?.let {
+                it.substring(0, it.indexOf('T'))
+            } ?: "Not available",
+            icon = Icons.Default.DateRange
+        )
+    }
+}
+
+@Composable
+fun ProfileSectionCard(
+    title: String,
+    icon: ImageVector,
+    content: @Composable () -> Unit
+) {
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = Color.White
+        ),
+        elevation = CardDefaults.elevatedCardElevation(
+            defaultElevation = 2.dp
+        ),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+                .animateContentSize(spring(stiffness = Spring.StiffnessLow))
+        ) {
+            // Section header
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(bottom = 12.dp)
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
+                // Icon in a circle
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(AppColors.blue500.copy(alpha = 0.1f), CircleShape),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(8.dp)
-                            .clip(CircleShape)
-                            .background(statusColor)
-                    )
-                    
-                    Spacer(modifier = Modifier.width(6.dp))
-                    
-                    Text(
-                        text = profile.employmentStatus,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = statusColor
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = AppColors.blue500,
+                        modifier = Modifier.size(20.dp)
                     )
                 }
+                
+                Spacer(modifier = Modifier.width(12.dp))
+                
+                Text(
+                    text = title,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = AppColors.gray800
+                )
             }
+            
+            Divider(
+                color = Color(0xFFEEF2F6),
+                thickness = 1.dp,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            
+            // Section content
+            content()
         }
     }
 }
 
 @Composable
-fun LoadingProfileCard() {
-    Card(
+fun ProfileDetailItem(
+    label: String,
+    value: String,
+    icon: ImageVector
+) {
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(bottom = 8.dp),
+            .padding(vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Small icon
+        Box(
+            modifier = Modifier
+                .size(32.dp)
+                .background(Color(0xFFF5F7FA), CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = AppColors.blue500,
+                modifier = Modifier.size(16.dp)
+            )
+        }
+        
+        Spacer(modifier = Modifier.width(12.dp))
+        
+        // Label and value
+        Column(
+            modifier = Modifier.weight(1f)
+        ) {
+            Text(
+                text = label,
+                fontSize = 14.sp,
+                color = AppColors.gray500,
+                fontWeight = FontWeight.Medium
+            )
+            
+            Text(
+                text = value,
+                fontSize = 16.sp,
+                fontWeight = if (value != "Not provided" && value != "Not assigned" && value != "Not available") 
+                    FontWeight.Medium else FontWeight.Normal,
+                color = if (value != "Not provided" && value != "Not assigned" && value != "Not available") 
+                    AppColors.gray800 else Color(0xFFADB5BD),
+                modifier = Modifier.padding(top = 2.dp)
+            )
+        }
+    }
+}
+
+@Composable
+fun LoadingCard() {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth(0.8f)
+            .padding(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        shape = RoundedCornerShape(16.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             CircularProgressIndicator(
-                modifier = Modifier
-                    .size(50.dp)
-                    .padding(16.dp),
-                color = AppColors.blue500
+                color = AppColors.blue500,
+                modifier = Modifier.size(40.dp)
             )
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
             Text(
-                text = "Loading profile information...",
+                text = "Loading profile data...",
                 fontSize = 16.sp,
-                color = AppColors.gray700
-            )
-        }
-    }
-}
-
-@Composable
-fun ErrorProfileCard(error: String) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(bottom = 8.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Icon(
-                imageVector = Icons.Default.Person,
-                contentDescription = "Error",
-                tint = AppColors.red,
-                modifier = Modifier.size(50.dp)
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Unable to load profile",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = AppColors.gray800
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = error,
-                fontSize = 14.sp,
-                color = AppColors.gray700,
+                color = ExtendedAppColors.gray600,
                 textAlign = TextAlign.Center
             )
         }
@@ -502,232 +650,44 @@ fun ErrorProfileCard(error: String) {
 }
 
 @Composable
-fun ProfileInfoCard(profile: EmployeeProfile) {
-    Spacer(modifier = Modifier.width(8.dp))
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(bottom = 8.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+fun ErrorCard(error: String) {
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.elevatedCardColors(containerColor = Color.White),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
+        shape = RoundedCornerShape(16.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Profile header with name and role
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text(
-                        text = "Personal Information",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = AppColors.gray800
-                    )
-                    
-                    Text(
-                        text = "Your basic profile details",
-                        fontSize = 14.sp,
-                        color = AppColors.gray500
-                    )
-                }
-            }
+            Icon(
+                imageVector = Icons.Default.Warning,
+                contentDescription = null,
+                tint = AppColors.red,
+                modifier = Modifier.size(48.dp)
+            )
             
             Spacer(modifier = Modifier.height(16.dp))
-            
-            // Full name
-            ProfileDataRow(label = "Full Name", value = "${profile.firstName} ${profile.lastName}")
-            
-            // Email
-            ProfileDataRow(label = "Email", value = profile.email)
-            
-            // Phone number
-            ProfileDataRow(
-                label = "Phone Number", 
-                value = profile.phoneNumber ?: "Not provided"
-            )
-            
-            // Gender
-            ProfileDataRow(
-                label = "Gender", 
-                value = profile.gender ?: "Not provided"
-            )
-            
-            // Date of Birth
-            ProfileDataRow(
-                label = "Date of Birth", 
-                value = profile.dateOfBirth ?: "Not provided"
-            )
-            
-            // Address
-            ProfileDataRow(
-                label = "Address", 
-                value = profile.address ?: "Not provided"
-            )
-            
-            // Marital Status
-            ProfileDataRow(
-                label = "Marital Status", 
-                value = profile.maritalStatus ?: "Not provided"
-            )
-        }
-    }
-}
-
-@Composable
-fun IdDetailsCard(profile: EmployeeProfile) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(bottom = 8.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            // Card title
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text(
-                        text = "Identification",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = AppColors.gray800
-                    )
-
-                    Text(
-                        text = "Your system identifiers",
-                        fontSize = 14.sp,
-                        color = AppColors.gray500
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Employee ID
-            ProfileDataRow(label = "Employee ID", value = profile.employeeId)
-
-            // ID Number
-            ProfileDataRow(
-                label = "ID Number",
-                value = profile.idNumber ?: "Not provided"
-            )
-
-            // Account Created
-            ProfileDataRow(
-                label = "Account Created",
-                value = profile.createdAt?.let {
-                    it.substring(0, it.indexOf('T'))
-                } ?: "Not available"
-            )
-        }
-    }
-}
-
-@Composable
-fun EmploymentDetailsCard(profile: EmployeeProfile) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(bottom = 8.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            // Card title
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text(
-                        text = "Employment Details",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = AppColors.gray800
-                    )
-                    
-                    Text(
-                        text = "Your work-related information",
-                        fontSize = 14.sp,
-                        color = AppColors.gray500
-                    )
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Department
-            ProfileDataRow(
-                label = "Department", 
-                value = profile.departmentName ?: "Not assigned"
-            )
-            
-            // Job Title
-            ProfileDataRow(
-                label = "Job Title", 
-                value = profile.jobName ?: "Not assigned"
-            )
-            
-            // Role
-            ProfileDataRow(
-                label = "Role", 
-                value = profile.roleName ?: "Not assigned"
-            )
-            
-            // Hire Date
-            ProfileDataRow(
-                label = "Hire Date", 
-                value = profile.hireDate ?: "Not provided"
-            )
-        }
-    }
-}
-
-@Composable
-fun ProfileDataRow(label: String, value: String) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = label,
-                fontSize = 16.sp,
-                color = AppColors.gray700
-            )
             
             Text(
-                text = value,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium,
-                color = AppColors.gray800
+                text = "Failed to load profile",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = AppColors.gray800,
+                textAlign = TextAlign.Center
+            )
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            Text(
+                text = error,
+                fontSize = 14.sp,
+                color = ExtendedAppColors.gray600,
+                textAlign = TextAlign.Center
             )
         }
-        
-        Divider(
-            color = AppColors.gray200
-        )
     }
 } 
