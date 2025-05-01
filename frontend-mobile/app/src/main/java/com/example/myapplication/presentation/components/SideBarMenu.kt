@@ -257,14 +257,15 @@ fun SideBarMenu(
         }
         
         // Divider before logout
-        Divider(color = AppColors.gray200)
+        Divider(color = AppColors.gray300)
         
         // Logout button with some padding
-        Box(modifier = Modifier.padding(vertical = 8.dp)) {
+        Box(modifier = Modifier) {
             MenuNavItem(
                 title = "Logout",
                 icon = R.drawable.logout_icon,
                 tint = AppColors.red,
+                backgroundColor = AppColors.redLight,
                 onClick = {
                     scope.launch {
                         drawerState.close()
@@ -285,9 +286,14 @@ fun MenuNavItem(
     icon: Int,
     isSelected: Boolean = false,
     tint: Color = AppColors.gray700,
+    backgroundColor: Color? = null,
     onClick: () -> Unit
 ) {
-    val background = if (isSelected) AppColors.blue50 else Color.Transparent
+    val background = when {
+        backgroundColor != null -> backgroundColor
+        isSelected -> AppColors.blue50
+        else -> Color.Transparent
+    }
     val textColor = if (isSelected) AppColors.blue700 else tint
     val iconTint = if (isSelected) AppColors.blue700 else tint
     

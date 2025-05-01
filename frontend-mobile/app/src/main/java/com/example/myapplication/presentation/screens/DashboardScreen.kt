@@ -220,7 +220,7 @@ fun DashboardScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(top = 205.dp) // Increased from 190.dp to move cards further down
+                            .padding(top = 210.dp) // Increased from 190.dp to move cards further down
                             .verticalScroll(scrollState),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {

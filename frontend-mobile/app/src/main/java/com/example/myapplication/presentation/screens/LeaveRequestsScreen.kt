@@ -125,38 +125,75 @@ fun LeaveRequestScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(top = 205.dp)
+                        .padding(top = 350.dp)
                         .verticalScroll(scrollState),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Placeholder content - replace with actual attendance UI
-                    Column(
+                    // Placeholder content
+                    Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                            .padding(36.dp)
+                            .shadow(elevation = 4.dp, shape = RoundedCornerShape(16.dp)),
+                        colors = CardDefaults.cardColors(containerColor = AppColors.white),
+                        shape = RoundedCornerShape(16.dp)
                     ) {
-                        // Placeholder content
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(16.dp)
                                 .background(
-                                    color = AppColors.white
-                                ),
+                                    brush = Brush.linearGradient(
+                                        colors = listOf(AppColors.blue50, AppColors.teal50),
+                                        start = Offset(0f, 0f),
+                                        end = Offset(1000f, 0f)
+                                    )
+                                )
+                                .padding(24.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(
-                                text = "Still working on it, Coming soon!",
-                                modifier = Modifier.padding(32.dp)
-                            )
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+
+                                Text(
+                                    text = "Under Development",
+                                    color = AppColors.gray800,
+                                    fontSize = 20.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(bottom = 8.dp)
+                                )
+
+                                Text(
+                                    text = "We're working hard to bring you the best experience.",
+                                    color = AppColors.gray700,
+                                    fontSize = 16.sp,
+                                    modifier = Modifier.padding(bottom = 16.dp),
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                )
+
+                                Box(
+                                    modifier = Modifier
+                                        .background(
+                                            color = AppColors.teal500,
+                                            shape = RoundedCornerShape(24.dp)
+                                        )
+                                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                                ) {
+                                    Text(
+                                        text = "Coming Soon!",
+                                        color = AppColors.white,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
                         }
                     }
                 }
 
                 // Fixed header on top (doesn't scroll)
                 AppHeader(
-                    title = "Leave Requests", // Updated title for consistency
+                    title = "Training & Events",
                     profileData = profileData,
                     isLoading = isLoading,
                     onMenuClick = {
@@ -165,156 +202,6 @@ fun LeaveRequestScreen(
                         }
                     },
                     modifier = Modifier.zIndex(1f) // Ensure header stays on top
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun LeaveRequestsScreenHeader(
-    onMenuClick: () -> Unit = {},
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(bottomStart = 22.dp, bottomEnd = 22.dp))
-            .height(220.dp)
-            .background(
-                brush = Brush.horizontalGradient(
-                    colors = listOf(AppColors.blue500, AppColors.teal500),
-                    startX = 0f,
-                    endX = 1200f
-                )
-            )
-    ) {
-        // Decorative circles
-        Canvas(
-            modifier = Modifier
-                .fillMaxSize()
-                .alpha(0.15f)
-        ) {
-            // Large circle
-            drawCircle(
-                color = Color.White,
-                center = Offset(size.width * 0.8f, size.height * 0.2f),
-                radius = size.width * 0.3f
-            )
-
-            // Small circle
-            drawCircle(
-                color = Color.White,
-                center = Offset(size.width * 0.2f, size.height * 0.7f),
-                radius = size.width * 0.1f
-            )
-        }
-
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 19.dp)
-        ) {
-            // Menu button at top left
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(
-                    onClick = onMenuClick,
-                    modifier = Modifier
-                        .size(40.dp)
-                        .background(Color(0x22FFFFFF), CircleShape)
-                ) {
-                    Icon(
-                        painter = painterResource(id = android.R.drawable.ic_menu_sort_by_size),
-                        contentDescription = "Menu",
-                        tint = AppColors.white,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-            }
-
-            // User profile section
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(top = 16.dp)
-            ) {
-                // User avatar
-                Box(
-                    modifier = Modifier
-                        .size(60.dp)
-                        .shadow(4.dp, CircleShape)
-                        .background(AppColors.white, CircleShape)
-                        .padding(2.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "PP",
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = AppColors.blue700
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(16.dp))
-
-                // User info
-                Column {
-                    // Welcome message
-                    Text(
-                        text = "Welcome back,",
-                        color = AppColors.white.copy(alpha = 0.85f),
-                        fontSize = 16.sp
-                    )
-
-                    Text(
-                        text = "Full Name",
-                        color = AppColors.white,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.5.sp
-                    )
-
-                    Text(
-                        text = "ID Number",
-                        color = AppColors.white.copy(alpha = 0.85f),
-                        fontSize = 14.sp,
-                        letterSpacing = 0.5.sp
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Date display
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Color(0x22FFFFFF))
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    painter = painterResource(id = android.R.drawable.ic_menu_my_calendar),
-                    contentDescription = "Date",
-                    tint = AppColors.white,
-                    modifier = Modifier.size(18.dp)
-                )
-
-                Spacer(modifier = Modifier.width(8.dp))
-
-                // Get current date formatted nicely
-                val today = LocalDate.now()
-                val formatter = DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy")
-                val formattedDate = today.format(formatter)
-
-                Text(
-                    text = formattedDate,
-                    color = AppColors.white,
-                    fontSize = 14.sp
                 )
             }
         }

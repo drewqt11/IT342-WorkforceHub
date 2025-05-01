@@ -48,6 +48,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -125,31 +126,68 @@ fun TrainingScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(top = 205.dp)
+                        .padding(top = 350.dp)
                         .verticalScroll(scrollState),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Placeholder content - replace with actual training UI
-                    Column(
+                    // Placeholder content
+                    Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                            .padding(36.dp)
+                            .shadow(elevation = 4.dp, shape = RoundedCornerShape(16.dp)),
+                        colors = CardDefaults.cardColors(containerColor = AppColors.white),
+                        shape = RoundedCornerShape(16.dp)
                     ) {
-                        // Placeholder content
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(16.dp)
                                 .background(
-                                    color = AppColors.white
-                                ),
+                                    brush = Brush.linearGradient(
+                                        colors = listOf(AppColors.blue50, AppColors.teal50),
+                                        start = Offset(0f, 0f),
+                                        end = Offset(1000f, 0f)
+                                    )
+                                )
+                                .padding(24.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(
-                                text = "Still working on it, Coming soon!",
-                                modifier = Modifier.padding(32.dp)
-                            )
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+
+                                Text(
+                                    text = "Under Development",
+                                    color = AppColors.gray800,
+                                    fontSize = 20.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(bottom = 8.dp)
+                                )
+
+                                Text(
+                                    text = "We're working hard to bring you the best experience.",
+                                    color = AppColors.gray700,
+                                    fontSize = 16.sp,
+                                    modifier = Modifier.padding(bottom = 16.dp),
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                )
+
+                                Box(
+                                    modifier = Modifier
+                                        .background(
+                                            color = AppColors.teal500,
+                                            shape = RoundedCornerShape(24.dp)
+                                        )
+                                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                                ) {
+                                    Text(
+                                        text = "Coming Soon!",
+                                        color = AppColors.white,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
                         }
                     }
                 }
