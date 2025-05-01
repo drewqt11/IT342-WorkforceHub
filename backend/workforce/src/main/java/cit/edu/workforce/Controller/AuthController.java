@@ -53,6 +53,29 @@ public class AuthController {
         this.userAccountRepository = userAccountRepository;
         this.employeeRepository = employeeRepository;
     }
+    /**
+     * Exchange OAuth2 authorization code for access token
+     * Uses the Spring security OAuth2 client to perform the exchange
+     */
+    @PostMapping("/oauth2/token")
+    @Operation(summary = "Exchange code for token", description = "Exchange OAuth2 authorization code for access token")
+    public ResponseEntity<AuthResponseDTO> exchangeCodeForToken(
+            @RequestParam("code") String code,
+            @RequestParam(value = "redirect_uri", required = false,
+                    defaultValue = "https://workforcehub.vercel.app/oauth2/redirect") String redirectUri) {
+
+        try {
+            // Extract email from Microsoft token claims
+            String email = authService.extractEmailFromAuthCode(code, redirectUri);
+
+            // Now get token info using the email
+            AuthResponseDTO authResponse = authService.getOAuth2TokenInfo(email);
+            return ResponseEntity.ok(authResponse);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new AuthResponseDTO(null, null, null, null, null, null, null, null, null));
+        }
+    }
 
     /**
      * Authenticate a user and generate a JWT token

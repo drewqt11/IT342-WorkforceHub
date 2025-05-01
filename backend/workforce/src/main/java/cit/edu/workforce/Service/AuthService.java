@@ -101,6 +101,18 @@ public class AuthService {
                 userAccount.getCreatedAt()
         );
     }
+    /**
+     * Extract email from OAuth2 authorization code
+     * This is a workaround since we don't have direct code exchange
+     */
+    public String extractEmailFromAuthCode(String code, String redirectUri) {
+        // Implement logic to extract email from code
+        // This would typically involve an exchange with the OAuth provider
+
+        // For now, just throw an exception
+        throw new ResponseStatusException(HttpStatus.NOT_IMPLEMENTED,
+                "Code exchange not implemented. Use token-info endpoint with email instead.");
+    }
 
     @Transactional
     public AuthResponseDTO register(EmployeeRegistrationDTO registrationDTO) {
