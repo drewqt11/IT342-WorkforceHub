@@ -246,8 +246,7 @@ public class AuthService {
             email,
             employee.getRole() != null ? employee.getRole().getRoleName() : "ROLE_EMPLOYEE"
         );
-
-        // Generate refresh token
+        //generate refresh token
         RefreshTokenEntity refreshToken = refreshTokenService.createRefreshToken(userAccount.getUserId());
 
         return new AuthResponseDTO(

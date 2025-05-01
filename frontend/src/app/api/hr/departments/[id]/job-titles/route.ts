@@ -13,9 +13,10 @@ import { NextRequest, NextResponse } from "next/server"
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: departmentId } = await params;
     const authHeader = request.headers.get("authorization")
     
     if (!authHeader) {
@@ -25,11 +26,6 @@ export async function GET(
       )
     }
 
-    // Get the department ID from the URL path
-    const url = new URL(request.url)
-    const pathSegments = url.pathname.split('/')
-    const departmentId = pathSegments[pathSegments.length - 2]
-    
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hr/job-titles/department/${departmentId}`, {
       headers: {
         Authorization: authHeader,
@@ -77,8 +73,12 @@ export async function GET(
  * @throws {400} If required fields are missing
  * @throws {500} If there's an internal server error
  */
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
+    const { id: departmentId } = await params;
     const authHeader = request.headers.get("authorization")
     
     if (!authHeader) {
@@ -101,11 +101,11 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     }
     
     // Build the URL with query parameters
-    let url = `${process.env.NEXT_PUBLIC_API_URL}/hr/job-titles?jobName=${encodeURIComponent(jobName.toString())}&departmentId=${params.id}`
+    let url = `${process.env.NEXT_PUBLIC_API_URL}/hr/job-titles?jobName=${encodeURIComponent(jobName.toString())}&departmentId=${departmentId}`
     
     // Add optional parameters if provided
     if (jobDescription) {
-      url += `&jobDescription=${encodeURIComponent(jobDescription.toString())}`
+      url += `?jobDescription=${encodeURIComponent(jobDescription.toString())}`
     }
     if (payGrade) {
       url += `&payGrade=${encodeURIComponent(payGrade.toString())}`

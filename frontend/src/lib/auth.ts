@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export const defaultFetchOptions = {
     credentials: 'include' as const,
@@ -194,7 +194,7 @@ export const authService = {
         } catch (error) {
             if (error instanceof TypeError && error.message === 'Failed to fetch') {
                 console.error('Network error details:', error);
-                throw new Error('Unable to connect to the server. Please ensure the backend server is running at http://localhost:8080');
+                throw new Error('Unable to connect to the server. Please ensure the backend server is running at http://localhost:8081');
             }
             throw error;
         }
@@ -230,16 +230,8 @@ export const authService = {
         document.cookie = `refreshToken=${refreshToken}; path=/; secure; samesite=strict`;
     },
 
-    async getToken(): Promise<string | null> {
-        if (typeof window === 'undefined') {
-            // Server-side: Get token from cookies using Next.js headers
-            const { cookies } = await import('next/headers');
-            const cookieStore = await cookies();
-            return cookieStore.get('token')?.value || null;
-        } else {
-            // Client-side: Get token from document.cookie
-            return document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1] || null;
-        }
+    getToken(): string | null {
+        return document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1] || null;
     },
 
     getRefreshToken(): string | null {
@@ -267,7 +259,7 @@ export const authService = {
     },
 
     async logout() {
-        const token = await this.getToken();
+        const token = this.getToken();
         if (token) {
             try {
                 // Extract userId from JWT token
@@ -279,14 +271,15 @@ export const authService = {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json',
                     },
                 });
             } catch (error) {
-                console.error('Error during logout:', error);
+                console.error('Logout error:', error);
             }
         }
+        this.clearTokens();
         this.clearAllCookies();
+        window.location.href = '/';
     },
 
     async getLastLogin(email: string): Promise<string> {
