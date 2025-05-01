@@ -240,6 +240,7 @@ fun DashboardHeader(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(bottomStart = 22.dp, bottomEnd = 22.dp))
+            .height(220.dp)
             .background(
                 brush = Brush.horizontalGradient(
                     colors = listOf(AppColors.blue500, AppColors.teal500),
@@ -248,7 +249,26 @@ fun DashboardHeader(
                 )
             )
     ) {
-        // Decorative circles in the header - removing them to match the image
+        // Decorative circles
+        Canvas(
+            modifier = Modifier
+                .fillMaxSize()
+                .alpha(0.15f)
+        ) {
+            // Large circle
+            drawCircle(
+                color = Color.White,
+                center = Offset(size.width * 0.8f, size.height * 0.2f),
+                radius = size.width * 0.3f
+            )
+
+            // Small circle
+            drawCircle(
+                color = Color.White,
+                center = Offset(size.width * 0.2f, size.height * 0.7f),
+                radius = size.width * 0.1f
+            )
+        }
 
         Column(
             modifier = Modifier
@@ -265,6 +285,7 @@ fun DashboardHeader(
                     onClick = onMenuClick,
                     modifier = Modifier
                         .size(40.dp)
+                        .clip(CircleShape)
                         .background(Color(0x22FFFFFF), CircleShape)
                 ) {
                     Icon(
@@ -397,9 +418,9 @@ fun AttendanceCard() {
                             modifier = Modifier.size(18.dp)
                         )
                     }
-                    
+
                     Spacer(modifier = Modifier.width(12.dp))
-                    
+
                     Text(
                         text = "Today's Attendance",
                         fontSize = 18.sp,
@@ -408,12 +429,12 @@ fun AttendanceCard() {
                         letterSpacing = 0.25.sp
                     )
                 }
-                
+
                 // Current date
                 val today = LocalDate.now()
                 val formatter = DateTimeFormatter.ofPattern("MMM d")
                 val formattedDate = today.format(formatter)
-                
+
                 Text(
                     text = formattedDate,
                     fontSize = 14.sp,
@@ -421,9 +442,9 @@ fun AttendanceCard() {
                     color = AppColors.gray500
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             // Divider with gradient
             Box(
                 modifier = Modifier
@@ -439,9 +460,9 @@ fun AttendanceCard() {
                         )
                     )
             )
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -454,7 +475,7 @@ fun AttendanceCard() {
                     textColor = AppColors.blue700,
                     iconRes = R.drawable.ic_menu_recent_history
                 )
-                
+
                 AttendanceTimeItem(
                     label = "Clock Out",
                     time = "05:30 PM",
@@ -464,9 +485,9 @@ fun AttendanceCard() {
                     iconRes = R.drawable.ic_menu_close_clear_cancel
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(20.dp))
-            
+
             // Work progress section
             Column {
                 Row(
@@ -480,7 +501,7 @@ fun AttendanceCard() {
                         fontWeight = FontWeight.Medium,
                         color = AppColors.gray700
                     )
-                    
+
                     Text(
                         text = "9h 00m / 8h 00m",
                         fontSize = 14.sp,
@@ -488,9 +509,9 @@ fun AttendanceCard() {
                         color = AppColors.blue700
                     )
                 }
-                
+
                 Spacer(modifier = Modifier.height(8.dp))
-                
+
                 // Progress bar
                 LinearProgressIndicator(
                     progress = 1.125f, // 9h / 8h = 1.125
@@ -501,9 +522,9 @@ fun AttendanceCard() {
                     color = AppColors.blue500,
                     trackColor = AppColors.blue100
                 )
-                
+
                 Spacer(modifier = Modifier.height(8.dp))
-                
+
                 // Overtime indicator
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -515,9 +536,9 @@ fun AttendanceCard() {
                             .size(8.dp)
                             .background(AppColors.green, CircleShape)
                     )
-                    
+
                     Spacer(modifier = Modifier.width(4.dp))
-                    
+
                     Text(
                         text = "1h 00m overtime",
                         fontSize = 12.sp,
@@ -574,9 +595,9 @@ fun AttendanceTimeItem(
                         tint = textColor.copy(alpha = 0.7f),
                         modifier = Modifier.size(16.dp)
                     )
-                    
+
                     Spacer(modifier = Modifier.width(8.dp))
-                    
+
                     Text(
                         text = label,
                         fontSize = 14.sp,
@@ -584,9 +605,9 @@ fun AttendanceTimeItem(
                         color = textColor.copy(alpha = 0.7f)
                     )
                 }
-                
+
                 Spacer(modifier = Modifier.height(8.dp))
-                
+
                 Text(
                     text = time,
                     fontSize = 20.sp,
@@ -633,9 +654,9 @@ fun LeaveRequestsCard() {
                             modifier = Modifier.size(18.dp)
                         )
                     }
-                    
+
                     Spacer(modifier = Modifier.width(12.dp))
-                    
+
                     Text(
                         text = "Leave Requests",
                         fontSize = 18.sp,
@@ -644,7 +665,7 @@ fun LeaveRequestsCard() {
                         letterSpacing = 0.25.sp
                     )
                 }
-                
+
                 // Leave balance indicator
                 Box(
                     modifier = Modifier
@@ -660,9 +681,9 @@ fun LeaveRequestsCard() {
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             LeaveRequestItem(
                 type = "Annual Leave",
                 status = "Approved",
@@ -670,12 +691,12 @@ fun LeaveRequestsCard() {
                 days = "5 days",
                 statusColor = AppColors.green
             )
-            
+
             Divider(
                 modifier = Modifier.padding(vertical = 12.dp),
                 color = AppColors.gray200
             )
-            
+
             LeaveRequestItem(
                 type = "Sick Leave",
                 status = "Pending",
@@ -683,9 +704,9 @@ fun LeaveRequestsCard() {
                 days = "1 day",
                 statusColor = AppColors.amber
             )
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             // "Apply for leave" button
             Box(
                 modifier = Modifier
@@ -705,9 +726,9 @@ fun LeaveRequestsCard() {
                         fontWeight = FontWeight.Medium,
                         color = AppColors.teal700
                     )
-                    
+
                     Spacer(modifier = Modifier.width(8.dp))
-                    
+
                     Icon(
                         painter = painterResource(id = android.R.drawable.ic_menu_add),
                         contentDescription = "Apply",
@@ -743,9 +764,9 @@ fun LeaveRequestItem(
                     fontWeight = FontWeight.SemiBold,
                     color = AppColors.gray800
                 )
-                
+
                 Spacer(modifier = Modifier.width(8.dp))
-                
+
                 // Days indicator
                 Box(
                     modifier = Modifier
@@ -761,9 +782,9 @@ fun LeaveRequestItem(
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(4.dp))
-            
+
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -773,9 +794,9 @@ fun LeaveRequestItem(
                     tint = AppColors.gray500,
                     modifier = Modifier.size(12.dp)
                 )
-                
+
                 Spacer(modifier = Modifier.width(4.dp))
-                
+
                 Text(
                     text = date,
                     fontSize = 12.sp,
@@ -783,7 +804,7 @@ fun LeaveRequestItem(
                 )
             }
         }
-        
+
         Box(
             modifier = Modifier
                 .background(
@@ -842,9 +863,9 @@ fun UpcomingTrainingCard() {
                             modifier = Modifier.size(18.dp)
                         )
                     }
-                    
+
                     Spacer(modifier = Modifier.width(12.dp))
-                    
+
                     Text(
                         text = "Upcoming Trainings",
                         fontSize = 18.sp,
@@ -853,7 +874,7 @@ fun UpcomingTrainingCard() {
                         letterSpacing = 0.25.sp
                     )
                 }
-                
+
                 // Training completion indicator
                 Row(
                     verticalAlignment = Alignment.CenterVertically
@@ -863,9 +884,9 @@ fun UpcomingTrainingCard() {
                             .size(8.dp)
                             .background(AppColors.blue500, CircleShape)
                     )
-                    
+
                     Spacer(modifier = Modifier.width(4.dp))
-                    
+
                     Text(
                         text = "3 courses",
                         fontSize = 12.sp,
@@ -873,9 +894,9 @@ fun UpcomingTrainingCard() {
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             // Featured training card with gradient
             Box(
                 modifier = Modifier
@@ -909,7 +930,7 @@ fun UpcomingTrainingCard() {
                             center = Offset(size.width * 0.85f, size.height * 0.3f),
                             style = Stroke(width = 2f)
                         )
-                        
+
                         drawCircle(
                             color = AppColors.white,
                             radius = 15.dp.toPx(),
@@ -917,7 +938,7 @@ fun UpcomingTrainingCard() {
                             style = Stroke(width = 1.5f)
                         )
                     }
-                    
+
                     Column {
                         Text(
                             text = "Cloud Computing Fundamentals",
@@ -925,9 +946,9 @@ fun UpcomingTrainingCard() {
                             fontWeight = FontWeight.Bold,
                             color = AppColors.white
                         )
-                        
+
                         Spacer(modifier = Modifier.height(10.dp))
-                        
+
                         Row(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -937,18 +958,18 @@ fun UpcomingTrainingCard() {
                                 tint = AppColors.white.copy(alpha = 0.9f),
                                 modifier = Modifier.size(14.dp)
                             )
-                            
+
                             Spacer(modifier = Modifier.width(6.dp))
-                            
+
                             Text(
                                 text = "May 5, 2024 • 10:00 AM",
                                 fontSize = 14.sp,
                                 color = AppColors.white.copy(alpha = 0.9f)
                             )
                         }
-                        
+
                         Spacer(modifier = Modifier.height(6.dp))
-                        
+
                         Row(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -958,18 +979,18 @@ fun UpcomingTrainingCard() {
                                 tint = AppColors.white.copy(alpha = 0.9f),
                                 modifier = Modifier.size(14.dp)
                             )
-                            
+
                             Spacer(modifier = Modifier.width(6.dp))
-                            
+
                             Text(
                                 text = "Virtual Meeting (Zoom)",
                                 fontSize = 14.sp,
                                 color = AppColors.white.copy(alpha = 0.9f)
                             )
                         }
-                        
+
                         Spacer(modifier = Modifier.height(16.dp))
-                        
+
                         // Join button
                         Box(
                             modifier = Modifier
@@ -987,9 +1008,9 @@ fun UpcomingTrainingCard() {
                                     tint = AppColors.white,
                                     modifier = Modifier.size(14.dp)
                                 )
-                                
+
                                 Spacer(modifier = Modifier.width(8.dp))
-                                
+
                                 Text(
                                     text = "Join Meeting",
                                     fontSize = 14.sp,
@@ -1001,9 +1022,9 @@ fun UpcomingTrainingCard() {
                     }
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             // "View all trainings" button
             Box(
                 modifier = Modifier
@@ -1060,9 +1081,9 @@ fun PerformanceMetricsCard() {
                             modifier = Modifier.size(18.dp)
                         )
                     }
-                    
+
                     Spacer(modifier = Modifier.width(12.dp))
-                    
+
                     Text(
                         text = "Performance Metrics",
                         fontSize = 18.sp,
@@ -1071,7 +1092,7 @@ fun PerformanceMetricsCard() {
                         letterSpacing = 0.25.sp
                     )
                 }
-                
+
                 // Time period selector (dropdown)
                 Box(
                     modifier = Modifier
@@ -1089,9 +1110,9 @@ fun PerformanceMetricsCard() {
                             fontWeight = FontWeight.Medium,
                             color = AppColors.gray700
                         )
-                        
+
                         Spacer(modifier = Modifier.width(4.dp))
-                        
+
                         Icon(
                             painter = painterResource(id = android.R.drawable.arrow_down_float),
                             contentDescription = "Select Period",
@@ -1101,9 +1122,9 @@ fun PerformanceMetricsCard() {
                     }
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(20.dp))
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -1116,7 +1137,7 @@ fun PerformanceMetricsCard() {
                     color = AppColors.blue500,
                     backgroundColor = AppColors.blue50
                 )
-                
+
                 PerformanceMetricItem(
                     label = "Projects",
                     value = "3",
@@ -1125,7 +1146,7 @@ fun PerformanceMetricsCard() {
                     color = AppColors.teal500,
                     backgroundColor = AppColors.teal50
                 )
-                
+
                 PerformanceMetricItem(
                     label = "Rating",
                     value = "4.8",
@@ -1135,9 +1156,9 @@ fun PerformanceMetricsCard() {
                     backgroundColor = AppColors.blue50
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             // Performance review note
             Row(
                 modifier = Modifier
@@ -1153,9 +1174,9 @@ fun PerformanceMetricsCard() {
                     tint = AppColors.blue700,
                     modifier = Modifier.size(18.dp)
                 )
-                
+
                 Spacer(modifier = Modifier.width(8.dp))
-                
+
                 Text(
                     text = "Next performance review: May 15, 2024",
                     fontSize = 12.sp,
@@ -1189,18 +1210,18 @@ fun PerformanceMetricItem(
             fontWeight = FontWeight.Bold,
             color = color
         )
-        
+
         Spacer(modifier = Modifier.height(4.dp))
-        
+
         Text(
             text = label,
             fontSize = 12.sp,
             color = AppColors.gray700,
             textAlign = TextAlign.Center
         )
-        
+
         Spacer(modifier = Modifier.height(8.dp))
-        
+
         // Change indicator
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -1219,9 +1240,9 @@ fun PerformanceMetricItem(
                 tint = if (isPositive) AppColors.green else AppColors.red,
                 modifier = Modifier.size(10.dp)
             )
-            
+
             Spacer(modifier = Modifier.width(2.dp))
-            
+
             Text(
                 text = change,
                 fontSize = 10.sp,
