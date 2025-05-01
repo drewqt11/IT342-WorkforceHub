@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.myapplication"
+    namespace = "cit.edu.workforcehub"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.myapplication"
+        applicationId = "cit.edu.workforcehub"
         minSdk = 27
         targetSdk = 35
         versionCode = 1
