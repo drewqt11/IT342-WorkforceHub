@@ -64,7 +64,7 @@ import com.example.myapplication.presentation.theme.AppColors
 import com.example.myapplication.R
 
 @Composable
-fun PerformanceScreen(
+fun TrainingScreen(
     onLogout: () -> Unit = {},
     onNavigateToDashboard: () -> Unit = {},
     onNavigateToAttendance: () -> Unit = {},
@@ -111,13 +111,13 @@ fun PerformanceScreen(
         // Using the UniversalDrawer
         UniversalDrawer(
             drawerState = drawerState,
-            currentScreen = AppScreen.PERFORMANCE,
+            currentScreen = AppScreen.TRAINING,
             onLogout = onLogout,
             onNavigateToDashboard = onNavigateToDashboard,
             onNavigateToAttendance = onNavigateToAttendance,
             onNavigateToLeaveRequests = onNavigateToLeaveRequests,
-            onNavigateToPerformance = {}, // Already on performance, no need to navigate
-            onNavigateToTraining = onNavigateToTraining,
+            onNavigateToPerformance = onNavigateToPerformance,
+            onNavigateToTraining = {}, // Already on training, no need to navigate
             onNavigateToProfile = onNavigateToProfile
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
@@ -129,7 +129,7 @@ fun PerformanceScreen(
                         .verticalScroll(scrollState),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Placeholder content - replace with actual attendance UI
+                    // Placeholder content - replace with actual training UI
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -156,7 +156,7 @@ fun PerformanceScreen(
 
                 // Fixed header on top (doesn't scroll)
                 AppHeader(
-                    title = "Performance", // Updated title for consistency
+                    title = "Training & Events",
                     profileData = profileData,
                     isLoading = isLoading,
                     onMenuClick = {
@@ -169,154 +169,4 @@ fun PerformanceScreen(
             }
         }
     }
-}
-
-@Composable
-fun PerformanceScreenHeader(
-    onMenuClick: () -> Unit = {},
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(bottomStart = 22.dp, bottomEnd = 22.dp))
-            .height(220.dp)
-            .background(
-                brush = Brush.horizontalGradient(
-                    colors = listOf(AppColors.blue500, AppColors.teal500),
-                    startX = 0f,
-                    endX = 1200f
-                )
-            )
-    ) {
-        // Decorative circles
-        Canvas(
-            modifier = Modifier
-                .fillMaxSize()
-                .alpha(0.15f)
-        ) {
-            // Large circle
-            drawCircle(
-                color = Color.White,
-                center = Offset(size.width * 0.8f, size.height * 0.2f),
-                radius = size.width * 0.3f
-            )
-
-            // Small circle
-            drawCircle(
-                color = Color.White,
-                center = Offset(size.width * 0.2f, size.height * 0.7f),
-                radius = size.width * 0.1f
-            )
-        }
-
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 19.dp)
-        ) {
-            // Menu button at top left
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(
-                    onClick = onMenuClick,
-                    modifier = Modifier
-                        .size(40.dp)
-                        .background(Color(0x22FFFFFF), CircleShape)
-                ) {
-                    Icon(
-                        painter = painterResource(id = android.R.drawable.ic_menu_sort_by_size),
-                        contentDescription = "Menu",
-                        tint = AppColors.white,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-            }
-
-            // User profile section
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(top = 16.dp)
-            ) {
-                // User avatar
-                Box(
-                    modifier = Modifier
-                        .size(60.dp)
-                        .shadow(4.dp, CircleShape)
-                        .background(AppColors.white, CircleShape)
-                        .padding(2.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "PP",
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = AppColors.blue700
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(16.dp))
-
-                // User info
-                Column {
-                    // Welcome message
-                    Text(
-                        text = "Welcome back,",
-                        color = AppColors.white.copy(alpha = 0.85f),
-                        fontSize = 16.sp
-                    )
-
-                    Text(
-                        text = "Full Name",
-                        color = AppColors.white,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.5.sp
-                    )
-
-                    Text(
-                        text = "ID Number",
-                        color = AppColors.white.copy(alpha = 0.85f),
-                        fontSize = 14.sp,
-                        letterSpacing = 0.5.sp
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Date display
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Color(0x22FFFFFF))
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    painter = painterResource(id = android.R.drawable.ic_menu_my_calendar),
-                    contentDescription = "Date",
-                    tint = AppColors.white,
-                    modifier = Modifier.size(18.dp)
-                )
-
-                Spacer(modifier = Modifier.width(8.dp))
-
-                // Get current date formatted nicely
-                val today = LocalDate.now()
-                val formatter = DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy")
-                val formattedDate = today.format(formatter)
-
-                Text(
-                    text = formattedDate,
-                    color = AppColors.white,
-                    fontSize = 14.sp
-                )
-            }
-        }
-    }
-}
+} 

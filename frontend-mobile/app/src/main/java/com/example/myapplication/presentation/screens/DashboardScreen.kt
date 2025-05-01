@@ -26,6 +26,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.Icon
@@ -35,7 +36,10 @@ import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -60,6 +64,10 @@ import kotlinx.coroutines.launch
 import com.example.myapplication.presentation.components.AppScreen
 import com.example.myapplication.presentation.components.UniversalDrawer
 import com.example.myapplication.presentation.theme.AppColors
+import com.example.myapplication.api.models.EmployeeProfile
+import com.example.myapplication.api.ApiHelper
+import androidx.compose.runtime.setValue
+import com.example.myapplication.presentation.components.AppHeader
 
 @Composable
 fun DashboardScreen(
@@ -96,6 +104,30 @@ fun DashboardScreen(
     
     // Scroll state for the content
     val scrollState = rememberScrollState()
+
+    // State for profile data
+    var profileData by remember { mutableStateOf<EmployeeProfile?>(null) }
+    var isLoading by remember { mutableStateOf(true) }
+    var error by remember { mutableStateOf<String?>(null) }
+    
+    // Fetch profile data
+    LaunchedEffect(key1 = true) {
+        try {
+            val employeeService = ApiHelper.getEmployeeService()
+            val response = employeeService.getProfile()
+            
+            if (response.isSuccessful && response.body() != null) {
+                profileData = response.body()
+                isLoading = false
+            } else {
+                error = "Failed to load profile: ${response.message()}"
+                isLoading = false
+            }
+        } catch (e: Exception) {
+            error = "Error loading profile: ${e.message}"
+            isLoading = false
+        }
+    }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -217,7 +249,9 @@ fun DashboardScreen(
                     }
                     
                     // Fixed header on top (doesn't scroll)
-                    DashboardHeader(
+                    AppHeader(
+                        profileData = profileData,
+                        isLoading = isLoading,
                         onMenuClick = {
                             scope.launch {
                                 drawerState.open()
@@ -226,164 +260,6 @@ fun DashboardScreen(
                         modifier = Modifier.zIndex(1f) // Ensure header stays on top
                     )
                 }
-            }
-        }
-    }
-}
-
-@Composable
-fun DashboardHeader(
-    onMenuClick: () -> Unit = {},
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(bottomStart = 22.dp, bottomEnd = 22.dp))
-            .height(220.dp)
-            .background(
-                brush = Brush.horizontalGradient(
-                    colors = listOf(AppColors.blue500, AppColors.teal500),
-                    startX = 0f,
-                    endX = 1200f
-                )
-            )
-    ) {
-            // Decorative circles
-            Canvas(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .alpha(0.15f)
-            ) {
-                // Large circle
-                drawCircle(
-                    color = Color.White,
-                    center = Offset(size.width * 0.85f, size.height * 0.2f),
-                    radius = size.width * 0.35f
-                )
-
-                // Medium circle
-                drawCircle(
-                    color = Color.White,
-                    center = Offset(size.width * 0.15f, size.height * 0.75f),
-                    radius = size.width * 0.15f
-                )
-
-                // Small circle
-                drawCircle(
-                    color = Color.White,
-                    center = Offset(size.width * 0.6f, size.height * 0.9f),
-                    radius = size.width * 0.08f
-                )
-            }
-
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 19.dp)
-                ) {
-                    // Menu button at top left
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        IconButton(
-                            onClick = onMenuClick,
-                            modifier = Modifier
-                                .size(40.dp)
-                        .clip(CircleShape)
-                        .background(Color(0x22FFFFFF), CircleShape)
-                ) {
-                    Icon(
-                        painter = painterResource(id = android.R.drawable.ic_menu_sort_by_size),
-                        contentDescription = "Menu",
-                        tint = AppColors.white,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-            }
-
-            // User profile section
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(top = 16.dp)
-            ) {
-                // User avatar
-                Box(
-                    modifier = Modifier
-                        .size(60.dp)
-                        .shadow(4.dp, CircleShape)
-                        .background(AppColors.white, CircleShape)
-                        .padding(2.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "PP",
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = AppColors.blue700
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(16.dp))
-
-                // User info
-                Column {
-                    // Welcome message
-                    Text(
-                        text = "Welcome back,",
-                        color = AppColors.white.copy(alpha = 0.85f),
-                        fontSize = 16.sp
-                    )
-
-                    Text(
-                        text = "Full Name",
-                        color = AppColors.white,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.5.sp
-                    )
-
-                    Text(
-                        text = "ID Number",
-                        color = AppColors.white.copy(alpha = 0.85f),
-                        fontSize = 14.sp,
-                        letterSpacing = 0.5.sp
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Date display
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Color(0x22FFFFFF))
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    painter = painterResource(id = android.R.drawable.ic_menu_my_calendar),
-                    contentDescription = "Date",
-                    tint = AppColors.white,
-                    modifier = Modifier.size(18.dp)
-                )
-
-                Spacer(modifier = Modifier.width(8.dp))
-
-                // Get current date formatted nicely
-                val today = LocalDate.now()
-                val formatter = DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy")
-                val formattedDate = today.format(formatter)
-
-                Text(
-                    text = formattedDate,
-                    color = AppColors.white,
-                    fontSize = 14.sp
-                )
             }
         }
     }

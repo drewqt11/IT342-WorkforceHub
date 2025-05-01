@@ -24,6 +24,9 @@ import com.example.myapplication.presentation.screens.DashboardScreen
 import com.example.myapplication.presentation.screens.MainScreen
 import com.example.myapplication.presentation.screens.ProfileScreen
 import com.example.myapplication.presentation.screens.TimeAttendanceScreen
+import com.example.myapplication.presentation.screens.LeaveRequestScreen
+import com.example.myapplication.presentation.screens.PerformanceScreen
+import com.example.myapplication.presentation.screens.TrainingScreen
 import com.example.myapplication.presentation.theme.AppTheme
 import kotlinx.coroutines.launch
 
@@ -186,8 +189,7 @@ fun WorkforceHubApp(
             }
             AppScreen.TIME_ATTENDANCE -> {
                 TimeAttendanceScreen(
-                    onBack = {
-                        // Navigate back to dashboard
+                    onNavigateToDashboard = {
                         onScreenChange(AppScreen.DASHBOARD)
                     },
                     onLogout = onLogout,
@@ -199,6 +201,66 @@ fun WorkforceHubApp(
                     },
                     onNavigateToTraining = {
                         onScreenChange(AppScreen.TRAINING)
+                    },
+                    onNavigateToProfile = {
+                        onScreenChange(AppScreen.PROFILE)
+                    }
+                )
+            }
+            AppScreen.LEAVE_REQUESTS -> {
+                LeaveRequestScreen(
+                    onLogout = onLogout,
+                    onNavigateToDashboard = {
+                        onScreenChange(AppScreen.DASHBOARD)
+                    },
+                    onNavigateToAttendance = {
+                        onScreenChange(AppScreen.TIME_ATTENDANCE)
+                    },
+                    onNavigateToPerformance = {
+                        onScreenChange(AppScreen.PERFORMANCE)
+                    },
+                    onNavigateToTraining = {
+                        onScreenChange(AppScreen.TRAINING)
+                    },
+                    onNavigateToProfile = {
+                        onScreenChange(AppScreen.PROFILE)
+                    }
+                )
+            }
+            AppScreen.PERFORMANCE -> {
+                PerformanceScreen(
+                    onLogout = onLogout,
+                    onNavigateToDashboard = {
+                        onScreenChange(AppScreen.DASHBOARD)
+                    },
+                    onNavigateToAttendance = {
+                        onScreenChange(AppScreen.TIME_ATTENDANCE)
+                    },
+                    onNavigateToLeaveRequests = {
+                        onScreenChange(AppScreen.LEAVE_REQUESTS)
+                    },
+                    onNavigateToTraining = {
+                        onScreenChange(AppScreen.TRAINING)
+                    },
+                    onNavigateToProfile = {
+                        onScreenChange(AppScreen.PROFILE)
+                    }
+                )
+            }
+            AppScreen.TRAINING -> {
+                TrainingScreen(
+                    onLogout = onLogout,
+                    onNavigateToDashboard = {
+                        onScreenChange(AppScreen.DASHBOARD)
+                    },
+                    onNavigateToAttendance = {
+                        onScreenChange(AppScreen.TIME_ATTENDANCE)
+                    },
+                    onNavigateToLeaveRequests = {
+                        onScreenChange(AppScreen.LEAVE_REQUESTS)
+                    },
+                    onNavigateToPerformance = {
+                        onScreenChange(AppScreen.PERFORMANCE)
                     },
                     onNavigateToProfile = {
                         onScreenChange(AppScreen.PROFILE)
@@ -227,8 +289,25 @@ fun WorkforceHubApp(
             }
             // For now, other screens can just redirect to Dashboard
             else -> {
-                // Placeholder - in the future, you'll implement these screens
-                onScreenChange(AppScreen.DASHBOARD)
+                // If we get an unimplemented screen, navigate to Dashboard as a fallback
+                DashboardScreen(
+                    onLogout = onLogout,
+                    onNavigateToAttendance = {
+                        onScreenChange(AppScreen.TIME_ATTENDANCE)
+                    },
+                    onNavigateToLeaveRequests = {
+                        onScreenChange(AppScreen.LEAVE_REQUESTS)
+                    },
+                    onNavigateToPerformance = {
+                        onScreenChange(AppScreen.PERFORMANCE)
+                    },
+                    onNavigateToTraining = {
+                        onScreenChange(AppScreen.TRAINING)
+                    },
+                    onNavigateToProfile = {
+                        onScreenChange(AppScreen.PROFILE)
+                    }
+                )
             }
         }
     } else {

@@ -32,7 +32,12 @@ import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -50,14 +55,18 @@ import androidx.compose.ui.zIndex
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.launch
+import com.example.myapplication.api.ApiHelper
+import com.example.myapplication.api.models.EmployeeProfile
+import com.example.myapplication.presentation.components.AppHeader
 import com.example.myapplication.presentation.components.AppScreen
 import com.example.myapplication.presentation.components.UniversalDrawer
 import com.example.myapplication.presentation.theme.AppColors
 
 @Composable
 fun TimeAttendanceScreen(
-    onBack: () -> Unit = {},
     onLogout: () -> Unit = {},
+    onNavigateToDashboard: () -> Unit = {},
+    onNavigateToAttendance: () -> Unit = {},
     onNavigateToLeaveRequests: () -> Unit = {},
     onNavigateToPerformance: () -> Unit = {},
     onNavigateToTraining: () -> Unit = {},
@@ -67,93 +76,95 @@ fun TimeAttendanceScreen(
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     
-    // For scrolling content
+    // Scroll state for content
     val scrollState = rememberScrollState()
+    
+    // State for profile data
+    var profileData by remember { mutableStateOf<EmployeeProfile?>(null) }
+    var isLoading by remember { mutableStateOf(true) }
+    var error by remember { mutableStateOf<String?>(null) }
+    
+    // Fetch profile data
+    LaunchedEffect(key1 = true) {
+        try {
+            val employeeService = ApiHelper.getEmployeeService()
+            val response = employeeService.getProfile()
+            
+            if (response.isSuccessful && response.body() != null) {
+                profileData = response.body()
+                isLoading = false
+            } else {
+                error = "Failed to load profile: ${response.message()}"
+                isLoading = false
+            }
+        } catch (e: Exception) {
+            error = "Error loading profile: ${e.message}"
+            isLoading = false
+        }
+    }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = AppColors.gray50
     ) {
-        // Using the Universal Drawer instead of directly using ModalNavigationDrawer
+        // Using the UniversalDrawer
         UniversalDrawer(
             drawerState = drawerState,
             currentScreen = AppScreen.TIME_ATTENDANCE,
             onLogout = onLogout,
-            onNavigateToDashboard = onBack, // Navigate back to dashboard
-            onNavigateToAttendance = {}, // Already on attendance screen
+            onNavigateToDashboard = onNavigateToDashboard,
+            onNavigateToAttendance = {}, // Already on attendance, no need to navigate
             onNavigateToLeaveRequests = onNavigateToLeaveRequests,
             onNavigateToPerformance = onNavigateToPerformance,
             onNavigateToTraining = onNavigateToTraining,
             onNavigateToProfile = onNavigateToProfile
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
-                // Background grid pattern
-                Canvas(
+                // Content that scrolls underneath the header
+                Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .alpha(0.05f)
+                        .padding(top = 205.dp)
+                        .verticalScroll(scrollState),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    val gridSpacing = 50f
-                    val strokeWidth = 1f
-                    
-                    for (i in 0..(size.width / gridSpacing).toInt()) {
-                        drawLine(
-                            color = AppColors.blue300,
-                            start = Offset(i * gridSpacing, 0f),
-                            end = Offset(i * gridSpacing, size.height),
-                            strokeWidth = strokeWidth
-                        )
-                    }
-                    
-                    for (i in 0..(size.height / gridSpacing).toInt()) {
-                        drawLine(
-                            color = AppColors.blue300,
-                            start = Offset(0f, i * gridSpacing),
-                            end = Offset(size.width, i * gridSpacing),
-                            strokeWidth = strokeWidth
-                        )
+                    // Placeholder content - replace with actual attendance UI
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        // Placeholder content
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp)
+                                .background(
+                                    color = AppColors.white
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "Still working on it, Coming soon!",
+                                modifier = Modifier.padding(32.dp)
+                            )
+                        }
                     }
                 }
                 
-                // Scrollable content
-                Box(
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    // Content that scrolls underneath the header
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(top = 220.dp)
-                            .verticalScroll(scrollState),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 8.dp),
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            // Time clock card
-                            TimeClockCard()
-                            
-                            // Attendance history card 
-                            AttendanceHistoryCard()
-
-                            // Bottom spacing
-                            Spacer(modifier = Modifier.height(24.dp))
+                // Fixed header on top (doesn't scroll)
+                AppHeader(
+                    title = "Time & Attendance", // Add a title for this screen
+                    profileData = profileData,
+                    isLoading = isLoading,
+                    onMenuClick = {
+                        scope.launch {
+                            drawerState.open()
                         }
-                    }
-                    
-                    // Fixed header on top (doesn't scroll)
-                    TimeAttendanceHeader(
-                        onMenuClick = {
-                            scope.launch {
-                                drawerState.open()
-                            }
-                        },
-                        modifier = Modifier.zIndex(1f) // Ensure header stays on top
-                    )
-                }
+                    },
+                    modifier = Modifier.zIndex(1f) // Ensure header stays on top
+                )
             }
         }
     }

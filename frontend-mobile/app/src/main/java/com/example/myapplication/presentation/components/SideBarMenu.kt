@@ -209,7 +209,7 @@ fun SideBarMenu(
                 onClick = {
                     scope.launch {
                         drawerState.close()
-//                        onNavigateToLeaveRequests()
+                        onNavigateToLeaveRequests()
                     }
                 }
             )
@@ -221,7 +221,7 @@ fun SideBarMenu(
                 onClick = {
                     scope.launch {
                         drawerState.close()
-//                        onNavigateToPerformance()
+                        onNavigateToPerformance()
                     }
                 }
             )
@@ -233,7 +233,7 @@ fun SideBarMenu(
                 onClick = {
                     scope.launch {
                         drawerState.close()
-//                        onNavigateToTraining()
+                        onNavigateToTraining()
                     }
                 }
             )
