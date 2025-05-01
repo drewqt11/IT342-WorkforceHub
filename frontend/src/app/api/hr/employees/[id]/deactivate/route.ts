@@ -17,7 +17,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Get the authorization header from the request
@@ -28,7 +28,7 @@ export async function PATCH(
     }
 
     // Get the employee ID from the URL parameters
-    const employeeId = params.id;
+    const { id: employeeId } = await params;
     
     if (!employeeId) {
       return NextResponse.json({ error: 'Employee ID is required' }, { status: 400 });

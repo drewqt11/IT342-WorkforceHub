@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: attendanceId } = await params;
     const authHeader = request.headers.get('Authorization');
     if (!authHeader) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -12,10 +13,6 @@ export async function PUT(
 
     const body = await request.json();
     const { employeeId, remarks } = body;
-    const url = new URL(request.url)
-    const pathSegments = url.pathname.split('/')
-    const attendanceId = pathSegments[pathSegments.length - 2]
-    
 
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/employee/attendance/${attendanceId}/clock-out`,
@@ -38,9 +35,6 @@ export async function PUT(
     return NextResponse.json(data);
   } catch (error) {
     console.error('Error in clock-out route:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-} 
+}

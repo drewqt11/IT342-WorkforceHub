@@ -3,7 +3,6 @@
 import type React from "react"
 import { useState } from "react"
 import Link from "next/link"
-import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import {
@@ -211,13 +210,11 @@ export function AppSidebar({ isMobile, onClose }: AppSidebarProps) {
       <div className="flex h-20 items-center justify-between border-b border-blue-100 dark:border-blue-900 px-6">
         <Link href="/hr/admin/dashboard" className="flex items-center gap-3">
           <div className="h-10 w-10 bg-white rounded-lg flex items-center justify-center shadow-md overflow-hidden">
-            <Image 
+            <img 
               src="/Logo with no Text.png" 
-              alt="Workforce Hub Logo"
-              width={32}
-              height={32}
-              className="object-contain"
-            />
+                alt="Workforce Hub Logo"
+              className="h-8 w-8 object-contain"
+              />
           </div>
           <div className="flex flex-col">
             <span className="font-bold text-blue-900 dark:text-blue-100">Workforce Hub</span>

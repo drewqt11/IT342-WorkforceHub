@@ -29,7 +29,7 @@ function getEmployeeIdFromToken(token: string): string | null {
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params
