@@ -1,13 +1,12 @@
 "use client";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { ArrowRight, Shield } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { authService } from "@/lib/auth";
 
 export default function MicrosoftLoginForm() {
-  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
   const handleMicrosoftLogin = async () => {
@@ -33,10 +32,12 @@ export default function MicrosoftLoginForm() {
         <div className="relative mb-8 text-center">
           <div className="mx-auto mb-3 h-20 w-20 overflow-hidden rounded-full bg-white p-[3px] shadow-lg">
             <div className="flex h-full w-full items-center justify-center rounded-full bg-white">
-              <img
+              <Image
                 src="/Logo with no Text.png"
                 alt="Workforce Hub Logo"
-                className="h-16 w-16 align-middle"
+                width={64}
+                height={64}
+                className="align-middle"
               />
             </div>
           </div>

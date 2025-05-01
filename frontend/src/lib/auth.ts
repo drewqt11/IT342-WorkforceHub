@@ -230,11 +230,12 @@ export const authService = {
         document.cookie = `refreshToken=${refreshToken}; path=/; secure; samesite=strict`;
     },
 
-    getToken(): string | null {
+    async getToken(): Promise<string | null> {
         if (typeof window === 'undefined') {
             // Server-side: Get token from cookies using Next.js headers
-            const { cookies } = require('next/headers');
-            return cookies().get('token')?.value || null;
+            const { cookies } = await import('next/headers');
+            const cookieStore = await cookies();
+            return cookieStore.get('token')?.value || null;
         } else {
             // Client-side: Get token from document.cookie
             return document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1] || null;
@@ -266,7 +267,7 @@ export const authService = {
     },
 
     async logout() {
-        const token = this.getToken();
+        const token = await this.getToken();
         if (token) {
             try {
                 // Extract userId from JWT token
@@ -278,15 +279,14 @@ export const authService = {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
                     },
                 });
             } catch (error) {
-                console.error('Logout error:', error);
+                console.error('Error during logout:', error);
             }
         }
-        this.clearTokens();
         this.clearAllCookies();
-        window.location.href = '/';
     },
 
     async getLastLogin(email: string): Promise<string> {
