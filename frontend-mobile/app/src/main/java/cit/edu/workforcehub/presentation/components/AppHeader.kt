@@ -146,32 +146,48 @@ fun AppHeader(
                     modifier = Modifier
                         .size(60.dp)
                         .shadow(4.dp, CircleShape)
-                        .background(cit.edu.workforcehub.presentation.theme.AppColors.white, CircleShape)
+                        .background(Color(0xFFE1F0FF), CircleShape)
                         .padding(2.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     if (isLoading) {
                         CircularProgressIndicator(
-                            color = cit.edu.workforcehub.presentation.theme.AppColors.blue700,
+                            color = Color(0xFF4285F4),
                             strokeWidth = 2.dp,
                             modifier = Modifier.size(24.dp)
                         )
                     } else if (profileData != null) {
-                        // Show initials from profile name
-                        Text(
-                            text = "${profileData.firstName.firstOrNull() ?: ""}${profileData.lastName.firstOrNull() ?: ""}",
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = cit.edu.workforcehub.presentation.theme.AppColors.blue700
-                        )
+                        // Show initials from profile name in blue circle
+                        Box(
+                            modifier = Modifier
+                                .size(30.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFF4285F4)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "${profileData.firstName.firstOrNull() ?: ""}${profileData.lastName.firstOrNull() ?: ""}",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                        }
                     } else {
-                        // Default placeholder
-                        Text(
-                            text = "PP",
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = cit.edu.workforcehub.presentation.theme.AppColors.blue700
-                        )
+                        // Default placeholder with blue circle
+                        Box(
+                            modifier = Modifier
+                                .size(30.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFF4285F4)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "AA",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                        }
                     }
                 }
 

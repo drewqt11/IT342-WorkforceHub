@@ -185,7 +185,7 @@ fun TimeAttendanceScreen(
 
                 // Fixed header on top (doesn't scroll)
                 AppHeader(
-                    title = "Training & Events",
+                    title = "Time & Attendance",
                     profileData = profileData,
                     isLoading = isLoading,
                     onMenuClick = {

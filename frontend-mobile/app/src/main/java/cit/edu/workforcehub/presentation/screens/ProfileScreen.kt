@@ -12,6 +12,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -32,8 +33,14 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.Badge
+import androidx.compose.material.icons.filled.Business
+import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocationOn
@@ -44,11 +51,14 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Work
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
@@ -70,18 +80,24 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import androidx.compose.foundation.ScrollState
+import cit.edu.workforcehub.R
 import cit.edu.workforcehub.api.ApiHelper
 import cit.edu.workforcehub.api.models.EmployeeProfile
 import cit.edu.workforcehub.presentation.components.AppScreen
 import cit.edu.workforcehub.presentation.components.UniversalDrawer
 import cit.edu.workforcehub.presentation.theme.AppColors
 import kotlinx.coroutines.launch
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import cit.edu.workforcehub.presentation.theme.CustomIcons
 
 @Preview(showBackground = true)
 @Composable
@@ -93,17 +109,6 @@ fun ProfileScreen(
     onNavigateToPerformance: () -> Unit = {},
     onNavigateToTraining: () -> Unit = {}
 ) {
-    // For animated decorative elements
-    val infiniteTransition = rememberInfiniteTransition(label = "profile_animation")
-    val alpha by infiniteTransition.animateFloat(
-        initialValue = 0.6f,
-        targetValue = 0.8f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2000),
-            repeatMode = androidx.compose.animation.core.RepeatMode.Reverse
-        ), label = "alpha_animation"
-    )
-    
     // State for drawer
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -137,7 +142,7 @@ fun ProfileScreen(
 
     Surface(
         modifier = Modifier.fillMaxSize(),
-        color = cit.edu.workforcehub.presentation.theme.AppColors.gray50
+        color = AppColors.gray50
     ) {
         // Using the Universal Drawer
         UniversalDrawer(
@@ -152,561 +157,625 @@ fun ProfileScreen(
             onNavigateToProfile = {} // Already on profile
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
-                // Decorative background elements
-                Canvas(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .alpha(0.05f)
-                ) {
-                    // Background grid pattern
-                    val gridSpacing = 50f
-                    val strokeWidth = 1f
-                    
-                    for (i in 0..(size.width / gridSpacing).toInt()) {
-                        drawLine(
-                            color = cit.edu.workforcehub.presentation.theme.AppColors.blue300,
-                            start = Offset(i * gridSpacing, 0f),
-                            end = Offset(i * gridSpacing, size.height),
-                            strokeWidth = strokeWidth
-                        )
-                    }
-                    
-                    for (i in 0..(size.height / gridSpacing).toInt()) {
-                        drawLine(
-                            color = cit.edu.workforcehub.presentation.theme.AppColors.blue300,
-                            start = Offset(0f, i * gridSpacing),
-                            end = Offset(size.width, i * gridSpacing),
-                            strokeWidth = strokeWidth
-                        )
-                    }
-                }
-                
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                ) {
-                    // Profile Header with gradient
-                    ProfileHeaderSection(
-                        profile = profileData,
-                        isLoading = isLoading,
-                        onMenuClick = {
-                            scope.launch {
-                                drawerState.open()
-                            }
-                        },
-                        modifier = Modifier.zIndex(1f) // Ensure header stays on top
-                    )
-
-                    // Main content with card sections
-                    AnimatedVisibility(
-                        visible = !isLoading && error == null && profileData != null,
-                        enter = fadeIn(spring(stiffness = Spring.StiffnessMediumLow)),
-                        exit = fadeOut()
+                // Main content
+                if (isLoading) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 8.dp)
-                                .verticalScroll(scrollState),
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            if (profileData != null) {
-                                // Main Information sections
-                                PersonalInfoCard(profile = profileData!!)
-                                WorkInfoCard(profile = profileData!!)
-                                AccountInfoCard(profile = profileData!!)
-
-                                // Bottom spacing
-                                Spacer(modifier = Modifier.height(24.dp))
-                            }
-                        }
+                        CircularProgressIndicator(color = AppColors.blue500)
                     }
-                    
-                    // Loading and error states
-                    if (isLoading) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 32.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            LoadingCard()
-                        }
-                    } else if (error != null) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 32.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            ErrorCard(error = error!!)
-                        }
-                    }
+                } else if (error != null) {
+                    ErrorView(error = error!!)
+                } else if (profileData != null) {
+                    ProfileContent(profile = profileData!!, scrollState = scrollState)
                 }
-            }
-        }
-    }
-}
-
-@Composable
-fun ProfileHeaderSection(
-    profile: EmployeeProfile?,
-    isLoading: Boolean,
-    onMenuClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(220.dp)
-    ) {
-        // Header background with gradient
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(220.dp)
-                .clip(RoundedCornerShape(bottomStart = 22.dp, bottomEnd = 22.dp))
-                .background(
-                    brush = Brush.horizontalGradient(
-                        colors = listOf(cit.edu.workforcehub.presentation.theme.AppColors.blue500, cit.edu.workforcehub.presentation.theme.AppColors.teal500),
-                        startX = 0f,
-                        endX = 1200f
-                    )
-                )
-        ) {
-            // Decorative circles in the background
-            Canvas(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .alpha(0.15f)
-            ) {
-                // Large circle
-                drawCircle(
-                    color = Color.White,
-                    center = Offset(size.width * 0.85f, size.height * 0.2f),
-                    radius = size.width * 0.35f
-                )
                 
-                // Medium circle
-                drawCircle(
-                    color = Color.White,
-                    center = Offset(size.width * 0.15f, size.height * 0.75f),
-                    radius = size.width * 0.15f
-                )
-                
-                // Small circle
-                drawCircle(
-                    color = Color.White,
-                    center = Offset(size.width * 0.6f, size.height * 0.9f),
-                    radius = size.width * 0.05f
-                )
-            }
-            
-            // Top app bar with menu and title
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Menu button with translucent background
+                // Menu button in top-left corner
                 IconButton(
-                    onClick = onMenuClick,
+                    onClick = {
+                        scope.launch {
+                            drawerState.open()
+                        }
+                    },
                     modifier = Modifier
-                        .size(40.dp)
+                        .padding(start = 16.dp, end = 16.dp, top = 30.dp, bottom = 19.dp)
+                        .size(45.dp)
                         .clip(CircleShape)
-                        .background(Color.White.copy(alpha = 0.15f))
+                        .background(Color.Transparent)
+                        .align(Alignment.TopStart)
+                        .zIndex(10f)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Menu,
+                        painter = painterResource(id = android.R.drawable.ic_menu_sort_by_size),
                         contentDescription = "Menu",
-                        tint = Color.White
+                        tint = Color.Transparent,
+                        modifier = Modifier.size(20.dp)
                     )
                 }
-                
-                // Title with nice typography
-                Text(
-                    text = "Profile",
-                    color = Color.White,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                
-                // Empty spacer to balance layout
-                Spacer(modifier = Modifier.size(40.dp))
-            }
-            
-            // User basic info
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-                    .offset(y = 20.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                if (!isLoading && profile != null) {
-                    // User avatar
-                    Box(
-                        modifier = Modifier
-                            .size(60.dp)
-                            .shadow(4.dp, CircleShape)
-                            .background(cit.edu.workforcehub.presentation.theme.AppColors.white, CircleShape)
-                            .padding(2.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "${profile.firstName.firstOrNull() ?: ""}${profile.lastName.firstOrNull() ?: ""}",
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = cit.edu.workforcehub.presentation.theme.AppColors.blue700
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(16.dp))
-
-                    // User info
-                    Column {
-                        Text(
-                            text = "${profile.firstName} ${profile.lastName}",
-                            color = cit.edu.workforcehub.presentation.theme.AppColors.white,
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 0.5.sp
-                        )
-
-                        Text(
-                            text = profile.idNumber ?: "ID Pending",
-                            color = cit.edu.workforcehub.presentation.theme.AppColors.white.copy(alpha = 0.85f),
-                            fontSize = 14.sp,
-                            letterSpacing = 0.5.sp
-                        )
-                        
-                        Spacer(modifier = Modifier.height(4.dp))
-                        
-                        // Status chip
-                        val statusColor = when (profile.employmentStatus) {
-                            "ACTIVE" -> cit.edu.workforcehub.presentation.theme.AppColors.green
-                            "PENDING" -> cit.edu.workforcehub.presentation.theme.AppColors.amber
-                            "INACTIVE" -> cit.edu.workforcehub.presentation.theme.AppColors.red
-                            else -> cit.edu.workforcehub.presentation.theme.AppColors.gray500
-                        }
-                        
-                        val statusText = when (profile.employmentStatus) {
-                            "ACTIVE" -> "Active"
-                            "PENDING" -> "Pending"
-                            "INACTIVE" -> "Inactive"
-                            else -> "Unknown"
-                        }
-                        
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(20.dp))
-                                .background(Color.White.copy(alpha = 0.15f))
-                                .padding(horizontal = 8.dp, vertical = 3.dp)
-                        ) {
-                            // Status indicator dot
-                            Box(
-                                modifier = Modifier
-                                    .size(8.dp)
-                                    .clip(CircleShape)
-                                    .background(statusColor)
-                            )
-                            
-                            Spacer(modifier = Modifier.width(6.dp))
-                            
-                            Text(
-                                text = statusText,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = Color.White
-                            )
-                        }
-                    }
-                }
-                else if (isLoading) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(
-                            color = Color.White,
-                            modifier = Modifier.size(36.dp)
-                        )
-                    }
-                }
             }
         }
     }
 }
 
 @Composable
-fun PersonalInfoCard(profile: EmployeeProfile) {
-    ProfileSectionCard(
-        title = "Personal Information",
-        icon = Icons.Default.Person,
-        iconBackgroundColor = cit.edu.workforcehub.presentation.theme.AppColors.blue50,
-        iconTintColor = cit.edu.workforcehub.presentation.theme.AppColors.blue700
+fun ProfileContent(profile: EmployeeProfile, scrollState: ScrollState) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(scrollState)
+            .padding(top = 50.dp)
     ) {
-        ProfileDetailItem(
-            label = "Full Name",
-            value = "${profile.firstName} ${profile.lastName}",
-            icon = Icons.Default.Person,
-            iconBackgroundColor = cit.edu.workforcehub.presentation.theme.AppColors.blue50,
-            iconTintColor = cit.edu.workforcehub.presentation.theme.AppColors.blue700
+        // My Profile title at the top of the scrollable content
+        Text(
+            text = "My Profile",
+            fontSize = 22.sp,
+            fontWeight = FontWeight.Bold,
+            color = AppColors.gray800,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp),
+            textAlign = TextAlign.Center
         )
         
-        ProfileDetailItem(
-            label = "Email",
-            value = profile.email,
-            icon = Icons.Default.Email,
-            iconBackgroundColor = cit.edu.workforcehub.presentation.theme.AppColors.teal50,
-            iconTintColor = cit.edu.workforcehub.presentation.theme.AppColors.teal700
-        )
+        // User Profile Card
+        UserProfileCard(profile = profile)
         
-        ProfileDetailItem(
-            label = "Phone",
-            value = profile.phoneNumber ?: "Not provided",
-            icon = Icons.Default.Phone,
-            iconBackgroundColor = cit.edu.workforcehub.presentation.theme.AppColors.blue50,
-            iconTintColor = cit.edu.workforcehub.presentation.theme.AppColors.blue700
-        )
+        Spacer(modifier = Modifier.height(16.dp))
         
-        ProfileDetailItem(
-            label = "Address",
-            value = profile.address ?: "Not provided",
-            icon = Icons.Default.LocationOn,
-            iconBackgroundColor = cit.edu.workforcehub.presentation.theme.AppColors.teal50,
-            iconTintColor = cit.edu.workforcehub.presentation.theme.AppColors.teal700
-        )
+        // Personal Information
+        PersonalInfoSection(profile = profile)
         
-        if (profile.gender != null || profile.dateOfBirth != null || profile.maritalStatus != null) {
-            Divider(
-                color = cit.edu.workforcehub.presentation.theme.AppColors.gray200,
-                thickness = 1.dp,
-                modifier = Modifier.padding(vertical = 12.dp)
-            )
-            
-            if (profile.gender != null) {
-                ProfileDetailItem(
-                    label = "Gender",
-                    value = profile.gender,
-                    icon = Icons.Default.Person,
-                    iconBackgroundColor = cit.edu.workforcehub.presentation.theme.AppColors.blue50,
-                    iconTintColor = cit.edu.workforcehub.presentation.theme.AppColors.blue700
-                )
-            }
-            
-            if (profile.dateOfBirth != null) {
-                ProfileDetailItem(
-                    label = "Date of Birth",
-                    value = profile.dateOfBirth,
-                    icon = Icons.Default.DateRange,
-                    iconBackgroundColor = cit.edu.workforcehub.presentation.theme.AppColors.teal50,
-                    iconTintColor = cit.edu.workforcehub.presentation.theme.AppColors.teal700
-                )
-            }
-            
-            if (profile.maritalStatus != null) {
-                ProfileDetailItem(
-                    label = "Marital Status",
-                    value = profile.maritalStatus,
-                    icon = Icons.Default.Person,
-                    iconBackgroundColor = cit.edu.workforcehub.presentation.theme.AppColors.blue50,
-                    iconTintColor = cit.edu.workforcehub.presentation.theme.AppColors.blue700
-                )
-            }
-        }
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        // Employment Information
+        EmploymentInfoSection(profile = profile)
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        // Account Information
+        AccountInfoSection(profile = profile)
+        
+        // Add extra space at the bottom to ensure the last card is fully visible when scrolling
+        Spacer(modifier = Modifier.height(24.dp))
     }
 }
 
 @Composable
-fun WorkInfoCard(profile: EmployeeProfile) {
-    ProfileSectionCard(
-        title = "Work Information",
-        icon = Icons.Default.Info,
-        iconBackgroundColor = cit.edu.workforcehub.presentation.theme.AppColors.teal50,
-        iconTintColor = cit.edu.workforcehub.presentation.theme.AppColors.teal700
-    ) {
-        ProfileDetailItem(
-            label = "Department",
-            value = profile.departmentName ?: "Not assigned",
-            icon = Icons.Default.Home,
-            iconBackgroundColor = cit.edu.workforcehub.presentation.theme.AppColors.blue50,
-            iconTintColor = cit.edu.workforcehub.presentation.theme.AppColors.blue700
-        )
-        
-        ProfileDetailItem(
-            label = "Job Title",
-            value = profile.jobName ?: "Not assigned",
-            icon = Icons.Default.Star,
-            iconBackgroundColor = cit.edu.workforcehub.presentation.theme.AppColors.teal50,
-            iconTintColor = cit.edu.workforcehub.presentation.theme.AppColors.teal700
-        )
-        
-        ProfileDetailItem(
-            label = "Employee ID",
-            value = profile.employeeId,
-            icon = Icons.Default.AccountCircle,
-            iconBackgroundColor = cit.edu.workforcehub.presentation.theme.AppColors.blue50,
-            iconTintColor = cit.edu.workforcehub.presentation.theme.AppColors.blue700
-        )
-        
-        ProfileDetailItem(
-            label = "Hire Date",
-            value = profile.hireDate ?: "Not provided",
-            icon = Icons.Default.DateRange,
-            iconBackgroundColor = cit.edu.workforcehub.presentation.theme.AppColors.teal50,
-            iconTintColor = cit.edu.workforcehub.presentation.theme.AppColors.teal700
-        )
-        
-        if (profile.employmentStatus != null) {
-            ProfileDetailItem(
-                label = "Employment Status",
-                value = profile.employmentStatus,
-                icon = Icons.Default.Info,
-                iconBackgroundColor = cit.edu.workforcehub.presentation.theme.AppColors.blue50,
-                iconTintColor = cit.edu.workforcehub.presentation.theme.AppColors.blue700
-            )
-        }
-    }
-}
-
-@Composable
-fun AccountInfoCard(profile: EmployeeProfile) {
-    ProfileSectionCard(
-        title = "Account Information",
-        icon = Icons.Default.AccountBox,
-        iconBackgroundColor = cit.edu.workforcehub.presentation.theme.AppColors.blue50,
-        iconTintColor = cit.edu.workforcehub.presentation.theme.AppColors.blue700
-    ) {
-        ProfileDetailItem(
-            label = "ID Number",
-            value = profile.idNumber ?: "Not provided",
-            icon = Icons.Default.Person,
-            iconBackgroundColor = cit.edu.workforcehub.presentation.theme.AppColors.teal50,
-            iconTintColor = cit.edu.workforcehub.presentation.theme.AppColors.teal700
-        )
-        
-        ProfileDetailItem(
-            label = "Role",
-            value = profile.roleName ?: "Not assigned",
-            icon = Icons.Default.Settings,
-            iconBackgroundColor = cit.edu.workforcehub.presentation.theme.AppColors.blue50,
-            iconTintColor = cit.edu.workforcehub.presentation.theme.AppColors.blue700
-        )
-        
-        if (profile.createdAt != null) {
-            ProfileDetailItem(
-                label = "Account Created",
-                value = profile.createdAt.let {
-                    it.substring(0, it.indexOf('T'))
-                },
-                icon = Icons.Default.DateRange,
-                iconBackgroundColor = cit.edu.workforcehub.presentation.theme.AppColors.teal50,
-                iconTintColor = cit.edu.workforcehub.presentation.theme.AppColors.teal700
-            )
-        }
-        
-        // Display account status
-        val statusText = if (profile.status) "Active" else "Inactive"
-        val statusIcon = if (profile.status) Icons.Default.Person else Icons.Default.AccountCircle
-        
-        ProfileDetailItem(
-            label = "Account Status",
-            value = statusText,
-            icon = statusIcon,
-            iconBackgroundColor = cit.edu.workforcehub.presentation.theme.AppColors.blue50,
-            iconTintColor = cit.edu.workforcehub.presentation.theme.AppColors.blue700
-        )
-    }
-}
-
-@Composable
-fun ProfileSectionCard(
-    title: String,
-    icon: ImageVector,
-    iconBackgroundColor: Color,
-    iconTintColor: Color,
-    content: @Composable () -> Unit
-) {
+fun UserProfileCard(profile: EmployeeProfile) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = cit.edu.workforcehub.presentation.theme.AppColors.white
-        ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 2.dp
-        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        colors = CardDefaults.cardColors(containerColor = AppColors.white),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         shape = RoundedCornerShape(16.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp)
-                .animateContentSize(spring(stiffness = Spring.StiffnessLow))
+                .padding(vertical = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Section header with icon
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            // Profile avatar with initials on light blue background
+            Box(
+                modifier = Modifier
+                    .size(84.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFFE1F0FF)),
+                contentAlignment = Alignment.Center
             ) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFF4285F4)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "${profile.firstName.firstOrNull() ?: ""}${profile.lastName.firstOrNull() ?: ""}", 
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = AppColors.white
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // User Name
+            Text(
+                text = "${profile.firstName} ${profile.lastName}",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = AppColors.gray800
+            )
+            
+            // Role or N/A
+            Text(
+                text = profile.jobName ?: "N/A",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Normal,
+                color = AppColors.gray500,
+                modifier = Modifier.padding(bottom = 20.dp)
+            )
+            
+            // Contact Information
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp),
+                horizontalAlignment = Alignment.Start
+            ) {
+                // Email
                 Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Icon in a circle with theme color
                     Box(
                         modifier = Modifier
-                            .size(38.dp)
-                            .background(
-                                color = iconBackgroundColor,
-                                shape = CircleShape
-                            ),
+                            .size(36.dp)
+                            .background(Color(0xFFF1F5F9), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = icon,
+                            imageVector = Icons.Default.Email,
                             contentDescription = null,
-                            tint = iconTintColor,
-                            modifier = Modifier.size(20.dp)
+                            tint = Color(0xFF3B82F6),
+                            modifier = Modifier.size(18.dp)
                         )
                     }
                     
                     Spacer(modifier = Modifier.width(12.dp))
                     
                     Text(
-                        text = title,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = cit.edu.workforcehub.presentation.theme.AppColors.gray800
+                        text = profile.email,
+                        fontSize = 14.sp,
+                        color = AppColors.gray700
+                    )
+                }
+                
+                // Phone
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .background(Color(0xFFF1F5F9), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Phone,
+                            contentDescription = null,
+                            tint = Color(0xFF10B981),
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.width(12.dp))
+                    
+                    Text(
+                        text = profile.phoneNumber ?: "N/A",
+                        fontSize = 14.sp,
+                        color = AppColors.gray700
+                    )
+                }
+                
+                // Location
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .background(Color(0xFFF1F5F9), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.LocationOn,
+                            contentDescription = null,
+                            tint = Color(0xFF3B82F6),
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.width(12.dp))
+                    
+                    Text(
+                        text = profile.address ?: "N/A",
+                        fontSize = 14.sp,
+                        color = AppColors.gray700
+                    )
+                }
+                
+                // Website/URL
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .background(Color(0xFFF1F5F9), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Language,
+                            contentDescription = null,
+                            tint = Color(0xFF10B981),
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.width(12.dp))
+                    
+                    Text(
+                        text = "N/A",
+                        fontSize = 14.sp,
+                        color = AppColors.gray700
                     )
                 }
             }
             
+            Spacer(modifier = Modifier.height(24.dp))
+            
             Divider(
-                color = cit.edu.workforcehub.presentation.theme.AppColors.gray200,
+                color = AppColors.gray200,
                 thickness = 1.dp,
-                modifier = Modifier.padding(top = 16.dp, bottom = 16.dp)
+                modifier = Modifier.padding(horizontal = 24.dp)
             )
             
-            // Section content
-            content()
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Status indicators in a row at the bottom of card
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Status
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .background(Color(0xFFF1F5F9), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = null,
+                            tint = Color(0xFF3B82F6),
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.height(6.dp))
+                    
+                    Text(
+                        text = "Status",
+                        fontSize = 12.sp,
+                        color = AppColors.gray500
+                    )
+                    
+                    Text(
+                        text = if (profile.status) "Active" else "Inactive",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = if (profile.status) Color(0xFF22C55E) else Color(0xFFEF4444)
+                    )
+                }
+                
+                // Employment
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .background(Color(0xFFF1F5F9), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.DateRange,
+                            contentDescription = null,
+                            tint = Color(0xFF10B981),
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.height(6.dp))
+                    
+                    Text(
+                        text = "Employment",
+                        fontSize = 12.sp,
+                        color = AppColors.gray500
+                    )
+                    
+                    Text(
+                        text = profile.employmentStatus ?: "N/A",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = AppColors.gray800
+                    )
+                }
+                
+                // Role
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .background(Color(0xFFF1F5F9), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AccountCircle,
+                            contentDescription = null,
+                            tint = Color(0xFF3B82F6),
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.height(6.dp))
+                    
+                    Text(
+                        text = "Role",
+                        fontSize = 12.sp,
+                        color = AppColors.gray500
+                    )
+                    
+                    Text(
+                        text = profile.roleName ?: "Employee",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = AppColors.gray800
+                    )
+                }
+            }
         }
     }
 }
 
 @Composable
-fun ProfileDetailItem(
-    label: String,
-    value: String,
-    icon: ImageVector,
-    iconBackgroundColor: Color,
-    iconTintColor: Color
+fun PersonalInfoSection(profile: EmployeeProfile) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        colors = CardDefaults.cardColors(containerColor = AppColors.white),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 16.dp)
+        ) {
+            // Header with icon
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(bottom = 8.dp)
+            ) {
+                Icon(
+                    imageVector = CustomIcons.Person,
+                    contentDescription = null,
+                    tint = Color(0xFF4285F4),
+                    modifier = Modifier.size(20.dp)
+                )
+                
+                Spacer(modifier = Modifier.width(8.dp))
+                
+                Text(
+                    text = "Personal Information",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = AppColors.gray800
+                )
+            }
+            
+            Divider(color = AppColors.gray200, thickness = 1.dp)
+            
+            // Info items
+            ModernInfoItem(label = "Employee ID", value = profile.employeeId)
+            ModernInfoItem(label = "ID Number", value = profile.idNumber ?: "22-4480-181")
+            ModernInfoItem(label = "Full Name", value = "${profile.firstName} ${profile.lastName}")
+            ModernInfoItem(label = "Gender", value = profile.gender ?: "N/A")
+            ModernInfoItem(
+                label = "Date of Birth", 
+                value = profile.dateOfBirth ?: "N/A", 
+                iconVector = CustomIcons.CalendarToday,
+                iconTint = Color(0xFF4285F4)
+            )
+            ModernInfoItem(
+                label = "Marital Status", 
+                value = profile.maritalStatus ?: "N/A", 
+                iconVector = Icons.Default.Favorite,
+                iconTint = Color(0xFF4285F4)
+            )
+        }
+    }
+}
+
+@Composable
+fun EmploymentInfoSection(profile: EmployeeProfile) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        colors = CardDefaults.cardColors(containerColor = AppColors.white),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 16.dp)
+        ) {
+            // Header with icon
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(bottom = 8.dp)
+            ) {
+                Icon(
+                    imageVector = CustomIcons.Business,
+                    contentDescription = null,
+                    tint = Color(0xFF10B981),
+                    modifier = Modifier.size(20.dp)
+                )
+                
+                Spacer(modifier = Modifier.width(8.dp))
+                
+                Text(
+                    text = "Employment Information",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = AppColors.gray800
+                )
+            }
+            
+            Divider(color = AppColors.gray200, thickness = 1.dp)
+            
+            // Status with green badge
+            ModernInfoItem(
+                label = "Status", 
+                value = "Active",
+                isHighlighted = true,
+                highlightColor = Color(0xFFDCFCE7),
+                textColor = Color(0xFF22C55E)
+            )
+            
+            ModernInfoItem(label = "Employment", value = profile.employmentStatus ?: "ACTIVE")
+            
+            ModernInfoItem(
+                label = "Hire Date", 
+                value = profile.hireDate ?: "May 1, 2025",
+                iconVector = CustomIcons.CalendarToday,
+                iconTint = Color(0xFF10B981)
+            )
+            
+            ModernInfoItem(
+                label = "Department", 
+                value = profile.departmentName ?: "N/A",
+                iconVector = CustomIcons.Business,
+                iconTint = Color(0xFF10B981)
+            )
+            
+            ModernInfoItem(
+                label = "Job Title", 
+                value = profile.jobName ?: "N/A",
+                iconVector = CustomIcons.Work,
+                iconTint = Color(0xFF10B981)
+            )
+            
+            ModernInfoItem(
+                label = "Role", 
+                value = profile.roleName ?: "Employee",
+                iconVector = Icons.Default.Person,
+                iconTint = Color(0xFF10B981)
+            )
+        }
+    }
+}
+
+@Composable
+fun AccountInfoSection(profile: EmployeeProfile) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        colors = CardDefaults.cardColors(containerColor = AppColors.white),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 16.dp)
+        ) {
+            // Header with icon
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(bottom = 8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.AccountCircle,
+                    contentDescription = null,
+                    tint = Color(0xFF4285F4),
+                    modifier = Modifier.size(20.dp)
+                )
+                
+                Spacer(modifier = Modifier.width(8.dp))
+                
+                Text(
+                    text = "Account Information",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = AppColors.gray800
+                )
+            }
+            
+            Divider(color = AppColors.gray200, thickness = 1.dp)
+            
+            // Info items
+            ModernInfoItem(
+                label = "User ID", 
+                value = "N/A",
+                iconVector = CustomIcons.Key,
+                iconTint = Color(0xFF4285F4)
+            )
+            
+            ModernInfoItem(
+                label = "Account Status", 
+                value = "Active",
+                isHighlighted = true,
+                highlightColor = Color(0xFFDCFCE7),
+                textColor = Color(0xFF22C55E)
+            )
+            
+            ModernInfoItem(
+                label = "Account Created", 
+                value = profile.createdAt?.let { 
+                    it.substring(0, it.indexOf('T')) 
+                } ?: "May 1, 2025 5:52 PM",
+                iconVector = CustomIcons.CalendarToday,
+                iconTint = Color(0xFF4285F4)
+            )
+            
+            ModernInfoItem(
+                label = "Last Login", 
+                value = "May 2, 2025 6:28 AM",
+                iconVector = CustomIcons.Login,
+                iconTint = Color(0xFF4285F4)
+            )
+        }
+    }
+}
+
+@Composable
+fun ModernInfoItem(
+    label: String, 
+    value: String, 
+    iconVector: ImageVector? = null,
+    iconTint: Color = AppColors.gray500,
+    isHighlighted: Boolean = false,
+    highlightColor: Color = AppColors.white,
+    textColor: Color = AppColors.gray800
 ) {
     Row(
         modifier = Modifier
@@ -714,151 +783,115 @@ fun ProfileDetailItem(
             .padding(vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Icon with circular background
-        Box(
-            modifier = Modifier
-                .size(36.dp)
-                .background(iconBackgroundColor, CircleShape),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = iconTintColor,
-                modifier = Modifier.size(18.dp)
-            )
-        }
+        Text(
+            text = label,
+            fontSize = 14.sp,
+            color = AppColors.gray500,
+            modifier = Modifier.width(120.dp)
+        )
         
-        Spacer(modifier = Modifier.width(12.dp))
-        
-        // Label and value
-        Column(
-            modifier = Modifier.weight(1f)
-        ) {
-            Text(
-                text = label,
-                fontSize = 14.sp,
-                color = cit.edu.workforcehub.presentation.theme.AppColors.gray500,
-                fontWeight = FontWeight.Medium
-            )
-            
+        if (isHighlighted) {
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(highlightColor)
+                    .padding(horizontal = 12.dp, vertical = 4.dp)
+            ) {
+                Text(
+                    text = value,
+                    fontSize = 14.sp,
+                    color = textColor,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+        } else if (iconVector != null) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = iconVector,
+                    contentDescription = null,
+                    tint = iconTint,
+                    modifier = Modifier.size(16.dp)
+                )
+                
+                Spacer(modifier = Modifier.width(6.dp))
+                
+                Text(
+                    text = value,
+                    fontSize = 14.sp,
+                    color = AppColors.gray700
+                )
+            }
+        } else {
             Text(
                 text = value,
-                fontSize = 16.sp,
-                fontWeight = if (value != "Not provided" && value != "Not assigned" && value != "Not available") 
-                    FontWeight.Medium else FontWeight.Normal,
-                color = if (value != "Not provided" && value != "Not assigned" && value != "Not available") 
-                    cit.edu.workforcehub.presentation.theme.AppColors.gray800 else cit.edu.workforcehub.presentation.theme.AppColors.gray500,
-                modifier = Modifier.padding(top = 2.dp)
-            )
-        }
-    }
-}
-
-@Composable
-fun LoadingCard() {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth(0.8f)
-            .padding(16.dp),
-        colors = CardDefaults.cardColors(containerColor = cit.edu.workforcehub.presentation.theme.AppColors.white),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        shape = RoundedCornerShape(16.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            CircularProgressIndicator(
-                color = cit.edu.workforcehub.presentation.theme.AppColors.blue500,
-                modifier = Modifier.size(40.dp)
-            )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            Text(
-                text = "Loading your profile...",
-                fontSize = 16.sp,
-                color = cit.edu.workforcehub.presentation.theme.AppColors.gray700,
-                textAlign = TextAlign.Center
-            )
-        }
-    }
-}
-
-@Composable
-fun ErrorCard(error: String) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = cit.edu.workforcehub.presentation.theme.AppColors.white),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        shape = RoundedCornerShape(16.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Icon(
-                imageVector = Icons.Default.Warning,
-                contentDescription = null,
-                tint = cit.edu.workforcehub.presentation.theme.AppColors.red,
-                modifier = Modifier.size(48.dp)
-            )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            Text(
-                text = "Failed to load profile",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = cit.edu.workforcehub.presentation.theme.AppColors.gray800,
-                textAlign = TextAlign.Center
-            )
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            Text(
-                text = error,
                 fontSize = 14.sp,
-                color = cit.edu.workforcehub.presentation.theme.AppColors.gray500,
-                textAlign = TextAlign.Center
+                color = AppColors.gray700
             )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            Card(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(24.dp))
-                    .clickable { /* Retry functionality could be added here */ },
-                colors = CardDefaults.cardColors(
-                    containerColor = cit.edu.workforcehub.presentation.theme.AppColors.blue50
-                ),
-                shape = RoundedCornerShape(24.dp)
+        }
+    }
+}
+
+@Composable
+fun ErrorView(error: String) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            imageVector = Icons.Default.Warning,
+            contentDescription = "Error",
+            tint = AppColors.red,
+            modifier = Modifier.size(64.dp)
+        )
+        
+        Spacer(modifier = Modifier.height(24.dp))
+        
+        Text(
+            text = "Error loading profile",
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold,
+            color = AppColors.gray800
+        )
+        
+        Spacer(modifier = Modifier.height(12.dp))
+        
+        Text(
+            text = error,
+            fontSize = 16.sp,
+            color = AppColors.gray600,
+            textAlign = TextAlign.Center
+        )
+        
+        Spacer(modifier = Modifier.height(32.dp))
+        
+        Button(
+            onClick = { /* Retry logic */ },
+            colors = ButtonDefaults.buttonColors(containerColor = AppColors.blue500),
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier.padding(horizontal = 24.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Refresh,
-                        contentDescription = "Retry",
-                        tint = cit.edu.workforcehub.presentation.theme.AppColors.blue700,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    
-                    Spacer(modifier = Modifier.width(8.dp))
-                    
-                    Text(
-                        text = "Retry",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = cit.edu.workforcehub.presentation.theme.AppColors.blue700
-                    )
-                }
+                Icon(
+                    imageVector = Icons.Default.Refresh,
+                    contentDescription = "Retry",
+                    modifier = Modifier.size(18.dp)
+                )
+                
+                Spacer(modifier = Modifier.width(8.dp))
+                
+                Text(
+                    "Retry", 
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
             }
         }
     }

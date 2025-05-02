@@ -29,9 +29,12 @@ object AppColors {
     val gray100 = Color(0xFFF3F4F6)
     val gray200 = Color(0xFFE5E7EB)
     val gray300 = Color(0xFFD1D5DB)
+    val gray400 = Color(0xFF9CA3AF)
     val gray500 = Color(0xFF6B7280)
+    val gray600 = Color(0xFF4B5563)
     val gray700 = Color(0xFF374151)
     val gray800 = Color(0xFF1F2937)
+    val gray900 = Color(0xFF111827)
     
     // Status colors
     val green = Color(0xFF22C55E)
@@ -44,15 +47,15 @@ object AppColors {
     // Gradients
     val blueGradient = Brush.verticalGradient(
         colors = listOf(
-            cit.edu.workforcehub.presentation.theme.AppColors.blue700,
-            cit.edu.workforcehub.presentation.theme.AppColors.blue500
+            AppColors.blue700,
+            AppColors.blue500
         )
     )
     
     val tealGradient = Brush.verticalGradient(
         colors = listOf(
-            cit.edu.workforcehub.presentation.theme.AppColors.teal700,
-            cit.edu.workforcehub.presentation.theme.AppColors.teal500
+            AppColors.teal700,
+            AppColors.teal500
         )
     )
 } 

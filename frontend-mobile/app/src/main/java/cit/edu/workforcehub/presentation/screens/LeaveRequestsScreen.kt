@@ -170,7 +170,7 @@ fun LeaveRequestScreen(
 
                 // Fixed header on top (doesn't scroll)
                 AppHeader(
-                    title = "Training & Events",
+                    title = "Leave Requests",
                     profileData = profileData,
                     isLoading = isLoading,
                     onMenuClick = {
