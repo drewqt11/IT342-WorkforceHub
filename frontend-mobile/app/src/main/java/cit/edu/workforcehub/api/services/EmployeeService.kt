@@ -21,7 +21,15 @@ interface EmployeeService {
      * Update the profile of the current authenticated employee.
      */
     @PUT(ApiEndpoints.EMPLOYEE_PROFILE)
+    @Headers("Content-Type: application/json")
     suspend fun updateProfile(@Body profile: EmployeeProfile): Response<EmployeeProfile>
+    
+    /**
+     * Partially update the profile of the current authenticated employee.
+     */
+    @PATCH(ApiEndpoints.EMPLOYEE_PROFILE)
+    @Headers("Content-Type: application/json")
+    suspend fun patchProfile(@Body profile: EmployeeProfile): Response<EmployeeProfile>
     
     /**
      * Clock in for the current day.

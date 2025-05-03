@@ -10,14 +10,17 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.lifecycleScope
 import cit.edu.workforcehub.api.ApiHelper
+import cit.edu.workforcehub.api.models.EmployeeProfile
 import cit.edu.workforcehub.auth.AuthManager
 import cit.edu.workforcehub.auth.OAuthWebViewActivity
 import cit.edu.workforcehub.presentation.components.AppScreen
 import cit.edu.workforcehub.presentation.screens.DashboardScreen
+import cit.edu.workforcehub.presentation.screens.EnrollmentScreen
 import cit.edu.workforcehub.presentation.screens.MainScreen
 import cit.edu.workforcehub.presentation.screens.ProfileScreen
 import cit.edu.workforcehub.presentation.screens.TimeAttendanceScreen
@@ -150,6 +153,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.S)
 @Composable
 fun WorkforceHubApp(
     isLoggedIn: Boolean,
@@ -161,7 +165,34 @@ fun WorkforceHubApp(
     val context = LocalContext.current
     
     if (isLoggedIn) {
+        // Check if user needs to complete enrollment
+        LaunchedEffect(key1 = Unit) {
+            try {
+                val employeeService = ApiHelper.getEmployeeService()
+                val response = employeeService.getProfile()
+                
+                if (response.isSuccessful && response.body() != null) {
+                    val profile = response.body()!!
+                    
+                    // If the user is not yet active, redirect to enrollment
+                    if (!profile.status) {
+                        onScreenChange(AppScreen.ENROLLMENT)
+                    }
+                }
+            } catch (e: Exception) {
+                // If there's an error, just continue to the selected screen
+                // The enrollment check will happen again when they navigate
+            }
+        }
+    
         when (currentScreen) {
+            AppScreen.ENROLLMENT -> {
+                EnrollmentScreen(
+                    onNavigateToDashboard = {
+                        onScreenChange(AppScreen.DASHBOARD)
+                    }
+                )
+            }
             AppScreen.DASHBOARD -> {
                 // Show dashboard when logged in
                 DashboardScreen(

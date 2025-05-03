@@ -43,7 +43,8 @@ enum class AppScreen {
     LEAVE_REQUESTS,
     PERFORMANCE,
     TRAINING,
-    PROFILE
+    PROFILE,
+    ENROLLMENT
 }
 
 /**
@@ -191,7 +192,7 @@ fun SideBarMenu(
             )
             
             MenuNavItem(
-                title = "Time & Attendance",
+                title = "Attendance Logs",
                 icon = R.drawable.time_attendance_icon,
                 isSelected = currentScreen == AppScreen.TIME_ATTENDANCE,
                 onClick = {
@@ -244,7 +245,7 @@ fun SideBarMenu(
             )
             
             MenuNavItem(
-                title = "Profile",
+                title = "My Profile",
                 icon = R.drawable.ic_single_account_24dp,
                 isSelected = currentScreen == AppScreen.PROFILE,
                 onClick = {
