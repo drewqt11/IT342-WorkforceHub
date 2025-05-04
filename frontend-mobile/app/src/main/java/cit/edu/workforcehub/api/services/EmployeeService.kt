@@ -44,6 +44,12 @@ interface EmployeeService {
     suspend fun clockOut(@Body request: ClockInRequest): Response<AttendanceRecord>
     
     /**
+     * Get today's attendance record for the current employee.
+     */
+    @GET("${ApiEndpoints.EMPLOYEE_ATTENDANCE}/today")
+    suspend fun getTodayAttendance(): Response<AttendanceRecord>
+    
+    /**
      * Get attendance records for the authenticated employee.
      */
     @GET("${ApiEndpoints.EMPLOYEE_ATTENDANCE}/records")

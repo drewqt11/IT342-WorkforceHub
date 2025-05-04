@@ -1,6 +1,11 @@
 package cit.edu.workforcehub.presentation.screens
 
+import android.os.Build
+import android.widget.ToggleButton
+import androidx.activity.compose.BackHandler
+import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
@@ -19,15 +24,18 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -38,19 +46,24 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
+import androidx.compose.material3.DrawerState
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.rememberDrawerState
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -60,6 +73,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.res.painterResource
@@ -73,22 +87,24 @@ import androidx.compose.ui.zIndex
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import cit.edu.workforcehub.presentation.components.AppScreen
 import cit.edu.workforcehub.presentation.components.UniversalDrawer
 import cit.edu.workforcehub.presentation.theme.AppColors
 import cit.edu.workforcehub.api.models.EmployeeProfile
 import cit.edu.workforcehub.api.ApiHelper
-import androidx.compose.runtime.setValue
-import cit.edu.workforcehub.presentation.components.AppHeader
-import androidx.compose.ui.layout.ContentScale
-import cit.edu.workforcehub.R
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.lifecycle.viewmodel.compose.viewModel
 import cit.edu.workforcehub.presentation.viewmodels.DashboardViewModel
 import cit.edu.workforcehub.presentation.components.LoadingComponent
+import cit.edu.workforcehub.presentation.components.NotificationDialog
+import cit.edu.workforcehub.presentation.components.NotificationType
+import cit.edu.workforcehub.presentation.theme.AppTheme
+import cit.edu.workforcehub.presentation.components.AppHeader
+import cit.edu.workforcehub.R
 
+@RequiresApi(Build.VERSION_CODES.S)
 @Composable
 fun DashboardScreen(
     viewModel: DashboardViewModel = viewModel(),
@@ -144,12 +160,31 @@ fun DashboardScreen(
     val viewModelHoursWorked by viewModel.hoursWorked.observeAsState("00:00:00")
     val viewModelBreakTime by viewModel.breakTime.observeAsState("00:00")
     
+    // New state for API operations
+    val apiError by viewModel.error.observeAsState(null)
+    
+    // Observe showNotification state for notification display
+    val showNotification by viewModel.showNotification.observeAsState(false)
+    val notificationTitle by viewModel.notificationTitle.observeAsState("")
+    val notificationMessage by viewModel.notificationMessage.observeAsState("")
+    val notificationType by viewModel.notificationType.observeAsState(NotificationType.INFO)
+    
     // Sync UI state with viewModel when values change
     LaunchedEffect(viewModelIsClockedIn, viewModelCurrentTime, viewModelHoursWorked, viewModelBreakTime) {
         isClockedIn = viewModelIsClockedIn
         currentTime = viewModelCurrentTime
         hoursWorked = viewModelHoursWorked
         breakTime = viewModelBreakTime
+    }
+    
+    // Update current time every second
+    LaunchedEffect(key1 = true) {
+        while(true) {
+            val now = LocalTime.now()
+            val formattedTime = "${now.hour.toString().padStart(2, '0')}:${now.minute.toString().padStart(2, '0')}:${now.second.toString().padStart(2, '0')}"
+            viewModel.updateCurrentTime(formattedTime)
+            delay(1000)
+        }
     }
     
     // Save state changes to viewModel
@@ -193,6 +228,18 @@ fun DashboardScreen(
     // Save state changes to viewModel
     LaunchedEffect(activeBreak) {
         viewModel.updateActiveBreak(activeBreak)
+    }
+
+    // Show notification dialog if needed
+    if (showNotification) {
+        AppTheme {
+            NotificationDialog(
+                title = notificationTitle,
+                message = notificationMessage,
+                type = notificationType,
+                onDismiss = { viewModel.dismissNotification() }
+            )
+        }
     }
 
     Surface(
@@ -311,9 +358,25 @@ fun DashboardScreen(
                                     hoursWorked = hoursWorked,
                                     breakTime = breakTime,
                                     isClockedIn = isClockedIn,
-                                    onClockInOutClick = { isClockedIn = !isClockedIn },
+                                    onClockInOutClick = { 
+                                        // Use viewModel to clock in or out instead of just toggling the state
+                                        if (isClockedIn) {
+                                            viewModel.clockOut()
+                                        } else {
+                                            viewModel.clockIn()
+                                        }
+                                    },
                                     activeBreak = activeBreak,
-                                    onActiveBreakChange = { activeBreak = it }
+                                    onActiveBreakChange = { newBreakType ->
+                                        // Call viewModel to manage break state
+                                        if (newBreakType == null) {
+                                            viewModel.endBreak()
+                                        } else {
+                                            viewModel.startBreak(newBreakType)
+                                        }
+                                    },
+                                    isLoading = isLoading,
+                                    error = apiError
                                 )
                             } else {
                                 // Card showing inactive account status
@@ -416,8 +479,14 @@ fun TimeTrackerCardWrapper(
     isClockedIn: Boolean,
     onClockInOutClick: () -> Unit,
     activeBreak: String?,
-    onActiveBreakChange: (String?) -> Unit
+    onActiveBreakChange: (String?) -> Unit,
+    isLoading: Boolean = false,
+    error: String? = null
 ) {
+    // Get the viewModel from the parent
+    val viewModel: DashboardViewModel = viewModel()
+    val clockInTime by viewModel.clockInTime.observeAsState()
+    
     if (!isClockedIn) {
         CollapsedTimeTrackerCard(
             currentDate = currentDate,
@@ -426,7 +495,10 @@ fun TimeTrackerCardWrapper(
             hoursWorked = hoursWorked,
             breakTime = breakTime,
             isClockedIn = isClockedIn,
-            onClockInOutClick = onClockInOutClick
+            onClockInOutClick = onClockInOutClick,
+            isLoading = isLoading,
+            error = error,
+            activeBreak = activeBreak
         )
     } else {
         ExpandedTimeTrackerCard(
@@ -437,7 +509,10 @@ fun TimeTrackerCardWrapper(
             breakTime = breakTime,
             onClockOutClick = onClockInOutClick,
             activeBreak = activeBreak,
-            onActiveBreakChange = onActiveBreakChange
+            onActiveBreakChange = onActiveBreakChange,
+            isLoading = isLoading,
+            error = error,
+            clockInTime = clockInTime
         )
     }
 }
@@ -450,7 +525,10 @@ private fun CollapsedTimeTrackerCard(
     hoursWorked: String,
     breakTime: String,
     isClockedIn: Boolean,
-    onClockInOutClick: () -> Unit
+    onClockInOutClick: () -> Unit,
+    isLoading: Boolean = false,
+    error: String? = null,
+    activeBreak: String? = null
 ) {
     val formatter = DateTimeFormatter.ofPattern("EEEE, MMM d")
     val formattedDate = currentDate.format(formatter)
@@ -813,7 +891,7 @@ private fun CollapsedTimeTrackerCard(
                                 Spacer(modifier = Modifier.width(8.dp))
                                 
                                 Text(
-                                    text = "No Active Break",
+                                    text = if (activeBreak != null) "Active Break" else "No Active Break",
                                     fontSize = 13.sp,
                                     color = AppColors.gray600
                                 )
@@ -845,22 +923,45 @@ private fun CollapsedTimeTrackerCard(
                         .height(56.dp),
                     elevation = ButtonDefaults.buttonElevation(
                         defaultElevation = 2.dp
-                    )
+                    ),
+                    enabled = !isLoading // Disable when loading
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.CheckCircle,
-                        contentDescription = "Clock In/Out",
-                        tint = Color.White,
-                        modifier = Modifier.size(20.dp)
-                    )
+                    if (isLoading) {
+                        // Show loading indicator
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            color = Color.White,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = "Clock In",
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                     
                     Spacer(modifier = Modifier.width(8.dp))
                     
                     Text(
-                        text = if (isClockedIn) "Clock Out" else "Clock In",
+                        text = if (isLoading) "Processing..." else "Clock In",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = Color.White
+                    )
+                }
+                
+                // Display error if any
+                if (error != null) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = error,
+                        color = Color.Red,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
             }
@@ -877,7 +978,10 @@ private fun ExpandedTimeTrackerCard(
     breakTime: String,
     onClockOutClick: () -> Unit,
     activeBreak: String? = null,
-    onActiveBreakChange: (String?) -> Unit = {}
+    onActiveBreakChange: (String?) -> Unit = {},
+    isLoading: Boolean = false,
+    error: String? = null,
+    clockInTime: String? = null
 ) {
     val formatter = DateTimeFormatter.ofPattern("EEEE, MMM d")
     val formattedDate = currentDate.format(formatter)
@@ -900,7 +1004,6 @@ private fun ExpandedTimeTrackerCard(
     val minutes = currentTimeState.minute.toString().padStart(2, '0')
     val seconds = currentTimeState.second.toString().padStart(2, '0')
     val amPm = if (currentTimeState.hour < 12) "AM" else "PM"
-    val clockInTime = "18:19:06" // This would come from actual data
     
     // Split the UI into frame and content
     Column(
@@ -1135,7 +1238,7 @@ private fun ExpandedTimeTrackerCard(
                             
                             // Status badge (Clocked In)
                             Text(
-                                text = "Clocked In",
+                                text = workStatus,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium,
                                 color = AppColors.teal900,
@@ -1283,9 +1386,9 @@ private fun ExpandedTimeTrackerCard(
                             
                             Spacer(modifier = Modifier.height(8.dp))
                             
-                            // Hours worked value
+                            // Hours worked value - use the passed in parameter instead of hardcoded value
                             Text(
-                                text = "08:00:17",
+                                text = hoursWorked,
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = AppColors.gray900
@@ -1329,7 +1432,7 @@ private fun ExpandedTimeTrackerCard(
                                 Spacer(modifier = Modifier.width(8.dp))
                                 
                                 Text(
-                                    text = "No Active Break",
+                                    text = if (activeBreak != null) "On Break" else "Break Time",
                                     fontSize = 13.sp,
                                     color = AppColors.gray600
                                 )
@@ -1339,7 +1442,7 @@ private fun ExpandedTimeTrackerCard(
                             
                             // Break time value
                             Text(
-                                text = "00:00",
+                                text = breakTime,
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = AppColors.gray900
@@ -1457,114 +1560,116 @@ private fun ExpandedTimeTrackerCard(
                             )
                         }
                         
-                        // Attendance Grid - 3 columns, 2 rows
-                        Column(
-                            modifier = Modifier.fillMaxWidth()
+                        // Attendance Grid Content
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            // Row 1
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                // Clock In
-                                AttendanceItem(
-                                    label = "Clock In",
-                                    value = clockInTime,
-                                    modifier = Modifier.weight(1f)
-                                )
-                                
-                                // Hours Worked
-                                AttendanceItem(
-                                    label = "Hours Worked",
-                                    value = "08:00:17",
-                                    modifier = Modifier.weight(1f)
-                                )
-                                
-                                // Break Time
-                                AttendanceItem(
-                                    label = "Break Time",
-                                    value = "00:00",
-                                    modifier = Modifier.weight(1f)
-                                )
-                            }
+                            // Clock In Time
+                            AttendanceItem(
+                                label = "Clock In",
+                                value = clockInTime ?: "-",
+                                modifier = Modifier.weight(1f)
+                            )
                             
-                            Spacer(modifier = Modifier.height(10.dp))
+                            // Hours worked (calculated from clockIn till now or clockOut)
+                            AttendanceItem(
+                                label = "Hours Worked",
+                                value = hoursWorked,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                        
+                        Spacer(modifier = Modifier.height(8.dp))
+                        
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            // Status
+                            AttendanceItem(
+                                label = "Status",
+                                value = workStatus,
+                                modifier = Modifier.weight(1f)
+                            )
                             
-                            // Row 2
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                // Clock Out
-                                AttendanceItem(
-                                    label = "Clock Out",
-                                    value = "Not clocked out",
-                                    modifier = Modifier.weight(1f)
-                                )
-                                
-                                // Total Hours
-                                AttendanceItem(
-                                    label = "Total Hours",
-                                    value = "0 hours",
-                                    modifier = Modifier.weight(1f)
-                                )
-                                
-                                // Date
-                                AttendanceItem(
-                                    label = "Date",
-                                    value = formattedDateValue,
-                                    modifier = Modifier.weight(1f)
-                                )
-                            }
+                            // Break time
+                            AttendanceItem(
+                                label = "Break Time",
+                                value = breakTime,
+                                modifier = Modifier.weight(1f)
+                            )
                         }
                     }
                 }
                 
                 // Clock Out button
-                Button(
-                    onClick = onClockOutClick,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Transparent
-                    ),
-                    contentPadding = PaddingValues(0.dp),
-                    shape = RoundedCornerShape(16.dp),
+                Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 24.dp)
-                        .height(56.dp)
+                        .padding(top = 24.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    shadowElevation = 2.dp
                 ) {
                     Box(
                         modifier = Modifier
-                            .fillMaxSize()
+                            .fillMaxWidth()
+                            .height(56.dp)
                             .background(
                                 brush = Brush.horizontalGradient(
-                                    colors = listOf(AppColors.blue500, AppColors.teal500)
+                                    colors = listOf(
+                                        AppColors.blue500,
+                                        AppColors.teal500
+                                    )
                                 ),
                                 shape = RoundedCornerShape(16.dp)
-                            ),
-                        contentAlignment = Alignment.Center
+                            )
+                            .clickable(enabled = !isLoading) { onClockOutClick() }
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center
+                            horizontalArrangement = Arrangement.Center,
+                            modifier = Modifier.fillMaxSize()
                         ) {
-                            Icon(
-                                painter = painterResource(id = android.R.drawable.ic_menu_recent_history),
-                                contentDescription = "Clock Out",
-                                tint = Color.White,
-                                modifier = Modifier.size(20.dp)
-                            )
+                            if (isLoading) {
+                                // Show loading indicator
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp),
+                                    color = Color.White,
+                                    strokeWidth = 2.dp
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Default.CheckCircle,
+                                    contentDescription = "Clock Out",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
                             
                             Spacer(modifier = Modifier.width(8.dp))
                             
                             Text(
-                                text = "Clock Out",
+                                text = if (isLoading) "Processing..." else "Clock Out",
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = Color.White
                             )
                         }
                     }
+                }
+                
+                // Display error if any
+                if (error != null) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = error,
+                        color = Color.Red,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
             }
         }
@@ -1605,7 +1710,7 @@ private fun ButtonWithIcon(
             ) {
                 // Coffee icon
                 Image(
-                    painter = painterResource(id = cit.edu.workforcehub.R.drawable.coffee),
+                    painter = painterResource(id = R.drawable.coffee),
                     contentDescription = "Coffee",
                     modifier = Modifier
                         .size(20.dp)
@@ -1748,6 +1853,7 @@ private fun AttendanceItem(
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.S)
 @Preview(showBackground = true)
 @Composable
 fun DashboardScreenPreview() {

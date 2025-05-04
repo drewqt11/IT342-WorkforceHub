@@ -92,7 +92,6 @@ import androidx.compose.material.icons.filled.Shield
 import cit.edu.workforcehub.R
 import cit.edu.workforcehub.api.ApiHelper
 import cit.edu.workforcehub.api.models.EmployeeProfile
-import cit.edu.workforcehub.api.models.UserAccount
 import cit.edu.workforcehub.presentation.components.AppScreen
 import cit.edu.workforcehub.presentation.components.UniversalDrawer
 import cit.edu.workforcehub.presentation.theme.AppColors
@@ -123,7 +122,6 @@ fun ProfileScreen(
     
     // State for profile data
     var profileData by remember { mutableStateOf<EmployeeProfile?>(null) }
-    var userData by remember { mutableStateOf<UserAccount?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
     var dataDebug by remember { mutableStateOf("") }
@@ -151,22 +149,9 @@ fun ProfileScreen(
                 // Create debug info
                 dataDebug = "Phone: ${receivedProfile.phoneNumber}, Gender: ${receivedProfile.gender}, " +
                          "DOB: ${receivedProfile.dateOfBirth}, Address: ${receivedProfile.address}, " +
-                         "Marital: ${receivedProfile.maritalStatus}"
-                
-                // Now fetch user account details using the email
-                try {
-                    val hrService = ApiHelper.getHrService()
-                    val userResponse = hrService.getUserAccountByEmail(receivedProfile.email)
-                    
-                    if (userResponse.isSuccessful && userResponse.body() != null) {
-                        userData = userResponse.body()
-                        dataDebug += "\nUser account fetched successfully: ${userData?.userId}"
-                    } else {
-                        dataDebug += "\nFailed to fetch user account: ${userResponse.message()}"
-                    }
-                } catch (e: Exception) {
-                    dataDebug += "\nError fetching user account: ${e.message}"
-                }
+                         "Marital: ${receivedProfile.maritalStatus}, " +
+                         "UserID: ${receivedProfile.userId}, LastLogin: ${receivedProfile.lastLogin}, " +
+                         "IsActive: ${receivedProfile.isActive}"
                 
                 isLoading = false
             } else {
@@ -231,7 +216,6 @@ fun ProfileScreen(
                     ) {
                         ProfileContent(
                             profile = profileData!!, 
-                            userData = userData,
                             scrollState = scrollState, 
                             debugInfo = dataDebug
                         )
@@ -328,7 +312,6 @@ fun ProfileAppHeader(
 @Composable
 fun ProfileContent(
     profile: EmployeeProfile, 
-    userData: UserAccount? = null,
     scrollState: ScrollState, 
     debugInfo: String = ""
 ) {
@@ -399,7 +382,7 @@ fun ProfileContent(
         Spacer(modifier = Modifier.height(16.dp))
         
         // Account Information
-        AccountInfoCard(profile = profile, userData = userData)
+        AccountInfoCard(profile = profile)
 
         // Add extra space at the bottom to ensure the last card is fully visible when scrolling
         Spacer(modifier = Modifier.height(24.dp))
@@ -730,7 +713,7 @@ fun EmploymentInfoCard(profile: EmployeeProfile) {
 }
 
 @Composable
-fun AccountInfoCard(profile: EmployeeProfile, userData: UserAccount? = null) {
+fun AccountInfoCard(profile: EmployeeProfile) {
     InfoCard(
         title = "Account Information",
         icon = Icons.Default.Shield,
@@ -738,30 +721,28 @@ fun AccountInfoCard(profile: EmployeeProfile, userData: UserAccount? = null) {
     ) {
         InfoItem(
             label = "User ID",
-            value = userData?.userId ?: "N/A",
+            value = profile.userId ?: "N/A",
             icon = CustomIcons.Key,
             iconTint = AppColors.blue500
         )
         InfoItem(
             label = "Account Status",
-            value = if (userData?.active == true) "Active" else "Inactive",
+            value = if (profile.isActive == true) "Active" else "Inactive",
             isHighlighted = true,
-            highlightBgColor = if (userData?.active == true) AppColors.teal100 else AppColors.redLight,
-            highlightTextColor = if (userData?.active == true) AppColors.teal900 else AppColors.red
+            highlightBgColor = if (profile.isActive == true) AppColors.teal100 else AppColors.redLight,
+            highlightTextColor = if (profile.isActive == true) AppColors.teal900 else AppColors.red
         )
         InfoItem(
             label = "Account Created",
-            value = userData?.createdAt?.let { 
+            value = profile.createdAt?.let { 
                 if (it.contains('T')) it.substring(0, it.indexOf('T')) else it
-            } ?: (profile.createdAt?.let { 
-                if (it.contains('T')) it.substring(0, it.indexOf('T')) else it
-            } ?: "N/A"),
+            } ?: "N/A",
             icon = CustomIcons.CalendarToday,
             iconTint = AppColors.blue500
         )
         InfoItem(
             label = "Last Login",
-            value = userData?.lastLogin?.let { 
+            value = profile.lastLogin?.let { 
                 if (it.contains('T')) it.substring(0, it.indexOf('T')) else it
             } ?: "N/A",
             icon = CustomIcons.Login,

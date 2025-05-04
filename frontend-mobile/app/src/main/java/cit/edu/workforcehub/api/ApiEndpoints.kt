@@ -18,7 +18,7 @@ object ApiEndpoints {
     
     // Employee endpoints
     const val EMPLOYEE_PROFILE = "/api/employee/profile"
-    const val EMPLOYEE_ATTENDANCE = "employee/attendance"
+    const val EMPLOYEE_ATTENDANCE = "/api/employee/attendance"
     
     // HR endpoints
     const val DEPARTMENTS = "hr/departments"

@@ -128,6 +128,19 @@ fun EnrollmentScreen(
     // Coroutine scope for API calls
     val coroutineScope = rememberCoroutineScope()
     
+    // Function to check if the profile is complete
+    fun isProfileComplete(profile: EmployeeProfile): Boolean {
+        // Check if all required fields are filled
+        return profile.firstName.isNotBlank() &&
+               profile.lastName.isNotBlank() &&
+               profile.email.isNotBlank() &&
+               !profile.phoneNumber.isNullOrBlank() &&
+               !profile.gender.isNullOrBlank() &&
+               !profile.dateOfBirth.isNullOrBlank() &&
+               !profile.maritalStatus.isNullOrBlank() &&
+               !profile.address.isNullOrBlank()
+    }
+    
     // Fetch profile data
     LaunchedEffect(key1 = true) {
         try {
@@ -137,6 +150,15 @@ fun EnrollmentScreen(
             if (response.isSuccessful && response.body() != null) {
                 val profile = response.body()!!
                 profileData = profile
+                
+                // Check if the profile is already completed
+                val profileComplete = isProfileComplete(profile)
+                
+                // If profile is complete, navigate back to dashboard
+                if (profileComplete) {
+                    onNavigateToDashboard()
+                    return@LaunchedEffect
+                }
                 
                 // Pre-fill form with existing data
                 firstName = profile.firstName
