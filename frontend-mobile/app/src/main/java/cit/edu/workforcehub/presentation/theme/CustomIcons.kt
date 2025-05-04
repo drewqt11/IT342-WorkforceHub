@@ -23,6 +23,7 @@ import androidx.compose.material.icons.rounded.Login
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Work
 import androidx.compose.ui.graphics.vector.ImageVector
+import cit.edu.workforcehub.R
 
 /**
  * Custom icon mappings to handle missing material icons
@@ -40,4 +41,7 @@ object CustomIcons {
     val Login: ImageVector = Icons.Rounded.Login
     val Admin: ImageVector = Icons.Rounded.AdminPanelSettings
     val Person: ImageVector = Icons.Rounded.Person
+    
+    // Medal icon for role designation
+    val Medal = R.drawable.ic_medal
 } 

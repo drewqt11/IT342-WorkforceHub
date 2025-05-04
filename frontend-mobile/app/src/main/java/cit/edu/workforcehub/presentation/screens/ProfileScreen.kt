@@ -88,9 +88,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.compose.foundation.ScrollState
+import androidx.compose.material.icons.filled.Shield
 import cit.edu.workforcehub.R
 import cit.edu.workforcehub.api.ApiHelper
 import cit.edu.workforcehub.api.models.EmployeeProfile
+import cit.edu.workforcehub.api.models.UserAccount
 import cit.edu.workforcehub.presentation.components.AppScreen
 import cit.edu.workforcehub.presentation.components.UniversalDrawer
 import cit.edu.workforcehub.presentation.theme.AppColors
@@ -98,6 +100,8 @@ import kotlinx.coroutines.launch
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import cit.edu.workforcehub.presentation.theme.CustomIcons
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 @Preview(showBackground = true)
 @Composable
@@ -118,8 +122,10 @@ fun ProfileScreen(
     
     // State for profile data
     var profileData by remember { mutableStateOf<EmployeeProfile?>(null) }
+    var userData by remember { mutableStateOf<UserAccount?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
+    var dataDebug by remember { mutableStateOf("") }
     
     // Fetch profile data
     LaunchedEffect(key1 = true) {
@@ -128,7 +134,39 @@ fun ProfileScreen(
             val response = employeeService.getProfile()
             
             if (response.isSuccessful && response.body() != null) {
-                profileData = response.body()
+                val receivedProfile = response.body()!!
+                
+                // Ensure we have proper fallback values for nullable fields
+                val updatedProfile = receivedProfile.copy(
+                    phoneNumber = receivedProfile.phoneNumber?.takeIf { it.isNotBlank() } ?: "Not provided",
+                    gender = receivedProfile.gender?.takeIf { it.isNotBlank() } ?: "Not provided",
+                    dateOfBirth = receivedProfile.dateOfBirth?.takeIf { it.isNotBlank() } ?: "Not provided",
+                    address = receivedProfile.address?.takeIf { it.isNotBlank() } ?: "Not provided",
+                    maritalStatus = receivedProfile.maritalStatus?.takeIf { it.isNotBlank() } ?: "Not provided"
+                )
+                
+                profileData = updatedProfile
+                
+                // Create debug info
+                dataDebug = "Phone: ${receivedProfile.phoneNumber}, Gender: ${receivedProfile.gender}, " +
+                         "DOB: ${receivedProfile.dateOfBirth}, Address: ${receivedProfile.address}, " +
+                         "Marital: ${receivedProfile.maritalStatus}"
+                
+                // Now fetch user account details using the email
+                try {
+                    val hrService = ApiHelper.getHrService()
+                    val userResponse = hrService.getUserAccountByEmail(receivedProfile.email)
+                    
+                    if (userResponse.isSuccessful && userResponse.body() != null) {
+                        userData = userResponse.body()
+                        dataDebug += "\nUser account fetched successfully: ${userData?.userId}"
+                    } else {
+                        dataDebug += "\nFailed to fetch user account: ${userResponse.message()}"
+                    }
+                } catch (e: Exception) {
+                    dataDebug += "\nError fetching user account: ${e.message}"
+                }
+                
                 isLoading = false
             } else {
                 error = "Failed to load profile: ${response.message()}"
@@ -156,42 +194,130 @@ fun ProfileScreen(
             onNavigateToTraining = onNavigateToTraining,
             onNavigateToProfile = {} // Already on profile
         ) {
-            Box(modifier = Modifier.fillMaxSize()) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                // Add the simplified header at the top with the drawer toggle
+                ProfileAppHeader(
+                    onMenuClick = { 
+                        scope.launch {
+                            drawerState.open()
+                        }
+                    }
+                )
+                
                 // Main content
                 if (isLoading) {
                     Box(
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .weight(1f),
                         contentAlignment = Alignment.Center
                     ) {
                         CircularProgressIndicator(color = AppColors.blue500)
                     }
                 } else if (error != null) {
-                    ErrorView(error = error!!)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .weight(1f)
+                    ) {
+                        ErrorView(error = error!!)
+                    }
                 } else if (profileData != null) {
-                    ProfileContent(profile = profileData!!, scrollState = scrollState)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .weight(1f)
+                    ) {
+                        ProfileContent(
+                            profile = profileData!!, 
+                            userData = userData,
+                            scrollState = scrollState, 
+                            debugInfo = dataDebug
+                        )
+                    }
                 }
-                
-                // Menu button in top-left corner
+            }
+        }
+    }
+}
+
+/**
+ * A simplified header component specifically for the Profile screen.
+ * This is based on AppHeader but without user info and date display.
+ * 
+ * @param title Optional title to display in the header
+ * @param onMenuClick Callback when the menu button is clicked
+ * @param modifier Modifier for the component
+ */
+@Composable
+fun ProfileAppHeader(
+    title: String? = null,
+    onMenuClick: () -> Unit = {},
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(bottomStart = 22.dp, bottomEnd = 22.dp))
+            .height(90.dp)  // Reduced height
+            .background(
+                brush = Brush.horizontalGradient(
+                    colors = listOf(AppColors.blue500, AppColors.teal500),
+                    startX = 0f,
+                    endX = 1200f
+                )
+            )
+    ) {
+        // Decorative circles (kept from original design)
+        Canvas(
+            modifier = Modifier
+                .fillMaxSize()
+                .alpha(0.15f)
+        ) {
+            // Large circle
+            drawCircle(
+                color = Color.White,
+                center = Offset(size.width * 0.85f, size.height * 0.2f),
+                radius = size.width * 0.35f
+            )
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 16.dp, end = 16.dp, top = 30.dp, bottom = 16.dp)
+        ) {
+            // Top row with menu button and title
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 IconButton(
-                    onClick = {
-                        scope.launch {
-                            drawerState.open()
-                        }
-                    },
+                    onClick = onMenuClick,
                     modifier = Modifier
-                        .padding(start = 16.dp, end = 16.dp, top = 30.dp, bottom = 19.dp)
-                        .size(45.dp)
+                        .size(40.dp)
                         .clip(CircleShape)
-                        .background(Color.Transparent)
-                        .align(Alignment.TopStart)
-                        .zIndex(10f)
+                        .background(Color(0x22FFFFFF), CircleShape)
                 ) {
                     Icon(
                         painter = painterResource(id = android.R.drawable.ic_menu_sort_by_size),
                         contentDescription = "Menu",
-                        tint = Color.Transparent,
+                        tint = AppColors.white,
                         modifier = Modifier.size(20.dp)
                     )
+                }
+                
+                if (title != null) {
+                    Text(
+                        text = title,
+                        color = AppColors.white,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    
+                    // Empty spacer to balance layout if title is shown
+                    Spacer(modifier = Modifier.size(40.dp))
                 }
             }
         }
@@ -199,635 +325,607 @@ fun ProfileScreen(
 }
 
 @Composable
-fun ProfileContent(profile: EmployeeProfile, scrollState: ScrollState) {
+fun ProfileContent(
+    profile: EmployeeProfile, 
+    userData: UserAccount? = null,
+    scrollState: ScrollState, 
+    debugInfo: String = ""
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(scrollState)
-            .padding(top = 50.dp)
+            .padding(bottom = 16.dp, top = 10.dp)
     ) {
-        // My Profile title at the top of the scrollable content
-        Text(
-            text = "My Profile",
-            fontSize = 22.sp,
-            fontWeight = FontWeight.Bold,
-            color = AppColors.gray800,
+        // Add My Profile header at the top of the scrollable content
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 16.dp),
-            textAlign = TextAlign.Center
-        )
+                .padding(start = 16.dp, top = 8.dp, bottom = 30.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Profile icon in circular blue background
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .shadow(
+                        elevation = 2.dp,
+                        shape = RoundedCornerShape(8.dp),
+                        clip = false
+                    )
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(
+                        brush = Brush.linearGradient(
+                            colors = listOf(AppColors.blue500, Color(0xFF36D1DC)),
+                            start = Offset(0f, 0f),
+                            end = Offset(40f, 40f)
+                        )
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.user),
+                    contentDescription = "Profile Icon",
+                    tint = Color.White,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+            
+            Spacer(modifier = Modifier.width(12.dp))
+            
+            // My Profile text
+            Text(
+                text = "My Profile",
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold,
+                color = AppColors.gray800
+            )
+        }
         
-        // User Profile Card
-        UserProfileCard(profile = profile)
+        // Profile Card
+        ProfileCard(profile = profile)
         
         Spacer(modifier = Modifier.height(16.dp))
         
         // Personal Information
-        PersonalInfoSection(profile = profile)
+        PersonalInfoCard(profile = profile)
         
         Spacer(modifier = Modifier.height(16.dp))
         
         // Employment Information
-        EmploymentInfoSection(profile = profile)
+        EmploymentInfoCard(profile = profile)
         
         Spacer(modifier = Modifier.height(16.dp))
         
         // Account Information
-        AccountInfoSection(profile = profile)
-        
+        AccountInfoCard(profile = profile, userData = userData)
+
         // Add extra space at the bottom to ensure the last card is fully visible when scrolling
         Spacer(modifier = Modifier.height(24.dp))
     }
 }
 
 @Composable
-fun UserProfileCard(profile: EmployeeProfile) {
+fun ProfileCard(profile: EmployeeProfile) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp),
-        colors = CardDefaults.cardColors(containerColor = AppColors.white),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        shape = RoundedCornerShape(16.dp)
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        shape = RoundedCornerShape(12.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 24.dp),
+                .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Profile avatar with initials on light blue background
+            // Get initials from profile name
+            val firstInitial = profile.firstName.firstOrNull()?.uppercase() ?: ""
+            val lastInitial = profile.lastName.firstOrNull()?.uppercase() ?: ""
+            val initials = "$firstInitial$lastInitial"
+            
+            // Profile Image - Redesigned to show user initials instead of icon
             Box(
                 modifier = Modifier
-                    .size(84.dp)
+                    .size(100.dp)
+                    .shadow(
+                        elevation = 4.dp,
+                        shape = CircleShape,
+                        clip = false
+                    )
+                    .border(width = 2.dp, color = Color.White, shape = CircleShape)
                     .clip(CircleShape)
-                    .background(Color(0xFFE1F0FF)),
+                    .background(AppColors.blue100),
                 contentAlignment = Alignment.Center
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(Color(0xFF4285F4)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "${profile.firstName.firstOrNull() ?: ""}${profile.lastName.firstOrNull() ?: ""}", 
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = AppColors.white
-                    )
-                }
+                Text(
+                    text = initials,
+                    color = AppColors.blue500,
+                    fontSize = 36.sp,
+                    fontWeight = FontWeight.Bold
+                )
             }
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            // User Name
+            // Profile Name
             Text(
                 text = "${profile.firstName} ${profile.lastName}",
-                fontSize = 18.sp,
+                fontSize = 20.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = AppColors.gray800
+                color = AppColors.gray900
             )
             
-            // Role or N/A
+            // Job Title
             Text(
                 text = profile.jobName ?: "N/A",
                 fontSize = 14.sp,
-                fontWeight = FontWeight.Normal,
-                color = AppColors.gray500,
-                modifier = Modifier.padding(bottom = 20.dp)
+                color = AppColors.gray600,
+                modifier = Modifier.padding(vertical = 4.dp)
             )
             
-            // Contact Information
+            // Contact Info
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp),
-                horizontalAlignment = Alignment.Start
+                    .padding(top = 16.dp)
             ) {
                 // Email
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .background(Color(0xFFF1F5F9), CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Email,
-                            contentDescription = null,
-                            tint = Color(0xFF3B82F6),
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                    
-                    Spacer(modifier = Modifier.width(12.dp))
-                    
-                    Text(
-                        text = profile.email,
-                        fontSize = 14.sp,
-                        color = AppColors.gray700
-                    )
-                }
+                ContactInfoItem(
+                    icon = Icons.Default.Email,
+                    iconBgColor = AppColors.blue100,
+                    iconTint = AppColors.blue500,
+                    text = profile.email
+                )
+                
+                Spacer(modifier = Modifier.height(12.dp))
                 
                 // Phone
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .background(Color(0xFFF1F5F9), CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Phone,
-                            contentDescription = null,
-                            tint = Color(0xFF10B981),
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                    
-                    Spacer(modifier = Modifier.width(12.dp))
-                    
-                    Text(
-                        text = profile.phoneNumber ?: "N/A",
-                        fontSize = 14.sp,
-                        color = AppColors.gray700
-                    )
-                }
+                ContactInfoItem(
+                    icon = Icons.Default.Phone,
+                    iconBgColor = AppColors.teal100,
+                    iconTint = AppColors.teal500,
+                    text = profile.phoneNumber ?: "09685861226"
+                )
+                
+                Spacer(modifier = Modifier.height(12.dp))
                 
                 // Location
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .background(Color(0xFFF1F5F9), CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.LocationOn,
-                            contentDescription = null,
-                            tint = Color(0xFF3B82F6),
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                    
-                    Spacer(modifier = Modifier.width(12.dp))
-                    
-                    Text(
-                        text = profile.address ?: "N/A",
-                        fontSize = 14.sp,
-                        color = AppColors.gray700
-                    )
-                }
+                ContactInfoItem(
+                    icon = Icons.Default.LocationOn,
+                    iconBgColor = AppColors.blue100,
+                    iconTint = AppColors.blue500,
+                    text = profile.address ?: "Midori Plains Blk. 4 lot 7, Tungkop, Minglanilla"
+                )
                 
-                // Website/URL
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .background(Color(0xFFF1F5F9), CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Language,
-                            contentDescription = null,
-                            tint = Color(0xFF10B981),
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                    
-                    Spacer(modifier = Modifier.width(12.dp))
-                    
-                    Text(
-                        text = "N/A",
-                        fontSize = 14.sp,
-                        color = AppColors.gray700
-                    )
-                }
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                // Job
+                ContactInfoItem(
+                    icon = Icons.Default.Business,
+                    iconBgColor = AppColors.teal100,
+                    iconTint = AppColors.teal500,
+                    text = profile.jobName ?: "N/A"
+                )
             }
             
-            Spacer(modifier = Modifier.height(24.dp))
-            
+            // Divider
             Divider(
+                modifier = Modifier.padding(vertical = 16.dp),
                 color = AppColors.gray200,
-                thickness = 1.dp,
-                modifier = Modifier.padding(horizontal = 24.dp)
+                thickness = 1.dp
             )
             
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Status indicators in a row at the bottom of card
+            // Status indicators
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 // Status
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .background(Color(0xFFF1F5F9), CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = null,
-                            tint = Color(0xFF3B82F6),
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                    
-                    Spacer(modifier = Modifier.height(6.dp))
-                    
-                    Text(
-                        text = "Status",
-                        fontSize = 12.sp,
-                        color = AppColors.gray500
-                    )
-                    
-                    Text(
-                        text = if (profile.status) "Active" else "Inactive",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = if (profile.status) Color(0xFF22C55E) else Color(0xFFEF4444)
-                    )
-                }
+                StatusItem(
+                    icon = Icons.Default.Person,
+                    iconTint = AppColors.blue500,
+                    label = "Status",
+                    value = if (profile.status) "Active" else "Inactive",
+                    isActive = profile.status
+                )
                 
                 // Employment
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .background(Color(0xFFF1F5F9), CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.DateRange,
-                            contentDescription = null,
-                            tint = Color(0xFF10B981),
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                    
-                    Spacer(modifier = Modifier.height(6.dp))
-                    
-                    Text(
-                        text = "Employment",
-                        fontSize = 12.sp,
-                        color = AppColors.gray500
-                    )
-                    
-                    Text(
-                        text = profile.employmentStatus ?: "N/A",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = AppColors.gray800
-                    )
-                }
+                StatusItem(
+                    icon = CustomIcons.AccessTime,
+                    iconTint = AppColors.teal500,
+                    label = "Employment",
+                    value = profile.employmentStatus ?: "FULL_TIME"
+                )
                 
                 // Role
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .background(Color(0xFFF1F5F9), CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.AccountCircle,
-                            contentDescription = null,
-                            tint = Color(0xFF3B82F6),
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                    
-                    Spacer(modifier = Modifier.height(6.dp))
-                    
-                    Text(
-                        text = "Role",
-                        fontSize = 12.sp,
-                        color = AppColors.gray500
-                    )
-                    
-                    Text(
-                        text = profile.roleName ?: "Employee",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = AppColors.gray800
-                    )
-                }
+                StatusItem(
+                    icon = Icons.Default.Person,
+                    iconTint = AppColors.blue500,
+                    label = "Role",
+                    value = profile.roleName ?: "Employee",
+                    iconDrawableRes = CustomIcons.Medal
+                )
             }
         }
     }
 }
 
 @Composable
-fun PersonalInfoSection(profile: EmployeeProfile) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
-        colors = CardDefaults.cardColors(containerColor = AppColors.white),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        shape = RoundedCornerShape(16.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 16.dp)
-        ) {
-            // Header with icon
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(bottom = 8.dp)
-            ) {
-                Icon(
-                    imageVector = CustomIcons.Person,
-                    contentDescription = null,
-                    tint = Color(0xFF4285F4),
-                    modifier = Modifier.size(20.dp)
-                )
-                
-                Spacer(modifier = Modifier.width(8.dp))
-                
-                Text(
-                    text = "Personal Information",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = AppColors.gray800
-                )
-            }
-            
-            Divider(color = AppColors.gray200, thickness = 1.dp)
-            
-            // Info items
-            ModernInfoItem(label = "Employee ID", value = profile.employeeId)
-            ModernInfoItem(label = "ID Number", value = profile.idNumber ?: "22-4480-181")
-            ModernInfoItem(label = "Full Name", value = "${profile.firstName} ${profile.lastName}")
-            ModernInfoItem(label = "Gender", value = profile.gender ?: "N/A")
-            ModernInfoItem(
-                label = "Date of Birth", 
-                value = profile.dateOfBirth ?: "N/A", 
-                iconVector = CustomIcons.CalendarToday,
-                iconTint = Color(0xFF4285F4)
-            )
-            ModernInfoItem(
-                label = "Marital Status", 
-                value = profile.maritalStatus ?: "N/A", 
-                iconVector = Icons.Default.Favorite,
-                iconTint = Color(0xFF4285F4)
-            )
-        }
-    }
-}
-
-@Composable
-fun EmploymentInfoSection(profile: EmployeeProfile) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
-        colors = CardDefaults.cardColors(containerColor = AppColors.white),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        shape = RoundedCornerShape(16.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 16.dp)
-        ) {
-            // Header with icon
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(bottom = 8.dp)
-            ) {
-                Icon(
-                    imageVector = CustomIcons.Business,
-                    contentDescription = null,
-                    tint = Color(0xFF10B981),
-                    modifier = Modifier.size(20.dp)
-                )
-                
-                Spacer(modifier = Modifier.width(8.dp))
-                
-                Text(
-                    text = "Employment Information",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = AppColors.gray800
-                )
-            }
-            
-            Divider(color = AppColors.gray200, thickness = 1.dp)
-            
-            // Status with green badge
-            ModernInfoItem(
-                label = "Status", 
-                value = "Active",
-                isHighlighted = true,
-                highlightColor = Color(0xFFDCFCE7),
-                textColor = Color(0xFF22C55E)
-            )
-            
-            ModernInfoItem(label = "Employment", value = profile.employmentStatus ?: "ACTIVE")
-            
-            ModernInfoItem(
-                label = "Hire Date", 
-                value = profile.hireDate ?: "May 1, 2025",
-                iconVector = CustomIcons.CalendarToday,
-                iconTint = Color(0xFF10B981)
-            )
-            
-            ModernInfoItem(
-                label = "Department", 
-                value = profile.departmentName ?: "N/A",
-                iconVector = CustomIcons.Business,
-                iconTint = Color(0xFF10B981)
-            )
-            
-            ModernInfoItem(
-                label = "Job Title", 
-                value = profile.jobName ?: "N/A",
-                iconVector = CustomIcons.Work,
-                iconTint = Color(0xFF10B981)
-            )
-            
-            ModernInfoItem(
-                label = "Role", 
-                value = profile.roleName ?: "Employee",
-                iconVector = Icons.Default.Person,
-                iconTint = Color(0xFF10B981)
-            )
-        }
-    }
-}
-
-@Composable
-fun AccountInfoSection(profile: EmployeeProfile) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
-        colors = CardDefaults.cardColors(containerColor = AppColors.white),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        shape = RoundedCornerShape(16.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 16.dp)
-        ) {
-            // Header with icon
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(bottom = 8.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.AccountCircle,
-                    contentDescription = null,
-                    tint = Color(0xFF4285F4),
-                    modifier = Modifier.size(20.dp)
-                )
-                
-                Spacer(modifier = Modifier.width(8.dp))
-                
-                Text(
-                    text = "Account Information",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = AppColors.gray800
-                )
-            }
-            
-            Divider(color = AppColors.gray200, thickness = 1.dp)
-            
-            // Info items
-            ModernInfoItem(
-                label = "User ID", 
-                value = "N/A",
-                iconVector = CustomIcons.Key,
-                iconTint = Color(0xFF4285F4)
-            )
-            
-            ModernInfoItem(
-                label = "Account Status", 
-                value = "Active",
-                isHighlighted = true,
-                highlightColor = Color(0xFFDCFCE7),
-                textColor = Color(0xFF22C55E)
-            )
-            
-            ModernInfoItem(
-                label = "Account Created", 
-                value = profile.createdAt?.let { 
-                    it.substring(0, it.indexOf('T')) 
-                } ?: "May 1, 2025 5:52 PM",
-                iconVector = CustomIcons.CalendarToday,
-                iconTint = Color(0xFF4285F4)
-            )
-            
-            ModernInfoItem(
-                label = "Last Login", 
-                value = "May 2, 2025 6:28 AM",
-                iconVector = CustomIcons.Login,
-                iconTint = Color(0xFF4285F4)
-            )
-        }
-    }
-}
-
-@Composable
-fun ModernInfoItem(
-    label: String, 
-    value: String, 
-    iconVector: ImageVector? = null,
-    iconTint: Color = AppColors.gray500,
-    isHighlighted: Boolean = false,
-    highlightColor: Color = AppColors.white,
-    textColor: Color = AppColors.gray800
+fun ContactInfoItem(
+    icon: ImageVector,
+    iconBgColor: Color,
+    iconTint: Color,
+    text: String
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth()
     ) {
-        Text(
-            text = label,
-            fontSize = 14.sp,
-            color = AppColors.gray500,
-            modifier = Modifier.width(120.dp)
-        )
+        Box(
+            modifier = Modifier
+                .size(32.dp)
+                .clip(CircleShape)
+                .background(iconBgColor),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = iconTint,
+                modifier = Modifier.size(16.dp)
+            )
+        }
         
-        if (isHighlighted) {
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(highlightColor)
-                    .padding(horizontal = 12.dp, vertical = 4.dp)
-            ) {
-                Text(
-                    text = value,
-                    fontSize = 14.sp,
-                    color = textColor,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-        } else if (iconVector != null) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+        Spacer(modifier = Modifier.width(12.dp))
+        
+        Text(
+            text = text,
+            fontSize = 14.sp,
+            color = AppColors.gray700,
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+@Composable
+fun StatusItem(
+    icon: ImageVector,
+    iconTint: Color,
+    label: String,
+    value: String,
+    isActive: Boolean? = null,
+    iconDrawableRes: Int? = null
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Box(
+            modifier = Modifier
+                .size(32.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            if (iconDrawableRes != null) {
                 Icon(
-                    imageVector = iconVector,
+                    painter = painterResource(id = iconDrawableRes),
                     contentDescription = null,
                     tint = iconTint,
-                    modifier = Modifier.size(16.dp)
+                    modifier = Modifier.size(25.dp)
                 )
-                
-                Spacer(modifier = Modifier.width(6.dp))
-                
+            } else {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = iconTint,
+                    modifier = Modifier.size(25.dp)
+                )
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(4.dp))
+        
+        Text(
+            text = label,
+            fontSize = 12.sp,
+            color = AppColors.gray500
+        )
+        
+        if (isActive != null) {
+            Box(
+                modifier = Modifier
+                    .padding(top = 4.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(if (isActive) AppColors.teal100 else AppColors.redLight)
+                    .padding(horizontal = 8.dp, vertical = 2.dp)
+            ) {
                 Text(
                     text = value,
-                    fontSize = 14.sp,
-                    color = AppColors.gray700
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = if (isActive) AppColors.teal900 else AppColors.red
                 )
             }
         } else {
             Text(
                 text = value,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+                color = AppColors.gray800
+            )
+        }
+    }
+}
+
+@Composable
+fun PersonalInfoCard(profile: EmployeeProfile) {
+    InfoCard(
+        title = "Personal Information",
+        icon = Icons.Default.Person,
+        iconTint = AppColors.blue500
+    ) {
+        InfoItem(label = "Employee ID", value = profile.employeeId)
+        InfoItem(label = "ID Number", value = profile.idNumber ?: "22-4480-181")
+        InfoItem(label = "Full Name", value = "${profile.firstName} ${profile.lastName}")
+        InfoItem(label = "Gender", value = profile.gender ?: "N/A")
+        InfoItem(
+            label = "Date of Birth",
+            value = profile.dateOfBirth ?: "N/A",
+            icon = CustomIcons.CalendarToday,
+            iconTint = AppColors.blue500
+        )
+        InfoItem(
+            label = "Marital Status",
+            value = profile.maritalStatus ?: "SINGLE",
+            icon = Icons.Default.Favorite,
+            iconTint = AppColors.blue500,
+            isLast = true
+        )
+    }
+}
+
+@Composable
+fun EmploymentInfoCard(profile: EmployeeProfile) {
+    InfoCard(
+        title = "Employment Information",
+        icon = CustomIcons.Work,
+        iconTint = AppColors.teal500
+    ) {
+        InfoItem(
+            label = "Status",
+            value = if (profile.status) "Active" else "Inactive",
+            isHighlighted = true,
+            highlightBgColor = if (profile.status) AppColors.teal100 else AppColors.redLight,
+            highlightTextColor = if (profile.status) AppColors.teal900 else AppColors.red
+        )
+        InfoItem(label = "Employment", value = profile.employmentStatus ?: "FULL_TIME")
+        InfoItem(
+            label = "Hire Date",
+            value = profile.hireDate ?: "May 2, 2025",
+            icon = CustomIcons.CalendarToday,
+            iconTint = AppColors.teal500
+        )
+        InfoItem(
+            label = "Department",
+            value = profile.departmentName ?: "N/A",
+            icon = CustomIcons.Business,
+            iconTint = AppColors.teal500
+        )
+        InfoItem(
+            label = "Job Title",
+            value = profile.jobName ?: "N/A",
+            icon = CustomIcons.Work,
+            iconTint = AppColors.teal500
+        )
+        InfoItem(
+            label = "Role",
+            value = profile.roleName ?: "Employee",
+            iconDrawableRes = CustomIcons.Medal,
+            iconTint = AppColors.teal500,
+            isLast = true
+        )
+    }
+}
+
+@Composable
+fun AccountInfoCard(profile: EmployeeProfile, userData: UserAccount? = null) {
+    InfoCard(
+        title = "Account Information",
+        icon = Icons.Default.Shield,
+        iconTint = AppColors.blue500
+    ) {
+        InfoItem(
+            label = "User ID",
+            value = userData?.userId ?: "N/A",
+            icon = CustomIcons.Key,
+            iconTint = AppColors.blue500
+        )
+        InfoItem(
+            label = "Account Status",
+            value = if (userData?.active == true) "Active" else "Inactive",
+            isHighlighted = true,
+            highlightBgColor = if (userData?.active == true) AppColors.teal100 else AppColors.redLight,
+            highlightTextColor = if (userData?.active == true) AppColors.teal900 else AppColors.red
+        )
+        InfoItem(
+            label = "Account Created",
+            value = userData?.createdAt?.let { 
+                if (it.contains('T')) it.substring(0, it.indexOf('T')) else it
+            } ?: (profile.createdAt?.let { 
+                if (it.contains('T')) it.substring(0, it.indexOf('T')) else it
+            } ?: "N/A"),
+            icon = CustomIcons.CalendarToday,
+            iconTint = AppColors.blue500
+        )
+        InfoItem(
+            label = "Last Login",
+            value = userData?.lastLogin?.let { 
+                if (it.contains('T')) it.substring(0, it.indexOf('T')) else it
+            } ?: "N/A",
+            icon = CustomIcons.Login,
+            iconTint = AppColors.blue500,
+            isLast = true
+        )
+    }
+}
+
+@Composable
+fun InfoCard(
+    title: String,
+    icon: ImageVector,
+    iconTint: Color,
+    content: @Composable () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            // Header
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(bottom = 16.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = iconTint,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+                
+                Spacer(modifier = Modifier.width(12.dp))
+                
+                Text(
+                    text = title,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = AppColors.gray800
+                )
+            }
+            
+            // Content
+            content()
+        }
+    }
+}
+
+@Composable
+fun InfoItem(
+    label: String,
+    value: String,
+    icon: ImageVector? = null,
+    iconTint: Color = AppColors.blue500,
+    isHighlighted: Boolean = false,
+    highlightBgColor: Color = AppColors.blue50,
+    highlightTextColor: Color = AppColors.blue500,
+    isLast: Boolean = false,
+    iconDrawableRes: Int? = null
+) {
+    Column {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Label always goes on the left
+            Text(
+                text = label,
                 fontSize = 14.sp,
-                color = AppColors.gray700
+                color = AppColors.gray500,
+                modifier = Modifier.weight(0.4f)
+            )
+            
+            // Value section takes the remaining space
+            Box(
+                modifier = Modifier.weight(0.6f),
+                contentAlignment = Alignment.CenterStart // Align content to the start (left)
+            ) {
+                if (isHighlighted) {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(highlightBgColor)
+                            .padding(horizontal = 8.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = value,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = highlightTextColor
+                        )
+                    }
+                } else if (icon != null) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = null,
+                            tint = iconTint,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        
+                        Spacer(modifier = Modifier.width(6.dp))
+                        
+                        Text(
+                            text = value,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = AppColors.gray700
+                        )
+                    }
+                } else if (iconDrawableRes != null) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            painter = painterResource(id = iconDrawableRes),
+                            contentDescription = null,
+                            tint = iconTint,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        
+                        Spacer(modifier = Modifier.width(6.dp))
+                        
+                        Text(
+                            text = value,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = AppColors.gray700
+                        )
+                    }
+                } else {
+                    Text(
+                        text = value,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = AppColors.gray700
+                    )
+                }
+            }
+        }
+        
+        if (!isLast) {
+            Divider(
+                color = AppColors.gray200,
+                thickness = 1.dp
             )
         }
     }

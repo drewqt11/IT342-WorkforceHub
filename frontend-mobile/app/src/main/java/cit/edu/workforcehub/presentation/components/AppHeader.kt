@@ -2,6 +2,7 @@ package cit.edu.workforcehub.presentation.components
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -145,49 +146,42 @@ fun AppHeader(
                 Box(
                     modifier = Modifier
                         .size(60.dp)
-                        .shadow(4.dp, CircleShape)
-                        .background(Color(0xFFE1F0FF), CircleShape)
-                        .padding(2.dp),
+                        .shadow(
+                            elevation = 4.dp,
+                            shape = CircleShape,
+                            clip = false
+                        )
+                        .border(width = 2.dp, color = Color.White, shape = CircleShape)
+                        .clip(CircleShape)
+                        .background(AppColors.blue100),
                     contentAlignment = Alignment.Center
                 ) {
                     if (isLoading) {
                         CircularProgressIndicator(
-                            color = Color(0xFF4285F4),
+                            color = AppColors.blue500,
                             strokeWidth = 2.dp,
                             modifier = Modifier.size(24.dp)
                         )
                     } else if (profileData != null) {
-                        // Show initials from profile name in blue circle
-                        Box(
-                            modifier = Modifier
-                                .size(30.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFF4285F4)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "${profileData.firstName.firstOrNull() ?: ""}${profileData.lastName.firstOrNull() ?: ""}",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White
-                            )
-                        }
+                        // Show initials from profile name
+                        val firstInitial = profileData.firstName.firstOrNull()?.uppercase() ?: ""
+                        val lastInitial = profileData.lastName.firstOrNull()?.uppercase() ?: ""
+                        val initials = "$firstInitial$lastInitial"
+                        
+                        Text(
+                            text = initials,
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = AppColors.blue500
+                        )
                     } else {
-                        // Default placeholder with blue circle
-                        Box(
-                            modifier = Modifier
-                                .size(30.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFF4285F4)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "AA",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White
-                            )
-                        }
+                        // Default placeholder with initials
+                        Text(
+                            text = "N/A",
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = AppColors.blue500
+                        )
                     }
                 }
 

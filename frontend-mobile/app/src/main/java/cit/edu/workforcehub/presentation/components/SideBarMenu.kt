@@ -43,7 +43,8 @@ enum class AppScreen {
     LEAVE_REQUESTS,
     PERFORMANCE,
     TRAINING,
-    PROFILE
+    PROFILE,
+    ENROLLMENT
 }
 
 /**
@@ -180,7 +181,7 @@ fun SideBarMenu(
         ) {
             MenuNavItem(
                 title = "Dashboard",
-                icon = R.drawable.home_dashboard_icon,
+                icon = R.drawable.dashboard2,
                 isSelected = currentScreen == AppScreen.DASHBOARD,
                 onClick = {
                     scope.launch {
@@ -191,8 +192,8 @@ fun SideBarMenu(
             )
             
             MenuNavItem(
-                title = "Time & Attendance",
-                icon = R.drawable.time_attendance_icon,
+                title = "Attendance Logs",
+                icon = R.drawable.clock,
                 isSelected = currentScreen == AppScreen.TIME_ATTENDANCE,
                 onClick = {
                     scope.launch {
@@ -203,8 +204,8 @@ fun SideBarMenu(
             )
             
             MenuNavItem(
-                title = "Leave Requests",
-                icon = R.drawable.leave_requests_icon,
+                title = "Requests",
+                icon = R.drawable.time,
                 isSelected = currentScreen == AppScreen.LEAVE_REQUESTS,
                 onClick = {
                     scope.launch {
@@ -228,7 +229,7 @@ fun SideBarMenu(
             
             MenuNavItem(
                 title = "Training & Events",
-                icon = R.drawable.training_icon,
+                icon = R.drawable.graduation,
                 isSelected = currentScreen == AppScreen.TRAINING,
                 onClick = {
                     scope.launch {
@@ -244,8 +245,8 @@ fun SideBarMenu(
             )
             
             MenuNavItem(
-                title = "Profile",
-                icon = R.drawable.ic_single_account_24dp,
+                title = "My Profile",
+                icon = R.drawable.user,
                 isSelected = currentScreen == AppScreen.PROFILE,
                 onClick = {
                     scope.launch {

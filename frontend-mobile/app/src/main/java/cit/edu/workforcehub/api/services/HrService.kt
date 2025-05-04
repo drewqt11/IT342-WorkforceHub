@@ -4,6 +4,7 @@ import cit.edu.workforcehub.api.ApiEndpoints
 import cit.edu.workforcehub.api.models.Department
 import cit.edu.workforcehub.api.models.Employee
 import cit.edu.workforcehub.api.models.JobTitle
+import cit.edu.workforcehub.api.models.UserAccount
 import retrofit2.Response
 import retrofit2.http.*
 
@@ -83,4 +84,10 @@ interface HrService {
      */
     @POST("${ApiEndpoints.EMPLOYEES}/{id}/deactivate")
     suspend fun deactivateEmployee(@Path("id") id: String): Response<Employee>
+    
+    /**
+     * Get a user account by email.
+     */
+    @GET("/api/hr/user-accounts/{email}")
+    suspend fun getUserAccountByEmail(@Path("email") email: String): Response<UserAccount>
 } 
