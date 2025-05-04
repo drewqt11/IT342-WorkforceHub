@@ -14,7 +14,7 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
         <activity
-            android:name=".MainActivity"
+            android:name="cit.edu.workforcehub.MainActivity"
             android:exported="true"
             android:theme="@style/Theme.AppCompat.Light.NoActionBar"
             android:windowSoftInputMode="adjustResize"
@@ -39,7 +39,7 @@
         
         <!-- OAuth WebView Activity -->
         <activity
-            android:name=".auth.OAuthWebViewActivity"
+            android:name="cit.edu.workforcehub.auth.OAuthWebViewActivity"
             android:exported="false"
             android:theme="@style/Theme.AppCompat.Light.NoActionBar"
             android:windowSoftInputMode="adjustResize" />

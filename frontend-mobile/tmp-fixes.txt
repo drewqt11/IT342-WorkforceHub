@@ -1,0 +1,22 @@
+Changes required to fix compilation errors:
+
+1. In CustomIcons.kt, add the following icons:
+   - Web: Map to Icons.Default.Language
+   - Work: Map to Icons.Default.Work
+   - Business: Map to Icons.Default.Business
+   - AccessTime: Map to Icons.Default.AccessTime
+   - Error: Map to Icons.Default.Warning
+
+2. In ProfileScreen.kt:
+   - Update all references to these icons to use CustomIcons instead of Icons.Default
+   - Specifically:
+     - Line 299: Replace Icons.Default.Web with CustomIcons.Web
+     - Line 350: Replace Icons.Default.Work with CustomIcons.Work
+     - Line 427: Replace Icons.Default.Business with CustomIcons.Business
+     - Line 446: Replace Icons.Default.Work with CustomIcons.Work
+     - Line 477: Replace Icons.Default.AccessTime with CustomIcons.AccessTime
+     - Line 605: Replace Icons.Default.Error with CustomIcons.Error
+
+3. Make sure all import statements are correct
+   - Import Icons from material.icons
+   - Import CustomIcons from cit.edu.workforcehub.presentation.theme.CustomIcons 
