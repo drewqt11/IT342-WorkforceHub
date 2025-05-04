@@ -177,7 +177,7 @@ fun AppHeader(
                     } else {
                         // Default placeholder with initials
                         Text(
-                            text = "AA",
+                            text = "N/A",
                             fontSize = 22.sp,
                             fontWeight = FontWeight.Bold,
                             color = AppColors.blue500

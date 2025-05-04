@@ -206,11 +206,12 @@ fun EnrollmentScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp)
+                        .padding(30.dp)
                 ) {
                     // Logo and title row
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Start,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         // Logo
@@ -218,7 +219,7 @@ fun EnrollmentScreen(
                             painter = painterResource(id = R.drawable.logo_with_no_text),
                             contentDescription = "Workforce Hub Logo",
                             modifier = Modifier
-                                .size(40.dp)
+                                .size(46.dp)
                                 .clip(CircleShape)
                                 .background(AppColors.white)
                                 .border(1.dp, AppColors.gray200, CircleShape)
@@ -229,20 +230,22 @@ fun EnrollmentScreen(
                         Column(
                             modifier = Modifier
                                 .padding(start = 12.dp)
-                                .weight(1f)
                         ) {
                             Text(
                                 text = "WORKFORCE HUB",
-                                fontSize = 16.sp,
+                                fontSize = 22.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = AppColors.gray800
                             )
                             Text(
                                 text = "ENTERPRISE PORTAL",
-                                fontSize = 10.sp,
+                                fontSize = 16.sp,
                                 color = AppColors.gray500
                             )
                         }
+                        
+                        // Add a spacer to push content to the left
+                        Spacer(modifier = Modifier.weight(1f))
                     }
                     
                     Spacer(modifier = Modifier.height(16.dp))

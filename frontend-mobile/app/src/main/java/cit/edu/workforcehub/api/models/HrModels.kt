@@ -25,4 +25,16 @@ data class JobTitle(
     @Json(name = "departmentName") val departmentName: String? = null,
     @Json(name = "minimumSalary") val minimumSalary: Double? = null,
     @Json(name = "maximumSalary") val maximumSalary: Double? = null
+)
+
+/**
+ * Model for user account data.
+ */
+@JsonClass(generateAdapter = true)
+data class UserAccount(
+    @Json(name = "userId") val userId: String,
+    @Json(name = "emailAddress") val emailAddress: String,
+    @Json(name = "createdAt") val createdAt: String? = null,
+    @Json(name = "lastLogin") val lastLogin: String? = null,
+    @Json(name = "active") val active: Boolean = false
 ) 

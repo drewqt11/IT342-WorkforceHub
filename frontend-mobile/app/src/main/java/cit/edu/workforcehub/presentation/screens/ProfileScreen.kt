@@ -92,6 +92,7 @@ import androidx.compose.material.icons.filled.Shield
 import cit.edu.workforcehub.R
 import cit.edu.workforcehub.api.ApiHelper
 import cit.edu.workforcehub.api.models.EmployeeProfile
+import cit.edu.workforcehub.api.models.UserAccount
 import cit.edu.workforcehub.presentation.components.AppScreen
 import cit.edu.workforcehub.presentation.components.UniversalDrawer
 import cit.edu.workforcehub.presentation.theme.AppColors
@@ -121,6 +122,7 @@ fun ProfileScreen(
     
     // State for profile data
     var profileData by remember { mutableStateOf<EmployeeProfile?>(null) }
+    var userData by remember { mutableStateOf<UserAccount?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
     var dataDebug by remember { mutableStateOf("") }
@@ -149,6 +151,21 @@ fun ProfileScreen(
                 dataDebug = "Phone: ${receivedProfile.phoneNumber}, Gender: ${receivedProfile.gender}, " +
                          "DOB: ${receivedProfile.dateOfBirth}, Address: ${receivedProfile.address}, " +
                          "Marital: ${receivedProfile.maritalStatus}"
+                
+                // Now fetch user account details using the email
+                try {
+                    val hrService = ApiHelper.getHrService()
+                    val userResponse = hrService.getUserAccountByEmail(receivedProfile.email)
+                    
+                    if (userResponse.isSuccessful && userResponse.body() != null) {
+                        userData = userResponse.body()
+                        dataDebug += "\nUser account fetched successfully: ${userData?.userId}"
+                    } else {
+                        dataDebug += "\nFailed to fetch user account: ${userResponse.message()}"
+                    }
+                } catch (e: Exception) {
+                    dataDebug += "\nError fetching user account: ${e.message}"
+                }
                 
                 isLoading = false
             } else {
@@ -211,7 +228,12 @@ fun ProfileScreen(
                             .fillMaxSize()
                             .weight(1f)
                     ) {
-                        ProfileContent(profile = profileData!!, scrollState = scrollState, debugInfo = dataDebug)
+                        ProfileContent(
+                            profile = profileData!!, 
+                            userData = userData,
+                            scrollState = scrollState, 
+                            debugInfo = dataDebug
+                        )
                     }
                 }
             }
@@ -258,13 +280,6 @@ fun ProfileAppHeader(
                 center = Offset(size.width * 0.85f, size.height * 0.2f),
                 radius = size.width * 0.35f
             )
-
-            // Medium circle
-            drawCircle(
-                color = Color.White,
-                center = Offset(size.width * 0.15f, size.height * 0.75f),
-                radius = size.width * 0.15f
-            )
         }
 
         Column(
@@ -310,7 +325,12 @@ fun ProfileAppHeader(
 }
 
 @Composable
-fun ProfileContent(profile: EmployeeProfile, scrollState: ScrollState, debugInfo: String = "") {
+fun ProfileContent(
+    profile: EmployeeProfile, 
+    userData: UserAccount? = null,
+    scrollState: ScrollState, 
+    debugInfo: String = ""
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -344,7 +364,7 @@ fun ProfileContent(profile: EmployeeProfile, scrollState: ScrollState, debugInfo
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = Icons.Default.Person,
+                    painter = painterResource(id = R.drawable.user),
                     contentDescription = "Profile Icon",
                     tint = Color.White,
                     modifier = Modifier.size(24.dp)
@@ -378,7 +398,7 @@ fun ProfileContent(profile: EmployeeProfile, scrollState: ScrollState, debugInfo
         Spacer(modifier = Modifier.height(16.dp))
         
         // Account Information
-        AccountInfoCard(profile = profile)
+        AccountInfoCard(profile = profile, userData = userData)
 
         // Add extra space at the bottom to ensure the last card is fully visible when scrolling
         Spacer(modifier = Modifier.height(24.dp))
@@ -617,14 +637,14 @@ fun StatusItem(
                 modifier = Modifier
                     .padding(top = 4.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(if (isActive) AppColors.greenLight else AppColors.redLight)
+                    .background(if (isActive) AppColors.teal100 else AppColors.redLight)
                     .padding(horizontal = 8.dp, vertical = 2.dp)
             ) {
                 Text(
                     text = value,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium,
-                    color = if (isActive) AppColors.green else AppColors.red
+                    color = if (isActive) AppColors.teal900 else AppColors.red
                 )
             }
         } else {
@@ -676,8 +696,8 @@ fun EmploymentInfoCard(profile: EmployeeProfile) {
             label = "Status",
             value = if (profile.status) "Active" else "Inactive",
             isHighlighted = true,
-            highlightBgColor = if (profile.status) AppColors.greenLight else AppColors.redLight,
-            highlightTextColor = if (profile.status) AppColors.green else AppColors.red
+            highlightBgColor = if (profile.status) AppColors.teal100 else AppColors.redLight,
+            highlightTextColor = if (profile.status) AppColors.teal900 else AppColors.red
         )
         InfoItem(label = "Employment", value = profile.employmentStatus ?: "FULL_TIME")
         InfoItem(
@@ -709,7 +729,7 @@ fun EmploymentInfoCard(profile: EmployeeProfile) {
 }
 
 @Composable
-fun AccountInfoCard(profile: EmployeeProfile) {
+fun AccountInfoCard(profile: EmployeeProfile, userData: UserAccount? = null) {
     InfoCard(
         title = "Account Information",
         icon = Icons.Default.Shield,
@@ -717,28 +737,32 @@ fun AccountInfoCard(profile: EmployeeProfile) {
     ) {
         InfoItem(
             label = "User ID",
-            value = "N/A",
+            value = userData?.userId ?: "N/A",
             icon = CustomIcons.Key,
             iconTint = AppColors.blue500
         )
         InfoItem(
             label = "Account Status",
-            value = "Active",
+            value = if (userData?.active == true) "Active" else "Inactive",
             isHighlighted = true,
-            highlightBgColor = AppColors.greenLight,
-            highlightTextColor = AppColors.green
+            highlightBgColor = if (userData?.active == true) AppColors.teal100 else AppColors.redLight,
+            highlightTextColor = if (userData?.active == true) AppColors.teal900 else AppColors.red
         )
         InfoItem(
             label = "Account Created",
-            value = profile.createdAt?.let { 
-                it.substring(0, it.indexOf('T')) 
-            } ?: "May 2, 2025 4:38 PM",
+            value = userData?.createdAt?.let { 
+                if (it.contains('T')) it.substring(0, it.indexOf('T')) else it
+            } ?: (profile.createdAt?.let { 
+                if (it.contains('T')) it.substring(0, it.indexOf('T')) else it
+            } ?: "N/A"),
             icon = CustomIcons.CalendarToday,
             iconTint = AppColors.blue500
         )
         InfoItem(
             label = "Last Login",
-            value = "May 3, 2025 1:52 AM",
+            value = userData?.lastLogin?.let { 
+                if (it.contains('T')) it.substring(0, it.indexOf('T')) else it
+            } ?: "N/A",
             icon = CustomIcons.Login,
             iconTint = AppColors.blue500,
             isLast = true
