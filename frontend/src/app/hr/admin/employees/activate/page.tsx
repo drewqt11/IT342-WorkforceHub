@@ -148,6 +148,7 @@ export default function ActivateEmployeesPage() {
   const [selectedJobTitleId, setSelectedJobTitleId] = useState<string>("")
   const [loadingJobTitles, setLoadingJobTitles] = useState(false)
   const [jobTitleError, setJobTitleError] = useState<string | null>(null)
+  const [viewedProfiles, setViewedProfiles] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -405,8 +406,60 @@ export default function ActivateEmployeesPage() {
       }
 
       toast.success("Employee activated successfully")
-      // Refresh the employee list
-      await fetchEmployees()
+      
+      // Only refresh the employee list
+      const updatedResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hr/employees`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if (!updatedResponse.ok) {
+        throw new Error("Failed to fetch updated employee list")
+      }
+
+      const data = await updatedResponse.json()
+      const employeesData = Array.isArray(data) ? data : data.employees || data.content || []
+      
+      // Process employees and check their active status
+      const processedEmployees = await Promise.all(
+        employeesData.map(async (emp: any) => {
+          try {
+            const isActive = await authService.getActiveStatus(emp.email)
+            
+            return {
+              employeeId: emp.employeeId || "",
+              firstName: emp.firstName || "",
+              lastName: emp.lastName || "",
+              email: emp.email || "",
+              phoneNumber: emp.phoneNumber || "Not provided",
+              gender: emp.gender || "Not specified",
+              dateOfBirth: emp.dateOfBirth ? new Date(emp.dateOfBirth).toLocaleDateString() : "Not provided",
+              address: emp.address || "Not provided",
+              maritalStatus: emp.maritalStatus || "Not specified",
+              departmentId: emp.departmentId || "",
+              departmentName: emp.departmentName || "Unassigned",
+              jobId: emp.jobId || "",
+              jobName: emp.jobName || "",
+              role: emp.roleId || emp.role || "ROLE_EMPLOYEE",
+              status: emp.status || false,
+              employmentStatus: emp.employmentStatus || "INACTIVE",
+              isActive: isActive
+            }
+          } catch (error) {
+            console.error(`Error checking active status for employee ${emp.email}:`, error)
+            return null
+          }
+        })
+      )
+
+      // Filter out null values and inactive employees
+      const validEmployees = processedEmployees.filter(emp => emp !== null && emp.isActive) as Employee[]
+      
+      setEmployees(validEmployees)
+      setTotalPages(Math.ceil(validEmployees.length / itemsPerPage))
+      setCurrentPage(1)
+      filterEmployees()
     } catch (error) {
       console.error("Error activating employee:", error)
       toast.error("Failed to activate employee. Please try again.")
@@ -481,8 +534,59 @@ export default function ActivateEmployeesPage() {
 
       toast.success("Department updated successfully");
       
-      // Refresh the employee list
-      await fetchEmployees();
+      // Only refresh the employee list
+      const updatedResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hr/employees`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!updatedResponse.ok) {
+        throw new Error("Failed to fetch updated employee list");
+      }
+
+      const employeesResponse = await updatedResponse.json();
+      const employeesData = Array.isArray(employeesResponse) ? employeesResponse : employeesResponse.employees || employeesResponse.content || [];
+      
+      // Process employees and check their active status
+      const processedEmployees = await Promise.all(
+        employeesData.map(async (emp: any) => {
+          try {
+            const isActive = await authService.getActiveStatus(emp.email);
+            
+            return {
+              employeeId: emp.employeeId || "",
+              firstName: emp.firstName || "",
+              lastName: emp.lastName || "",
+              email: emp.email || "",
+              phoneNumber: emp.phoneNumber || "Not provided",
+              gender: emp.gender || "Not specified",
+              dateOfBirth: emp.dateOfBirth ? new Date(emp.dateOfBirth).toLocaleDateString() : "Not provided",
+              address: emp.address || "Not provided",
+              maritalStatus: emp.maritalStatus || "Not specified",
+              departmentId: emp.departmentId || "",
+              departmentName: emp.departmentName || "Unassigned",
+              jobId: emp.jobId || "",
+              jobName: emp.jobName || "",
+              role: emp.roleId || emp.role || "ROLE_EMPLOYEE",
+              status: emp.status || false,
+              employmentStatus: emp.employmentStatus || "INACTIVE",
+              isActive: isActive
+            };
+          } catch (error) {
+            console.error(`Error checking active status for employee ${emp.email}:`, error);
+            return null;
+          }
+        })
+      );
+
+      // Filter out null values and inactive employees
+      const validEmployees = processedEmployees.filter(emp => emp !== null && emp.isActive) as Employee[];
+      
+      setEmployees(validEmployees);
+      setTotalPages(Math.ceil(validEmployees.length / itemsPerPage));
+      setCurrentPage(1);
+      filterEmployees();
       
       // Close department dialog
       setIsDepartmentDialogOpen(false);
@@ -536,6 +640,8 @@ export default function ActivateEmployeesPage() {
     setSelectedEmployeeProfile(employee);
     setIsProfileDialogOpen(true);
     setLoadingProfile(true);
+    // Add employee to viewed profiles
+    setViewedProfiles(prev => new Set(prev).add(employee.employeeId));
 
     try {
       // Fetch employee profile
@@ -606,7 +712,16 @@ export default function ActivateEmployeesPage() {
     }
   };
 
-  // Update the profile dialog content to use the new handleProfileUpdate function
+  // Add helper function to format text
+  const formatText = (text: string | undefined | null) => {
+    if (!text) return "Not provided";
+    return text
+      .split(/[_\s]+/)
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
+
+  // Update the profile dialog content
   const renderProfileDialog = () => (
     <Dialog open={isProfileDialogOpen} onOpenChange={setIsProfileDialogOpen}>
       <DialogContent className="max-w-[90vw] md:max-w-[85vw] lg:max-w-[1000px] p-0 overflow-hidden h-[90vh] max-h-[800px]">
@@ -627,10 +742,10 @@ export default function ActivateEmployeesPage() {
               {selectedEmployeeProfile && (
                 <>
                   <h3 className="text-xl font-bold text-center">
-                    {selectedEmployeeProfile.firstName} {selectedEmployeeProfile.lastName}
+                    {formatText(selectedEmployeeProfile.firstName)} {formatText(selectedEmployeeProfile.lastName)}
                   </h3>
                   <p className="text-sm text-white/80 text-center">
-                    {selectedEmployeeProfile.jobName || "No Job Title"} at {selectedEmployeeProfile.departmentName}
+                    {formatText(selectedEmployeeProfile.jobName) || "No Job Title"} at {formatText(selectedEmployeeProfile.departmentName)}
                   </p>
 
                   <div className="mt-4 w-full">
@@ -668,16 +783,16 @@ export default function ActivateEmployeesPage() {
                   </div>
                   <div>
                     <p className="text-xs text-white/60 uppercase">ID Number</p>
-                    <p className="text-sm font-medium">{selectedEmployeeProfile.idNumber || "Not provided"}</p>
+                    <p className="text-sm font-medium">{formatText(selectedEmployeeProfile.idNumber)}</p>
                   </div>
                   <div>
                     <p className="text-xs text-white/60 uppercase">Employment Status</p>
-                    <p className="text-sm font-medium">{selectedEmployeeProfile.employmentStatus}</p>
+                    <p className="text-sm font-medium">{formatText(selectedEmployeeProfile.employmentStatus)}</p>
                   </div>
                   <div>
                     <p className="text-xs text-white/60 uppercase">Hire Date</p>
                     <p className="text-sm font-medium text-white dark:text-white">
-                      {selectedEmployeeProfile.hireDate || "Not provided"}
+                      {formatText(selectedEmployeeProfile.hireDate)}
                     </p>
                   </div>
                 </div>
@@ -819,7 +934,7 @@ export default function ActivateEmployeesPage() {
                     <div>
                       <p className="text-xs text-[#6B7280] dark:text-[#9CA3AF]">Phone Number</p>
                       <p className="text-sm font-medium text-[#1F2937] dark:text-white flex items-center gap-2">
-                        {selectedEmployeeProfile.phoneNumber || "Not provided"}
+                        {formatText(selectedEmployeeProfile.phoneNumber)}
                         {selectedEmployeeProfile.phoneNumber && (
                           <Button variant="ghost" size="sm" className="h-6 w-6 p-0 rounded-full">
                             <svg
@@ -844,7 +959,7 @@ export default function ActivateEmployeesPage() {
                     <div>
                       <p className="text-xs text-[#6B7280] dark:text-[#9CA3AF]">Address</p>
                       <p className="text-sm font-medium text-[#1F2937] dark:text-white">
-                        {selectedEmployeeProfile.address || "Not provided"}
+                        {formatText(selectedEmployeeProfile.address)}
                       </p>
                     </div>
                     <div>
@@ -878,7 +993,7 @@ export default function ActivateEmployeesPage() {
                       <p className="text-xs text-[#6B7280] dark:text-[#9CA3AF]">Department</p>
                       <div className="flex items-center gap-2">
                         <p className="text-sm font-medium text-[#1F2937] dark:text-white">
-                          {selectedEmployeeProfile.departmentName}
+                          {formatText(selectedEmployeeProfile.departmentName)}
                         </p>
                         <Button
                           variant="outline"
@@ -902,19 +1017,19 @@ export default function ActivateEmployeesPage() {
                     <div>
                       <p className="text-xs text-[#6B7280] dark:text-[#9CA3AF]">Job Title</p>
                       <p className="text-sm font-medium text-[#1F2937] dark:text-white">
-                        {selectedEmployeeProfile.jobName || "Not assigned"}
+                        {formatText(selectedEmployeeProfile.jobName)}
                       </p>
                     </div>
                     <div>
                       <p className="text-xs text-[#6B7280] dark:text-[#9CA3AF]">Hire Date</p>
                       <p className="text-sm font-medium text-[#1F2937] dark:text-white">
-                        {selectedEmployeeProfile.hireDate || "Not provided"}
+                        {formatText(selectedEmployeeProfile.hireDate)}
                       </p>
                     </div>
                     <div>
                       <p className="text-xs text-[#6B7280] dark:text-[#9CA3AF]">Employment Type</p>
                       <p className="text-sm font-medium text-[#1F2937] dark:text-white">
-                        {selectedEmployeeProfile.employmentStatus}
+                        {formatText(selectedEmployeeProfile.employmentStatus)}
                       </p>
                     </div>
                     <div>
@@ -953,6 +1068,11 @@ export default function ActivateEmployeesPage() {
 
   const handleUpdateJobTitle = async (jobId: string, departmentId: string) => {
     try {
+      if (!selectedJobTitleId) {
+        toast.error("Please select a job title");
+        return;
+      }
+
       setUpdatingJobTitle(jobId);
       const token = authService.getToken();
       
@@ -966,7 +1086,7 @@ export default function ActivateEmployeesPage() {
         throw new Error("Employee ID is required");
       }
       
-      const response = await fetch(`/api/hr/employees/${selectedJobTitleForUpdate.employeeId}/job-title`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hr/employees/${selectedJobTitleForUpdate.employeeId}/job-title`, {
         method: "PATCH",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -985,8 +1105,59 @@ export default function ActivateEmployeesPage() {
 
       toast.success("Job title updated successfully");
       
-      // Refresh the employee list to show updated job titles
-      await fetchEmployees();
+      // Only refresh the employee list
+      const updatedResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hr/employees`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!updatedResponse.ok) {
+        throw new Error("Failed to fetch updated employee list");
+      }
+
+      const employeesResponse = await updatedResponse.json();
+      const employeesData = Array.isArray(employeesResponse) ? employeesResponse : employeesResponse.employees || employeesResponse.content || [];
+      
+      // Process employees and check their active status
+      const processedEmployees = await Promise.all(
+        employeesData.map(async (emp: any) => {
+          try {
+            const isActive = await authService.getActiveStatus(emp.email);
+            
+            return {
+              employeeId: emp.employeeId || "",
+              firstName: emp.firstName || "",
+              lastName: emp.lastName || "",
+              email: emp.email || "",
+              phoneNumber: emp.phoneNumber || "Not provided",
+              gender: emp.gender || "Not specified",
+              dateOfBirth: emp.dateOfBirth ? new Date(emp.dateOfBirth).toLocaleDateString() : "Not provided",
+              address: emp.address || "Not provided",
+              maritalStatus: emp.maritalStatus || "Not specified",
+              departmentId: emp.departmentId || "",
+              departmentName: emp.departmentName || "Unassigned",
+              jobId: emp.jobId || "",
+              jobName: emp.jobName || "",
+              role: emp.roleId || emp.role || "ROLE_EMPLOYEE",
+              status: emp.status || false,
+              employmentStatus: emp.employmentStatus || "INACTIVE",
+              isActive: isActive
+            };
+          } catch (error) {
+            console.error(`Error checking active status for employee ${emp.email}:`, error);
+            return null;
+          }
+        })
+      );
+
+      // Filter out null values and inactive employees
+      const validEmployees = processedEmployees.filter(emp => emp !== null && emp.isActive) as Employee[];
+      
+      setEmployees(validEmployees);
+      setTotalPages(Math.ceil(validEmployees.length / itemsPerPage));
+      setCurrentPage(1);
+      filterEmployees();
       
       // Close the dialog and reset states
       setIsUpdateJobTitleDialogOpen(false);
@@ -1162,6 +1333,15 @@ export default function ActivateEmployeesPage() {
       </div>
     </TableCell>
   );
+
+  // Add helper function to check if employee can be activated
+  const canActivateEmployee = (employee: Employee) => {
+    return (
+      employee.departmentId && 
+      employee.jobId && 
+      viewedProfiles.has(employee.employeeId)
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#F9FAFB] via-[#F0FDFA] to-[#E0F2FE] dark:from-[#1F2937] dark:via-[#134E4A] dark:to-[#0F172A] p-4 md:p-6">
@@ -1512,38 +1692,44 @@ export default function ActivateEmployeesPage() {
                                   disabled={processingEmployee === employee.employeeId}
                                   className="border-[#FED7AA] text-[#F59E0B] hover:bg-[#FEF3C7] dark:border-[#78350F] dark:text-[#F59E0B] dark:hover:bg-[#78350F]/30"
                                 >
-                                  {processingEmployee === employee.employeeId ? (
-                                    <div className="flex items-center gap-1">
-                                      <div className="h-3 w-3 rounded-full border-2 border-[#F59E0B] border-t-transparent animate-spin"></div>
-                                      <span>Processing...</span>
-                                    </div>
-                                  ) : (
-                                    <div className="flex items-center gap-1">
-                                      <UserX className="h-3.5 w-3.5" />
-                                      <span>Deactivate</span>
-                                    </div>
-                                  )}
+                                  <div className="flex items-center gap-1">
+                                    <UserX className="h-3.5 w-3.5" />
+                                    <span>Deactivate</span>
+                                  </div>
                                 </Button>
                               ) : (
                                 <Button
                                   variant="outline"
                                   size="sm"
                                   onClick={() => handleActivate(employee.employeeId)}
-                                  disabled={processingEmployee === employee.employeeId}
-                                  className="border-[#BFDBFE] text-[#3B82F6] hover:bg-[#EFF6FF] dark:border-[#1E3A8A] dark:text-[#3B82F6] dark:hover:bg-[#1E3A8A]/30"
-                                >
-                                  {processingEmployee === employee.employeeId ? (
-                                    <div className="flex items-center gap-1">
-                                      <div className="h-3 w-3 rounded-full border-2 border-[#3B82F6] border-t-transparent animate-spin"></div>
-                                      <span>Processing...</span>
-                                    </div>
-                                  ) : (
-                                    <div className="flex items-center gap-1">
-                                      <UserCheck className="h-3.5 w-3.5" />
-                                      <span>Activate</span>
-                                    </div>
+                                  disabled={processingEmployee === employee.employeeId || !canActivateEmployee(employee)}
+                                  className={cn(
+                                    "border-[#BFDBFE] text-[#3B82F6] hover:bg-[#EFF6FF] dark:border-[#1E3A8A] dark:text-[#3B82F6] dark:hover:bg-[#1E3A8A]/30",
+                                    !canActivateEmployee(employee) && "opacity-50 cursor-not-allowed"
                                   )}
+                                >
+                                  <div className="flex items-center gap-1">
+                                    <UserCheck className="h-3.5 w-3.5" />
+                                    <span>Activate</span>
+                                  </div>
                                 </Button>
+                              )}
+                              {!canActivateEmployee(employee) && !employee.status && (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <AlertCircle className="h-4 w-4 text-yellow-500" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>Please ensure the following before activation:</p>
+                                      <ul className="list-disc list-inside mt-1">
+                                        {!employee.departmentId && <li>Assign a department</li>}
+                                        {!employee.jobId && <li>Assign a job title</li>}
+                                        {!viewedProfiles.has(employee.employeeId) && <li>View employee profile</li>}
+                                      </ul>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
                               )}
                             </div>
                           </TableCell>

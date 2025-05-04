@@ -53,8 +53,8 @@ interface AttendanceInfo {
   overtimeHours: number | null;
   reasonForAbsence: string | null;
   approvedByManager: boolean;
-  workTimeInSched: string | null;
-  workTimeOutSched: string | null;
+  tardiness_minutes: number | null;
+  underTime_minutes: number | null;
 }
 
 interface EmployeeProfile {
@@ -96,7 +96,6 @@ export function ClockInOut() {
   const [employeeProfile, setEmployeeProfile] = useState<EmployeeProfile | null>(null);
   const [attendanceInfo, setAttendanceInfo] = useState<AttendanceInfo | null>(null);
   const [status, setStatus] = useState<"in" | "out">(() => {
-    // Check localStorage on initial render
     if (typeof window !== 'undefined') {
       const storedStatus = localStorage.getItem('clockStatus');
       return storedStatus === 'in' ? 'in' : 'out';
@@ -155,6 +154,29 @@ export function ClockInOut() {
   const [morningBreakTime, setMorningBreakTime] = useState<number>(0);
   const [lunchBreakTime, setLunchBreakTime] = useState<number>(0);
   const [afternoonBreakTime, setAfternoonBreakTime] = useState<number>(0);
+  const [overtimeStatus, setOvertimeStatus] = useState<"active" | "inactive">(() => {
+    if (typeof window !== 'undefined') {
+      const storedStatus = localStorage.getItem('overtimeStatus');
+      return storedStatus === 'active' ? 'active' : 'inactive';
+    }
+    return 'inactive';
+  });
+  const [overtimeStartTime, setOvertimeStartTime] = useState<number | null>(() => {
+    if (typeof window !== 'undefined') {
+      const storedTime = localStorage.getItem('overtimeStartTime');
+      return storedTime ? parseInt(storedTime) : null;
+    }
+    return null;
+  });
+  const [overtimeElapsedTime, setOvertimeElapsedTime] = useState<string>("00:00:00");
+  const overtimeTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [overtimeUsed, setOvertimeUsed] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('overtimeUsed');
+      return stored === 'true';
+    }
+    return false;
+  });
 
   // Format milliseconds to MM:SS
   const formatElapsedTime = (ms: number): string => {
@@ -184,6 +206,19 @@ export function ClockInOut() {
     return `${hours.toString().padStart(2, "0")}:${minutes
       .toString()
       .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`
+  }
+
+  // Format time to 12-hour format with AM/PM
+  const formatTimeToStandard = (time: string | null): string => {
+    if (!time) return 'Not set';
+    const [hours, minutes] = time.split(':');
+    const date = new Date();
+    date.setHours(parseInt(hours), parseInt(minutes));
+    return date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
   }
 
   useEffect(() => {
@@ -245,23 +280,62 @@ export function ClockInOut() {
 
   // Fetch today's attendance
   useEffect(() => {
+    // Helper function to reset break states
+    const resetBreakStates = () => {
+      setLunchBreakUsed(false);
+      setMorningBreakUsed(false);
+      setAfternoonBreakUsed(false);
+      localStorage.removeItem('lunchBreakUsed');
+      localStorage.removeItem('morningBreakUsed');
+      localStorage.removeItem('afternoonBreakUsed');
+    };
+
+    // Helper function to reset all states
+    const resetAllStates = () => {
+      setAttendanceInfo(null);
+      setStatus('out');
+      setTodayClockIn(false);
+      setWorkStartTime(null);
+      setTotalWorkTime(0);
+      setElapsedWorkTime("00:00:00");
+      setTotalBreakTime(0);
+      setTotalBreakDisplay("00:00");
+      setMorningBreakTime(0);
+      setLunchBreakTime(0);
+      setAfternoonBreakTime(0);
+      resetBreakStates();
+      localStorage.removeItem('clockStatus');
+    };
+
     const fetchTodayAttendance = async () => {
       try {
+        // First check localStorage for existing attendance record
+        const storedAttendance = localStorage.getItem('attendanceRecord');
+        if (storedAttendance) {
+          const parsedAttendance = JSON.parse(storedAttendance);
+          setAttendanceInfo(parsedAttendance);
+          
+          if (parsedAttendance.clockInTime && !parsedAttendance.clockOutTime) {
+            setStatus('in');
+            setTodayClockIn(true);
+            localStorage.setItem('clockStatus', 'in');
+          } else {
+            setStatus('out');
+            setTodayClockIn(false);
+            localStorage.removeItem('clockStatus');
+          }
+          return;
+        }
+
         const response = await fetch('/api/employee/attendance/today', {
           headers: {
             'Authorization':  `Bearer ${authService.getToken()}`,
           }
         });
 
-
-
         if (!response.ok) {
           if (response.status === 404) {
-            setAttendanceInfo(null);
-            if (localStorage.getItem('clockStatus') === 'in') {
-              localStorage.removeItem('clockStatus');
-              setStatus('out');
-            }
+            resetAllStates();
             return;
           }
           throw new Error('Failed to fetch attendance');
@@ -270,36 +344,76 @@ export function ClockInOut() {
         const data = await response.json();
         if (data) {
           setAttendanceInfo(data);
+          // Store only non-null display values in localStorage
+          const displayData = {
+            date: data.date,
+            clockInTime: data.clockInTime,
+            clockOutTime: data.clockOutTime,
+            totalHours: data.totalHours,
+            status: data.status,
+            workTimeInSched: data.workTimeInSched,
+            workTimeOutSched: data.workTimeOutSched,
+            ...(data.remarks && { remarks: data.remarks }),
+            ...(data.overtimeHours && { overtimeHours: data.overtimeHours }),
+            ...(data.reasonForAbsence && { reasonForAbsence: data.reasonForAbsence })
+          };
+          localStorage.setItem('attendanceRecord', JSON.stringify(displayData));
+          
           if (data.clockInTime && !data.clockOutTime) {
-            localStorage.setItem('clockStatus', 'in');
             setStatus('in');
             setTodayClockIn(true);
+            localStorage.setItem('clockStatus', 'in');
             
             if (data.status === "CLOCKED_IN") {
-              localStorage.removeItem('lunchBreakUsed');
-              localStorage.removeItem('morningBreakUsed');
-              localStorage.removeItem('afternoonBreakUsed');
-              setLunchBreakUsed(false);
-              setMorningBreakUsed(false);
-              setAfternoonBreakUsed(false);
-              setTotalBreakTime(0);
-              setTotalBreakDisplay("00:00");
-              setMorningBreakTime(0);
-              setLunchBreakTime(0);
-              setAfternoonBreakTime(0);
+              resetBreakStates();
             }
           } else {
-            localStorage.removeItem('clockStatus');
             setStatus('out');
             setTodayClockIn(false);
+            localStorage.removeItem('clockStatus');
           }
+        } else {
+          resetAllStates();
         }
       } catch (error) {
-        setAttendanceInfo(null);
+        console.error('Error fetching attendance:', error);
+        resetAllStates();
       }
     };
 
     fetchTodayAttendance();
+  }, []);
+
+  // Reset clock-in status at midnight
+  useEffect(() => {
+    const checkNewDay = () => {
+      const now = new Date();
+      if (now.getHours() === 0 && now.getMinutes() === 0 && now.getSeconds() === 0) {
+        // Reset all states at midnight
+        setStatus('out');
+        setTodayClockIn(false);
+        setWorkStartTime(null);
+        setTotalWorkTime(0);
+        setElapsedWorkTime("00:00:00");
+        setTotalBreakTime(0);
+        setTotalBreakDisplay("00:00");
+        setMorningBreakTime(0);
+        setLunchBreakTime(0);
+        setAfternoonBreakTime(0);
+        setLunchBreakUsed(false);
+        setMorningBreakUsed(false);
+        setAfternoonBreakUsed(false);
+        // Clear all localStorage items including attendance record
+        localStorage.removeItem('clockStatus');
+        localStorage.removeItem('lunchBreakUsed');
+        localStorage.removeItem('morningBreakUsed');
+        localStorage.removeItem('afternoonBreakUsed');
+        localStorage.removeItem('attendanceRecord');
+      }
+    };
+
+    const midnightCheck = setInterval(checkNewDay, 1000);
+    return () => clearInterval(midnightCheck);
   }, []);
 
   // Work time tracking effect
@@ -329,19 +443,6 @@ export function ClockInOut() {
     };
   }, [status, breakStatus, workStartTime, totalWorkTime, attendanceInfo]);
 
-  // Reset clock-in status at midnight
-  useEffect(() => {
-    const checkNewDay = () => {
-      const now = new Date()
-      if (now.getHours() === 0 && now.getMinutes() === 0 && now.getSeconds() === 0) {
-        setTodayClockIn(false)
-      }
-    }
-
-    const midnightCheck = setInterval(checkNewDay, 1000)
-    return () => clearInterval(midnightCheck)
-  }, [])
-
   // Clear error after 5 seconds
   useEffect(() => {
     if (error) {
@@ -363,24 +464,6 @@ export function ClockInOut() {
     };
 
     fetchEmployeeProfile();
-  }, []);
-
-  // Reset break states at midnight
-  useEffect(() => {
-    const checkNewDay = () => {
-      const now = new Date();
-      if (now.getHours() === 0 && now.getMinutes() === 0 && now.getSeconds() === 0) {
-        setLunchBreakUsed(false);
-        setMorningBreakUsed(false);
-        setAfternoonBreakUsed(false);
-        localStorage.removeItem('lunchBreakUsed');
-        localStorage.removeItem('morningBreakUsed');
-        localStorage.removeItem('afternoonBreakUsed');
-      }
-    };
-
-    const midnightCheck = setInterval(checkNewDay, 1000);
-    return () => clearInterval(midnightCheck);
   }, []);
 
   const handleClockIn = async () => {
@@ -419,18 +502,23 @@ export function ClockInOut() {
       }
 
       const data = await response.json();
-
-      // Fetch today's attendance after successful clock-in
-      const attendanceResponse = await fetch('/api/employee/attendance/today', {
-        headers: {
-          'Authorization': `Bearer ${authService.getToken()}`
-        }
-      });
-      if (attendanceResponse.ok) {
-        const attendanceData = await attendanceResponse.json();
-        setAttendanceInfo(attendanceData);
-      }
-
+      setAttendanceInfo(data);
+      
+      // Store only non-null display values in localStorage
+      const displayData = {
+        date: data.date,
+        clockInTime: data.clockInTime,
+        clockOutTime: data.clockOutTime,
+        totalHours: data.totalHours,
+        status: data.status,
+        workTimeInSched: data.workTimeInSched,
+        workTimeOutSched: data.workTimeOutSched,
+        ...(data.remarks && { remarks: data.remarks }),
+        ...(data.overtimeHours && { overtimeHours: data.overtimeHours }),
+        ...(data.reasonForAbsence && { reasonForAbsence: data.reasonForAbsence })
+      };
+      localStorage.setItem('attendanceRecord', JSON.stringify(displayData));
+      
       setStatus("in");
       setTodayClockIn(true);
       const now = Date.now();
@@ -472,11 +560,24 @@ export function ClockInOut() {
     }
 
     try {
-      if (!attendanceInfo?.attendanceId) {
+      const todayResponse = await fetch('/api/employee/attendance/today', {
+        headers: {
+          'Authorization': `Bearer ${authService.getToken()}`,
+        }
+      });
+
+      if (!todayResponse.ok) {
+        throw new Error('Failed to fetch attendance');
+      }
+
+      const todayData = await todayResponse.json();
+      setAttendanceInfo(todayData);
+
+      if (!todayData?.attendanceId) {
         throw new Error('No attendance record found for today');
       }
 
-      const response = await fetch(`/api/employee/attendance/${attendanceInfo.attendanceId}/clock-out`, {
+      const response = await fetch(`/api/employee/attendance/${todayData.attendanceId}/clock-out`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -496,9 +597,42 @@ export function ClockInOut() {
       const data = await response.json();
       setAttendanceInfo(data);
       
+      // Store only non-null display values in localStorage
+      const displayData = {
+        date: data.date,
+        clockInTime: data.clockInTime,
+        clockOutTime: data.clockOutTime,
+        totalHours: data.totalHours,
+        status: data.status,
+        workTimeInSched: data.workTimeInSched,
+        workTimeOutSched: data.workTimeOutSched,
+        ...(data.remarks && { remarks: data.remarks }),
+        ...(data.overtimeHours && { overtimeHours: data.overtimeHours }),
+        ...(data.reasonForAbsence && { reasonForAbsence: data.reasonForAbsence })
+      };
+      localStorage.setItem('attendanceRecord', JSON.stringify(displayData));
+      localStorage.setItem('clockStatus', 'out');
+
+
+      // Reset all states and clear localStorage
       setStatus("out");
       setTodayClockIn(false);
-      localStorage.removeItem('clockStatus');
+      setWorkStartTime(null);
+      setTotalWorkTime(0);
+      setElapsedWorkTime("00:00:00");
+      setTotalBreakTime(0);
+      setTotalBreakDisplay("00:00");
+      setMorningBreakTime(0);
+      setLunchBreakTime(0);
+      setAfternoonBreakTime(0);
+      setLunchBreakUsed(false);
+      setMorningBreakUsed(false);
+      setAfternoonBreakUsed(false);
+      
+      // Clear all localStorage items except attendance record
+      localStorage.removeItem('lunchBreakUsed');
+      localStorage.removeItem('morningBreakUsed');
+      localStorage.removeItem('afternoonBreakUsed');
 
       if (data.clockInTime && data.clockOutTime) {
         const clockInDate = new Date(data.date + 'T' + data.clockInTime);
@@ -507,22 +641,11 @@ export function ClockInOut() {
         setElapsedWorkTime(formatWorkTime(finalWorkTime));
       }
 
-      setWorkStartTime(null);
-
       toast.success("Successfully clocked out", {
         description: "Your work day has ended. Have a great rest of your day!",
         duration: 5000,
       });
 
-      const attendanceResponse = await fetch('/api/employee/attendance/today', {
-        headers: {
-          'Authorization': `Bearer ${authService.getToken()}`
-        }
-      });
-      if (attendanceResponse.ok) {
-        const attendanceData = await attendanceResponse.json();
-        setAttendanceInfo(attendanceData);
-      }
     } catch (error) {
       toast.error("Failed to clock out", {
         description: error instanceof Error ? error.message : "An unexpected error occurred",
@@ -656,23 +779,6 @@ export function ClockInOut() {
     setShowEndBreakDialog(false);
   };
 
-  // Reset all break times at midnight
-  useEffect(() => {
-    const checkNewDay = () => {
-      const now = new Date();
-      if (now.getHours() === 0 && now.getMinutes() === 0 && now.getSeconds() === 0) {
-        setTotalBreakTime(0);
-        setTotalBreakDisplay("00:00");
-        setMorningBreakTime(0);
-        setLunchBreakTime(0);
-        setAfternoonBreakTime(0);
-      }
-    };
-
-    const midnightCheck = setInterval(checkNewDay, 1000);
-    return () => clearInterval(midnightCheck);
-  }, []);
-
   // Update total break time whenever individual break times change
   useEffect(() => {
     const combinedBreakTime = morningBreakTime + lunchBreakTime + afternoonBreakTime;
@@ -709,6 +815,148 @@ export function ClockInOut() {
         return <Clock className="h-4 w-4 text-[#6B7280]" />
     }
   }
+
+  // Overtime timer effect
+  useEffect(() => {
+    if (overtimeStatus === "active" && overtimeStartTime) {
+      overtimeTimerRef.current = setInterval(() => {
+        const elapsed = Date.now() - overtimeStartTime;
+        setOvertimeElapsedTime(formatWorkTime(elapsed));
+      }, 1000);
+    } else if (overtimeTimerRef.current) {
+      clearInterval(overtimeTimerRef.current);
+    }
+
+    return () => {
+      if (overtimeTimerRef.current) {
+        clearInterval(overtimeTimerRef.current);
+      }
+    };
+  }, [overtimeStatus, overtimeStartTime]);
+
+  const handleStartOvertime = async () => {
+    try {
+      const todayResponse = await fetch('/api/employee/attendance/today', {
+        headers: {
+          'Authorization': `Bearer ${authService.getToken()}`,
+        }
+      });
+
+      if (!todayResponse.ok) {
+        throw new Error('Failed to fetch attendance');
+      }
+
+      const todayData = await todayResponse.json();
+      setAttendanceInfo(todayData);
+
+      if (!todayData?.attendanceId) {
+        throw new Error('No attendance record found for today');
+      }
+
+      const startTime = Date.now();
+      setOvertimeStatus("active");
+      setOvertimeStartTime(startTime);
+      setOvertimeElapsedTime("00:00:00");
+      
+      // Store overtime state in localStorage
+      localStorage.setItem('overtimeStatus', 'active');
+      localStorage.setItem('overtimeStartTime', startTime.toString());
+    } catch (error) {
+      toast.error("Failed to start overtime", {
+        description: error instanceof Error ? error.message : "An unexpected error occurred",
+        duration: 5000,
+      });
+    }
+  };
+
+  const handleEndOvertime = async () => {
+    try {
+      const todayResponse = await fetch('/api/employee/attendance/today', {
+        headers: {
+          'Authorization': `Bearer ${authService.getToken()}`,
+        }
+      });
+
+      if (!todayResponse.ok) {
+        throw new Error('Failed to fetch attendance');
+      }
+
+      const todayData = await todayResponse.json();
+      setAttendanceInfo(todayData);
+
+      if (!todayData?.attendanceId) {
+        throw new Error('No attendance record found for today');
+      }
+
+      // Calculate overtime hours
+      const overtimeHours = overtimeStartTime ? (Date.now() - overtimeStartTime) / (1000 * 60 * 60) : 0;
+      
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/employee/attendance/${todayData.attendanceId}/overtime?overtimeHours=${overtimeHours.toFixed(2)}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${authService.getToken()}`
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update overtime hours');
+      }
+
+      const data = await response.json();
+      setAttendanceInfo(data);
+      
+      toast.success("Overtime recorded successfully", {
+        description: `Total overtime: ${overtimeHours.toFixed(2)} hours`,
+        duration: 5000,
+      });
+
+      setOvertimeStatus("inactive");
+      setOvertimeStartTime(null);
+      setOvertimeElapsedTime("00:00:00");
+      setOvertimeUsed(true);
+      
+      // Clear overtime state from localStorage
+      localStorage.removeItem('overtimeStatus');
+      localStorage.removeItem('overtimeStartTime');
+      localStorage.setItem('overtimeUsed', 'true');
+    } catch (error) {
+      toast.error("Failed to record overtime", {
+        description: error instanceof Error ? error.message : "An unexpected error occurred",
+        duration: 5000,
+      });
+    }
+  };
+
+  // Add effect to restore overtime state on mount
+  useEffect(() => {
+    if (overtimeStatus === "active" && overtimeStartTime) {
+      // Calculate elapsed time since the stored start time
+      const elapsed = Date.now() - overtimeStartTime;
+      setOvertimeElapsedTime(formatWorkTime(elapsed));
+    }
+  }, [overtimeStatus, overtimeStartTime]);
+
+  // Reset overtime state at midnight
+  useEffect(() => {
+    const checkNewDay = () => {
+      const now = new Date();
+      if (now.getHours() === 0 && now.getMinutes() === 0 && now.getSeconds() === 0) {
+        // Reset overtime states at midnight
+        setOvertimeStatus("inactive");
+        setOvertimeStartTime(null);
+        setOvertimeElapsedTime("00:00:00");
+        setOvertimeUsed(false);
+        // Clear overtime localStorage items
+        localStorage.removeItem('overtimeStatus');
+        localStorage.removeItem('overtimeStartTime');
+        localStorage.removeItem('overtimeUsed');
+      }
+    };
+
+    const midnightCheck = setInterval(checkNewDay, 1000);
+    return () => clearInterval(midnightCheck);
+  }, []);
 
   return (
     <>
@@ -1088,7 +1336,7 @@ export function ClockInOut() {
                     <div className="flex flex-col items-center p-3 bg-white dark:bg-[#1F2937]/50 rounded-lg border border-[#E5E7EB] dark:border-[#E5E7EB]/20">
                       <span className="text-xs text-[#6B7280] dark:text-[#6B7280] mb-1">Clock In</span>
                       <span className="text-sm font-medium text-[#1F2937] dark:text-[#F9FAFB]">
-                        {attendanceInfo.clockInTime || 'Not clocked in'}
+                        {formatTimeToStandard(attendanceInfo.clockInTime)}
                       </span>
                     </div>
 
@@ -1112,7 +1360,7 @@ export function ClockInOut() {
                     <div className="flex flex-col items-center p-3 bg-white dark:bg-[#1F2937]/50 rounded-lg border border-[#E5E7EB] dark:border-[#E5E7EB]/20">
                       <span className="text-xs text-[#6B7280] dark:text-[#6B7280] mb-1">Clock Out</span>
                       <span className="text-sm font-medium text-[#1F2937] dark:text-[#F9FAFB]">
-                        {attendanceInfo.clockOutTime || 'Not clocked out'}
+                        {formatTimeToStandard(attendanceInfo.clockOutTime)}
                       </span>
                     </div>
 
@@ -1120,15 +1368,15 @@ export function ClockInOut() {
                     <div className="flex flex-col items-center p-3 bg-white dark:bg-[#1F2937]/50 rounded-lg border border-[#E5E7EB] dark:border-[#E5E7EB]/20">
                       <span className="text-xs text-[#6B7280] dark:text-[#6B7280] mb-1">Total Hours</span>
                       <span className="text-sm font-medium text-[#1F2937] dark:text-[#F9FAFB]">
-                        {attendanceInfo.totalHours || '0'} hours
+                        {attendanceInfo.totalHours || '0'} hour(s)
                       </span>
                     </div>
 
-                    {/* Date */}
+                    {/* Work Schedule */}
                     <div className="flex flex-col items-center p-3 bg-white dark:bg-[#1F2937]/50 rounded-lg border border-[#E5E7EB] dark:border-[#E5E7EB]/20">
-                      <span className="text-xs text-[#6B7280] dark:text-[#6B7280] mb-1">Date</span>
+                      <span className="text-xs text-[#6B7280] dark:text-[#6B7280] mb-1">Work Schedule</span>
                       <span className="text-sm font-medium text-[#1F2937] dark:text-[#F9FAFB]">
-                        {new Date(attendanceInfo.date).toLocaleDateString()}
+                        {employeeProfile ? `${formatTimeToStandard(employeeProfile.workTimeInSched)} - ${formatTimeToStandard(employeeProfile.workTimeOutSched)}` : 'N/A'}
                       </span>
                     </div>
                   </div>
@@ -1163,6 +1411,85 @@ export function ClockInOut() {
                 </div>
               )}
             </div>
+
+            {/* Overtime Section - Only show when clocked out */}
+            {status === "out" && attendanceInfo?.clockInTime && (
+              <div className="w-full bg-gradient-to-r from-[#F59E0B]/10 to-[#F9FAFB] dark:from-[#F59E0B]/20 dark:to-[#1F2937] rounded-xl p-4 shadow-sm border border-[#E5E7EB] dark:border-[#E5E7EB]/20">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className={`h-3 w-3 rounded-full ${
+                        overtimeStatus === "active" ? "bg-[#F59E0B] animate-pulse" : "bg-[#6B7280]"
+                      } mr-1`}
+                      aria-hidden="true"
+                    ></div>
+                    <span className="text-sm font-medium text-[#1F2937] dark:text-[#F9FAFB]">Overtime Status</span>
+                  </div>
+                  <Badge
+                    variant="default"
+                    className={`text-xs font-medium px-3 py-1 ${
+                      overtimeStatus === "active"
+                        ? "bg-[#F59E0B]/20 text-[#F59E0B] dark:bg-[#F59E0B]/20 dark:text-[#F59E0B] border border-[#F59E0B]/30"
+                        : "bg-[#6B7280]/20 text-[#6B7280] dark:bg-[#6B7280]/20 dark:text-[#6B7280] border border-[#6B7280]/30"
+                    }`}
+                    role="status"
+                    aria-label={`Overtime Status: ${overtimeStatus === "active" ? "Active" : "Inactive"}`}
+                  >
+                    {overtimeStatus === "active" ? "Active" : "Inactive"}
+                  </Badge>
+                </div>
+
+                {/* Overtime Timer */}
+                <div className="w-full bg-[#FFFFFF] dark:bg-[#1F2937] backdrop-blur-sm rounded-xl p-4 flex items-center justify-between shadow-sm border border-[#E5E7EB] dark:border-[#E5E7EB]/20">
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-5 w-5 text-[#F59E0B] dark:text-[#F59E0B]" />
+                    <span className="text-sm text-[#1F2937] dark:text-[#F9FAFB] font-medium">Overtime Duration</span>
+                  </div>
+                  <div className="font-mono font-bold text-[#F59E0B] dark:text-[#F59E0B] text-lg bg-[#FFFFFF] dark:bg-[#1F2937] px-3 py-1 rounded-lg shadow-inner border border-[#E5E7EB] dark:border-[#E5E7EB]/20">
+                    {overtimeElapsedTime}
+                  </div>
+                </div>
+
+                {/* Overtime Buttons */}
+                <div className="mt-3 grid grid-cols-2 gap-3">
+                  <Button
+                    onClick={handleStartOvertime}
+                    disabled={overtimeStatus === "active" || overtimeUsed}
+                    className={`rounded-xl py-4 font-medium transition-all duration-300 ${
+                      overtimeStatus === "active" || overtimeUsed
+                        ? "bg-[#E5E7EB] text-[#6B7280] dark:bg-[#1F2937]/70 dark:text-[#6B7280] cursor-not-allowed"
+                        : "bg-[#F59E0B] hover:bg-[#D97706] text-white shadow-md border-0"
+                    }`}
+                    aria-label="Start Overtime"
+                  >
+                    <div className="flex items-center justify-center gap-2">
+                      {overtimeUsed ? (
+                        <CheckCircle className="h-5 w-5 text-[#6B7280]" aria-hidden="true" />
+                      ) : (
+                        <PlayCircle className="h-5 w-5" aria-hidden="true" />
+                      )}
+                      <span>{overtimeUsed ? "Overtime Used" : "Start Overtime"}</span>
+                    </div>
+                  </Button>
+
+                  <Button
+                    onClick={handleEndOvertime}
+                    disabled={overtimeStatus === "inactive"}
+                    className={`rounded-xl py-4 font-medium transition-all duration-300 ${
+                      overtimeStatus === "inactive"
+                        ? "bg-[#E5E7EB] text-[#6B7280] dark:bg-[#1F2937]/70 dark:text-[#6B7280] cursor-not-allowed"
+                        : "bg-[#F59E0B] hover:bg-[#D97706] text-white shadow-md border-0"
+                    }`}
+                    aria-label="End Overtime"
+                  >
+                    <div className="flex items-center justify-center gap-2">
+                      <PauseCircle className="h-5 w-5" aria-hidden="true" />
+                      <span>End Overtime</span>
+                    </div>
+                  </Button>
+                </div>
+              </div>
+            )}
 
             {/* Action Buttons */}
             <div className="mt-auto w-full space-y-3">

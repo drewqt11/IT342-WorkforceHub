@@ -37,6 +37,8 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog"
+import PrivacyPolicyPopup from "./privacy-policy"
+import TermsOfServicePopup from "./terms-of-service"
 
 export default function EnrollmentForm() {
   const router = useRouter()
@@ -72,66 +74,80 @@ export default function EnrollmentForm() {
     title: "",
     message: "",
   })
+  const [isSaving, setIsSaving] = useState(false)
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false)
+  const [successDetails, setSuccessDetails] = useState({ title: "", message: "" })
+  const [termsAccepted, setTermsAccepted] = useState(false)
+  const [privacyAccepted, setPrivacyAccepted] = useState(false)
+  const [consentAccepted, setConsentAccepted] = useState(false)
+  const [showTerms, setShowTerms] = useState(false)
+  const [showPrivacy, setShowPrivacy] = useState(false)
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({})
 
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         const data = await authService.getEmployeeProfile()
         setProfile(data)
-        // Set initial values for non-null fields
-        if (data) {
-          if (data.dateOfBirth) {
-            const dob = new Date(data.dateOfBirth)
-            setDate(dob)
+
+        // Initialize form data with profile data
             setFormData(prev => ({
               ...prev,
-              dateOfBirth: format(dob, 'yyyy-MM-dd')
-            }))
-          }
-          if (data.hireDate) setStartDate(new Date(data.hireDate))
-          
-          // Split address string if it exists
-          let buildingNo = ""
-          let street = ""
-          let barangay = ""
-          let city = ""
-          let province = ""
-          let zipCode = ""
-          
-          if (data.address) {
-            const addressParts = data.address.split(',')
-            if (addressParts.length >= 1) buildingNo = addressParts[0].trim()
-            if (addressParts.length >= 2) street = addressParts[1].trim()
-            if (addressParts.length >= 3) barangay = addressParts[2].trim()
-            if (addressParts.length >= 4) city = addressParts[3].trim()
-            if (addressParts.length >= 5) province = addressParts[4].trim()
-            if (addressParts.length >= 6) zipCode = addressParts[5].trim()
-          }
+          firstName: data.firstName || '',
+          lastName: data.lastName || '',
+          email: data.email || '',
+          phoneNumber: data.phoneNumber || '',
+          gender: data.gender || '',
+          dateOfBirth: data.dateOfBirth || '',
+          address: data.address || '',
+          maritalStatus: data.maritalStatus || '',
+          employmentStatus: data.employmentStatus || '',
+          departmentId: data.departmentId || '',
+          jobId: data.jobId || '',
+          roleId: data.roleId || '',
+        }))
 
-          // Initialize form data with existing profile data
-          setFormData(prev => ({
-            ...prev,
-            firstName: data.firstName || "",
-            lastName: data.lastName || "",
-            email: data.email || "",
-            phoneNumber: data.phoneNumber || "",
-            gender: data.gender || "",
-            address: data.address || "",
-            maritalStatus: data.maritalStatus || "",
-            employmentStatus: data.employmentStatus || "FULL_TIME",
-            status: data.status !== undefined ? data.status : true,
-            buildingNo: buildingNo,
-            street: street,
-            barangay: barangay,
-            city: city,
-            province: province,
-            zipCode: zipCode,
-            country: "Philippines",
-          }))
+        // Set date of birth if available
+        if (data.dateOfBirth) {
+          setDate(new Date(data.dateOfBirth))
         }
-      } catch (err) {
-        console.error("Error fetching profile:", err)
-        setError("Failed to fetch profile data")
+
+        // Set hire date if available
+        if (data.hireDate) {
+          setStartDate(new Date(data.hireDate))
+        }
+
+        // Check for draft data
+        const draft = localStorage.getItem('enrollmentDraft')
+        if (draft) {
+          try {
+            const parsedDraft = JSON.parse(draft)
+            if (parsedDraft.formData) {
+              setFormData(parsedDraft.formData)
+              setTermsAccepted(parsedDraft.formData.termsAccepted || false)
+              setPrivacyAccepted(parsedDraft.formData.privacyAccepted || false)
+              setConsentAccepted(parsedDraft.formData.consentAccepted || false)
+            }
+            if (parsedDraft.date) {
+              setDate(new Date(parsedDraft.date))
+            }
+            if (parsedDraft.startDate) {
+              setStartDate(new Date(parsedDraft.startDate))
+            }
+            if (parsedDraft.activeTab) {
+              setActiveTab(parsedDraft.activeTab)
+            }
+          } catch (e) {
+            // Clear invalid draft data
+            localStorage.removeItem('enrollmentDraft')
+          }
+        }
+      } catch (error) {
+        setErrorDetails({
+          title: "Error Loading Profile",
+          message: "Failed to load your profile information. Please try again later.",
+        })
+        setShowErrorDialog(true)
       } finally {
         setLoading(false)
       }
@@ -166,6 +182,16 @@ export default function EnrollmentForm() {
       setErrorDetails({
         title: "Missing Employee ID",
         message: "Your employee ID could not be found. Please try logging out and logging in again.",
+      })
+      setShowErrorDialog(true)
+      return
+    }
+
+    // Validate terms and privacy policy acceptance
+    if (!termsAccepted || !privacyAccepted || !consentAccepted) {
+      setErrorDetails({
+        title: "Terms and Privacy Policy Required",
+        message: "Please accept the Terms of Service, Privacy Policy, and Data Consent before submitting the form.",
       })
       setShowErrorDialog(true)
       return
@@ -208,57 +234,39 @@ export default function EnrollmentForm() {
         departmentId: profile.departmentId,
         jobId: profile.jobId,
         roleId: profile.roleId,
+        termsAccepted,
+        privacyAccepted,
+        consentAccepted
       }
 
-      console.log('Submitting payload:', payload)
-
-      const token = localStorage.getItem('token')
+      const token = authService.getToken()
       if (!token) {
         setErrorDetails({
           title: "Authentication Error",
           message: "Your session has expired. Please log in again.",
         })
         setShowErrorDialog(true)
-        router.push('/login')
+        router.push('/')
         return
       }
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL
-      if (!apiUrl) {
-        setErrorDetails({
-          title: "Configuration Error",
-          message: "API URL is not configured. Please contact support.",
-        })
-        setShowErrorDialog(true)
-        return
-      }
-
-      console.log('Making request to:', `${apiUrl}/hr/employees/${profile.employeeId}`)
+      const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/employee/profile`
 
       // Add timeout to fetch request
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
 
-      const response = await fetch(`${apiUrl}/hr/employees/${profile.employeeId}`, {
-        method: 'PUT',
+      const response = await fetch(endpoint, {
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify(payload),
         signal: controller.signal,
-        credentials: 'include', // Include cookies in the request
-        redirect: 'manual', // Prevent automatic redirects
+        credentials: 'include'
       }).catch(error => {
         clearTimeout(timeoutId)
-        console.error('Network error details:', {
-          name: error.name,
-          message: error.message,
-          stack: error.stack,
-          type: error.type,
-          cause: error.cause
-        })
-        
         if (error.name === 'AbortError') {
           setErrorDetails({
             title: "Request Timeout",
@@ -267,10 +275,7 @@ export default function EnrollmentForm() {
         } else if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
           setErrorDetails({
             title: "Connection Error",
-            message: "Unable to connect to the server. Please check if:\n\n" +
-              "• The backend server is running at " + apiUrl + "\n" +
-              "• Your internet connection is working\n" +
-              "• The API URL is correctly configured",
+            message: "Unable to connect to the server. Please check your internet connection.",
           })
         } else {
           setErrorDetails({
@@ -279,56 +284,49 @@ export default function EnrollmentForm() {
           })
         }
         setShowErrorDialog(true)
-        throw error // Re-throw to be caught by outer try-catch
+        throw error
       })
 
       clearTimeout(timeoutId)
 
-      // Check for authentication redirect
-      if (response.status === 302 || response.status === 307) {
-        const location = response.headers.get('location')
-        if (location && location.includes('login.microsoftonline.com')) {
-          setErrorDetails({
-            title: "Session Expired",
-            message: "Your session has expired. Please log in again.",
-          })
-          setShowErrorDialog(true)
-          router.push('/login')
-          return
-        }
-      }
-
+      if (!response.ok) {
       const responseText = await response.text()
-      console.log('Raw response:', responseText)
-
       let errorData
       try {
         errorData = responseText ? JSON.parse(responseText) : {}
       } catch (e) {
-        console.error('Failed to parse response as JSON:', e)
         errorData = { message: 'Invalid response from server' }
       }
 
-      if (!response.ok) {
-        console.error('Error response:', {
-          status: response.status,
-          statusText: response.statusText,
-          data: errorData
-        })
+        if (response.status === 401) {
+          setErrorDetails({
+            title: "Authentication Error",
+            message: "Your session has expired. Please log in again.",
+          })
+          router.push('/')
+        } else if (response.status === 403) {
+          setErrorDetails({
+            title: "Access Denied",
+            message: "You do not have permission to perform this action.",
+          })
+        } else {
         setErrorDetails({
           title: "Server Error",
           message: errorData.message || `Error ${response.status}: ${response.statusText}`,
         })
+        }
         setShowErrorDialog(true)
         return
       }
+
+      // Clear draft data on successful submission
+      localStorage.removeItem('enrollmentDraft')
 
       // Success case
       setFormSubmitted(true)
       router.push('/employee/dashboard')
     } catch (error) {
-      console.error('Error submitting form:', error)
-      if (!errorDetails.title) { // Only set if not already set by network error
+      if (!errorDetails.title) {
         setErrorDetails({
           title: "Unexpected Error",
           message: "An unexpected error occurred. Please try again later.",
@@ -339,63 +337,74 @@ export default function EnrollmentForm() {
   }
 
   const handleSaveAsDraft = async () => {
-    if (!profile?.employeeId) {
-      setErrorDetails({
-        title: "Missing Employee ID",
-        message: "Your employee ID could not be found. Please try logging out and logging in again.",
-      })
-      setShowErrorDialog(true)
-      return
-    }
-
+    setIsSaving(true)
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hr/employees/${profile.employeeId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      // Save form data to localStorage as draft
+      const draftData = {
+        formData: {
+          ...formData,
+          termsAccepted,
+          privacyAccepted,
+          consentAccepted
         },
-        body: JSON.stringify(formData),
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to save draft')
-      }
-
-      setErrorDetails({
-        title: "Success",
-        message: "Your form has been saved as a draft successfully.",
-      })
-      setShowErrorDialog(true)
-    } catch (err) {
-      console.error('Error saving draft:', err)
-      
-      let errorMessage = 'An unexpected error occurred while saving your draft.'
-      let errorTitle = 'Save Failed'
-      
-      if (err instanceof Error) {
-        if (err.message.includes('Failed to fetch')) {
-          errorTitle = 'Connection Error'
-          errorMessage = 'Unable to connect to the server. Please check if:\n\n' +
-            '• The backend server is running at http://localhost:8080\n' +
-            '• Your internet connection is working\n' +
-            '• The API URL is correctly configured'
-        } else {
-          errorMessage = err.message
-        }
+        date: date ? format(date, 'yyyy-MM-dd') : null,
+        startDate: startDate ? format(startDate, 'yyyy-MM-dd') : null,
+        activeTab
       }
       
+      localStorage.setItem('enrollmentDraft', JSON.stringify(draftData))
+      
+      setSuccessDetails({
+        title: "Draft Saved",
+        message: "Your form has been saved as a draft successfully. You can continue editing later.",
+      })
+      setShowSuccessDialog(true)
+      
+    } catch (error) {
       setErrorDetails({
-        title: errorTitle,
-        message: errorMessage,
+        title: "Error Saving Draft",
+        message: "Failed to save your draft. Please try again.",
       })
       setShowErrorDialog(true)
+    } finally {
+      setIsSaving(false)
     }
   }
 
   const handleNextTab = () => {
     const currentIndex = tabOrder.indexOf(activeTab)
     if (currentIndex < tabOrder.length - 1) {
+      // Validate required fields based on current tab
+      const missingFields = []
+
+      switch (activeTab) {
+        case "personal":
+          if (!formData.firstName) missingFields.push("First Name")
+          if (!formData.lastName) missingFields.push("Last Name")
+          if (!formData.email) missingFields.push("Email")
+          if (!formData.phoneNumber) missingFields.push("Phone Number")
+          if (!formData.gender) missingFields.push("Gender")
+          if (!date) missingFields.push("Date of Birth")
+          if (!formData.maritalStatus) missingFields.push("Marital Status")
+          break
+        case "address":
+          if (!formData.buildingNo) missingFields.push("Building, house, or unit number ")
+          if (!formData.barangay) missingFields.push("Barangay")
+          if (!formData.city) missingFields.push("City")
+          if (!formData.province) missingFields.push("Province")
+          if (!formData.zipCode) missingFields.push("ZIP Code")
+          break
+      }
+
+      if (missingFields.length > 0) {
+      setErrorDetails({
+          title: "Missing Required Fields",
+          message: `Please fill in the following required fields:\n${missingFields.join("\n")}`,
+      })
+      setShowErrorDialog(true)
+        return
+  }
+
       setActiveTab(tabOrder[currentIndex + 1])
     }
   }
@@ -406,6 +415,42 @@ export default function EnrollmentForm() {
       setActiveTab(tabOrder[currentIndex - 1])
     }
   }
+
+  // Optimize form validation
+  useEffect(() => {
+    const validateForm = () => {
+      const errors: Record<string, string> = {}
+      
+      // Basic information validation
+      if (!formData.firstName?.trim()) errors.firstName = "First name is required"
+      if (!formData.lastName?.trim()) errors.lastName = "Last name is required"
+      if (!formData.email?.trim()) errors.email = "Email is required"
+      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) errors.email = "Invalid email format"
+      
+      if (!formData.phoneNumber?.trim()) errors.phoneNumber = "Phone number is required"
+      else if (!/^\+?[\d\s-]{10,}$/.test(formData.phoneNumber)) errors.phoneNumber = "Invalid phone number format"
+      
+      if (!formData.gender) errors.gender = "Gender is required"
+      if (!date) errors.dateOfBirth = "Date of birth is required"
+      
+      // Address validation
+      if (!formData.buildingNo?.trim()) errors.buildingNo = "Building number is required"
+      if (!formData.street?.trim()) errors.street = "Street is required"
+      if (!formData.barangay?.trim()) errors.barangay = "Barangay is required"
+      if (!formData.city?.trim()) errors.city = "City is required"
+      if (!formData.province?.trim()) errors.province = "Province is required"
+      if (!formData.zipCode?.trim()) errors.zipCode = "ZIP code is required"
+      if (!formData.country?.trim()) errors.country = "Country is required"
+      
+      // Employment information validation
+      if (!formData.maritalStatus) errors.maritalStatus = "Marital status is required"
+      if (!formData.employmentStatus) errors.employmentStatus = "Employment status is required"
+      
+      setFormErrors(errors)
+    }
+
+    validateForm()
+  }, [formData, date])
 
   if (loading) {
     return (
@@ -574,12 +619,11 @@ export default function EnrollmentForm() {
                         onChange={(e) => handleInputChange('firstName', e.target.value)}
                         disabled={!!profile?.firstName}
                         className={cn(
-                          "border border-[#3B82F6]/70 dark:border-[#3B82F6]/70 focus:border-[#3B82F6] dark:focus:border-[#3B82F6] focus:border-2 focus:border-solid focus:ring-0 dark:focus:ring-0 pl-10 transition-all duration-200 bg-white dark:bg-[#1F2937]/60 rounded-md shadow-sm",
+                          "border border-[#3B82F6] dark:border-[#3B82F6] focus-visible:ring-[#60A5FA] focus-visible:ring-[1px] pl-10 transition-all duration-200 bg-white dark:bg-[#1F2937]/60 rounded-md shadow-sm",
                           profile?.firstName && "bg-gray-50 dark:bg-gray-900/50"
                         )}
                         required
                       />
-                      <div className="absolute inset-y-0 left-0 w-0.5 rounded-l-md bg-gradient-to-b from-[#3B82F6] via-[#0EA5E9] to-[#14B8A6] opacity-0 group-focus-within:opacity-100 transition-opacity duration-200"></div>
                       <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6B7280] dark:text-[#9CA3AF] group-focus-within:text-[#3B82F6] dark:group-focus-within:text-[#3B82F6] transition-colors duration-200" />
                     </div>
                   </div>
@@ -598,12 +642,11 @@ export default function EnrollmentForm() {
                         onChange={(e) => handleInputChange('lastName', e.target.value)}
                         disabled={!!profile?.lastName}
                         className={cn(
-                          "border border-[#3B82F6]/70 dark:border-[#3B82F6]/70 focus:border-[#3B82F6] dark:focus:border-[#3B82F6] focus:border-2 focus:border-solid focus:ring-0 dark:focus:ring-0 pl-10 transition-all duration-200 bg-white dark:bg-[#1F2937]/60 rounded-md shadow-sm",
+                          "border border-[#3B82F6] dark:border-[#3B82F6] focus-visible:ring-[#60A5FA] focus-visible:ring-[1px] pl-10 transition-all duration-200 bg-white dark:bg-[#1F2937]/60 rounded-md shadow-sm",
                           profile?.lastName && "bg-gray-50 dark:bg-gray-900/50"
                         )}
                         required
                       />
-                      <div className="absolute inset-y-0 left-0 w-0.5 rounded-l-md bg-gradient-to-b from-[#3B82F6] via-[#0EA5E9] to-[#14B8A6] opacity-0 group-focus-within:opacity-100 transition-opacity duration-200"></div>
                       <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6B7280] dark:text-[#9CA3AF] group-focus-within:text-[#3B82F6] dark:group-focus-within:text-[#3B82F6] transition-colors duration-200" />
                     </div>
                   </div>
@@ -630,20 +673,140 @@ export default function EnrollmentForm() {
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0 border border-[#3B82F6]/70 dark:border-[#3B82F6]/70 bg-white dark:bg-[#1F2937] rounded-md shadow-md">
-                        <Calendar
-                          mode="single"
-                          selected={date}
-                          onSelect={(selectedDate) => {
-                            setDate(selectedDate)
-                            setFormData(prev => ({
-                              ...prev,
-                              dateOfBirth: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : ""
-                            }))
-                          }}
-                          disabled={!!profile?.dateOfBirth}
-                          initialFocus
-                          className="rounded-md"
-                        />
+                        <div className="flex items-center justify-between px-4 py-2 border-b border-[#E5E7EB] dark:border-[#374151]">
+                          <Select
+                            value={date ? date.getFullYear().toString() : new Date().getFullYear().toString()}
+                            onValueChange={(value) => {
+                              const newDate = date ? new Date(date) : new Date()
+                              newDate.setFullYear(parseInt(value))
+                              setDate(newDate)
+                            }}
+                          >
+                            <SelectTrigger className="w-[120px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Array.from(
+                                { length: new Date().getFullYear() - 1899 },
+                                (_, i) => new Date().getFullYear() - i
+                              ).map((year) => (
+                                <SelectItem key={year} value={year.toString()}>
+                                  {year}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Select
+                            value={date ? date.getMonth().toString() : new Date().getMonth().toString()}
+                            onValueChange={(value) => {
+                              const newDate = date ? new Date(date) : new Date()
+                              newDate.setMonth(parseInt(value))
+                              setDate(newDate)
+                            }}
+                          >
+                            <SelectTrigger className="w-[140px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Array.from({ length: 12 }, (_, i) => i).map((month) => (
+                                <SelectItem key={month} value={month.toString()}>
+                                  {format(new Date(2000, month), 'MMMM')}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="p-4">
+                          <div className="grid grid-cols-7 gap-1 mb-2">
+                            {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((day) => (
+                              <div
+                                key={day}
+                                className="text-center text-sm font-medium text-[#6B7280] dark:text-[#9CA3AF]"
+                              >
+                                {day}
+                              </div>
+                            ))}
+                          </div>
+                          <div className="grid grid-cols-7 gap-1">
+                            {(() => {
+                              const currentDate = date || new Date()
+                              const year = currentDate.getFullYear()
+                              const month = currentDate.getMonth()
+                              
+                              // Get first day of the month
+                              const firstDay = new Date(year, month, 1)
+                              // Get last day of the month
+                              const lastDay = new Date(year, month + 1, 0)
+                              
+                              // Get number of days in the month
+                              const daysInMonth = lastDay.getDate()
+                              // Get the day of week of the first day (0-6)
+                              const firstDayOfWeek = firstDay.getDay()
+                              
+                              // Create array of all days to display
+                              const days = []
+                              
+                              // Add previous month's days
+                              const prevMonthLastDay = new Date(year, month, 0).getDate()
+                              for (let i = firstDayOfWeek - 1; i >= 0; i--) {
+                                days.push({
+                                  day: prevMonthLastDay - i,
+                                  isCurrentMonth: false,
+                                  date: new Date(year, month - 1, prevMonthLastDay - i)
+                                })
+                              }
+                              
+                              // Add current month's days
+                              for (let i = 1; i <= daysInMonth; i++) {
+                                days.push({
+                                  day: i,
+                                  isCurrentMonth: true,
+                                  date: new Date(year, month, i)
+                                })
+                              }
+                              
+                              // Add next month's days
+                              const remainingDays = 42 - days.length // 6 rows * 7 days
+                              for (let i = 1; i <= remainingDays; i++) {
+                                days.push({
+                                  day: i,
+                                  isCurrentMonth: false,
+                                  date: new Date(year, month + 1, i)
+                                })
+                              }
+                              
+                              return days.map(({ day, isCurrentMonth, date }) => {
+                                const isSelected = date && format(date, 'yyyy-MM-dd') === format(currentDate, 'yyyy-MM-dd')
+                                const isToday = format(date, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
+                                const isDisabled = !!profile?.dateOfBirth
+
+                                return (
+                                  <button
+                                    key={`${day}-${isCurrentMonth ? 'current' : 'other'}`}
+                                    onClick={() => {
+                                      if (!isDisabled) {
+                                        setDate(date)
+                                      }
+                                    }}
+                                    className={cn(
+                                      "h-9 w-9 rounded-full text-sm font-medium transition-colors",
+                                      isSelected
+                                        ? "bg-[#3B82F6] text-white hover:bg-[#2563EB]"
+                                        : isToday
+                                          ? "bg-[#EFF6FF] text-[#3B82F6] hover:bg-[#DBEAFE] dark:bg-[#1E3A8A]/20 dark:text-[#3B82F6] dark:hover:bg-[#1E3A8A]/30"
+                                          : !isCurrentMonth
+                                            ? "text-[#9CA3AF] dark:text-[#6B7280]"
+                                            : "hover:bg-[#F3F4F6] dark:hover:bg-[#374151]",
+                                      isDisabled && "opacity-50 cursor-not-allowed"
+                                    )}
+                                  >
+                                    {day}
+                                  </button>
+                                )
+                              })
+                            })()}
+                          </div>
+                        </div>
                       </PopoverContent>
                     </Popover>
                   </div>
@@ -681,17 +844,35 @@ export default function EnrollmentForm() {
                       <Input
                         id="phone"
                         type="tel"
-                        placeholder="(555) 555-5555"
+                        placeholder="Enter phone number"
                         value={formData.phoneNumber}
-                        onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/\D/g, '') // Remove non-digits
+                          let formatted = value
+                          
+                          // Format as user types
+                          if (value.length > 0) {
+                            formatted = value.slice(0, 4) // First 4 digits
+                            if (value.length > 4) {
+                              formatted += ' ' + value.slice(4, 7) // Next 3 digits
+                            }
+                            if (value.length > 7) {
+                              formatted += ' ' + value.slice(7, 11) // Last 4 digits
+                            }
+                          }
+                          
+                          // Limit to 11 digits (09## ### ####)
+                          if (value.length <= 11) {
+                            handleInputChange('phoneNumber', formatted)
+                          }
+                        }}
                         disabled={!!profile?.phoneNumber}
                         className={cn(
-                          "border border-[#3B82F6]/70 dark:border-[#3B82F6]/70 focus:border-[#3B82F6] dark:focus:border-[#3B82F6] focus:border-2 focus:border-solid focus:ring-0 dark:focus:ring-0 pl-10 transition-all duration-200 bg-white dark:bg-[#1F2937]/60 rounded-md shadow-sm",
+                          "border border-[#3B82F6] dark:border-[#3B82F6] focus-visible:ring-[#60A5FA] focus-visible:ring-[1px] pl-10 transition-all duration-200 bg-white dark:bg-[#1F2937]/60 rounded-md shadow-sm",
                           profile?.phoneNumber && "bg-gray-50 dark:bg-gray-900/50"
                         )}
                         required
                       />
-                      <div className="absolute inset-y-0 left-0 w-0.5 rounded-l-md bg-gradient-to-b from-[#3B82F6] via-[#0EA5E9] to-[#14B8A6] opacity-0 group-focus-within:opacity-100 transition-opacity duration-200"></div>
                       <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6B7280] dark:text-[#9CA3AF] group-focus-within:text-[#3B82F6] dark:group-focus-within:text-[#3B82F6] transition-colors duration-200" />
                     </div>
                   </div>
@@ -711,12 +892,11 @@ export default function EnrollmentForm() {
                         onChange={(e) => handleInputChange('email', e.target.value)}
                         disabled={!!profile?.email}
                         className={cn(
-                          "border border-[#3B82F6]/70 dark:border-[#3B82F6]/70 focus:border-[#3B82F6] dark:focus:border-[#3B82F6] focus:border-2 focus:border-solid focus:ring-0 dark:focus:ring-0 pl-10 transition-all duration-200 bg-white dark:bg-[#1F2937]/60 rounded-md shadow-sm",
+                          "border border-[#3B82F6] dark:border-[#3B82F6] focus-visible:ring-[#60A5FA] focus-visible:ring-[1px] pl-10 transition-all duration-200 bg-white dark:bg-[#1F2937]/60 rounded-md shadow-sm",
                           profile?.email && "bg-gray-50 dark:bg-gray-900/50"
                         )}
                         required
                       />
-                      <div className="absolute inset-y-0 left-0 w-0.5 rounded-l-md bg-gradient-to-b from-[#3B82F6] via-[#0EA5E9] to-[#14B8A6] opacity-0 group-focus-within:opacity-100 transition-opacity duration-200"></div>
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6B7280] dark:text-[#9CA3AF] group-focus-within:text-[#3B82F6] dark:group-focus-within:text-[#3B82F6] transition-colors duration-200" />
                     </div>
                   </div>
@@ -783,7 +963,7 @@ export default function EnrollmentForm() {
                       htmlFor="buildingNo"
                       className="text-[#1F2937] dark:text-white group-focus-within:text-[#3B82F6] dark:group-focus-within:text-[#3B82F6] transition-colors duration-200"
                     >
-                      Building No./Room <span className="text-red-500 dark:text-red-400">*</span>
+                      Building No./House No./Unit No. <span className="text-red-500 dark:text-red-400">*</span>
                     </Label>
                     <div className="relative">
                       <Input
@@ -793,12 +973,11 @@ export default function EnrollmentForm() {
                         onChange={(e) => handleInputChange('buildingNo', e.target.value)}
                         disabled={!!profile?.address}
                         className={cn(
-                          "border border-[#3B82F6]/70 dark:border-[#3B82F6]/70 focus:border-[#3B82F6] dark:focus:border-[#3B82F6] focus:border-2 focus:border-solid focus:ring-0 dark:focus:ring-0 pl-10 transition-all duration-200 bg-white dark:bg-[#1F2937]/60 rounded-md shadow-sm",
+                          "border border-[#3B82F6] dark:border-[#3B82F6] focus-visible:ring-[#60A5FA] focus-visible:ring-[1px] pl-10 transition-all duration-200 bg-white dark:bg-[#1F2937]/60 rounded-md shadow-sm",
                           profile?.address && "bg-gray-50 dark:bg-gray-900/50"
                         )}
                         required
                       />
-                      <div className="absolute inset-y-0 left-0 w-0.5 rounded-l-md bg-gradient-to-b from-[#3B82F6] via-[#0EA5E9] to-[#14B8A6] opacity-0 group-focus-within:opacity-100 transition-opacity duration-200"></div>
                       <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6B7280] dark:text-[#9CA3AF] group-focus-within:text-[#3B82F6] dark:group-focus-within:text-[#3B82F6] transition-colors duration-200" />
                     </div>
                   </div>
@@ -808,7 +987,7 @@ export default function EnrollmentForm() {
                       htmlFor="street"
                       className="text-[#1F2937] dark:text-white group-focus-within:text-[#3B82F6] dark:group-focus-within:text-[#3B82F6] transition-colors duration-200"
                     >
-                      Street <span className="text-red-500 dark:text-red-400">*</span>
+                      Street
                     </Label>
                     <div className="relative">
                       <Input
@@ -818,12 +997,10 @@ export default function EnrollmentForm() {
                         onChange={(e) => handleInputChange('street', e.target.value)}
                         disabled={!!profile?.address}
                         className={cn(
-                          "border border-[#3B82F6]/70 dark:border-[#3B82F6]/70 focus:border-[#3B82F6] dark:focus:border-[#3B82F6] focus:border-2 focus:border-solid focus:ring-0 dark:focus:ring-0 pl-10 transition-all duration-200 bg-white dark:bg-[#1F2937]/60 rounded-md shadow-sm",
+                          "border border-[#3B82F6] dark:border-[#3B82F6] focus-visible:ring-[#60A5FA] focus-visible:ring-[1px] pl-10 transition-all duration-200 bg-white dark:bg-[#1F2937]/60 rounded-md shadow-sm",
                           profile?.address && "bg-gray-50 dark:bg-gray-900/50"
                         )}
-                        required
                       />
-                      <div className="absolute inset-y-0 left-0 w-0.5 rounded-l-md bg-gradient-to-b from-[#3B82F6] via-[#0EA5E9] to-[#14B8A6] opacity-0 group-focus-within:opacity-100 transition-opacity duration-200"></div>
                       <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6B7280] dark:text-[#9CA3AF] group-focus-within:text-[#3B82F6] dark:group-focus-within:text-[#3B82F6] transition-colors duration-200" />
                     </div>
                   </div>
@@ -843,12 +1020,11 @@ export default function EnrollmentForm() {
                         onChange={(e) => handleInputChange('barangay', e.target.value)}
                         disabled={!!profile?.address}
                         className={cn(
-                          "border border-[#3B82F6]/70 dark:border-[#3B82F6]/70 focus:border-[#3B82F6] dark:focus:border-[#3B82F6] focus:border-2 focus:border-solid focus:ring-0 dark:focus:ring-0 pl-10 transition-all duration-200 bg-white dark:bg-[#1F2937]/60 rounded-md shadow-sm",
+                          "border border-[#3B82F6] dark:border-[#3B82F6] focus-visible:ring-[#60A5FA] focus-visible:ring-[1px] pl-10 transition-all duration-200 bg-white dark:bg-[#1F2937]/60 rounded-md shadow-sm",
                           profile?.address && "bg-gray-50 dark:bg-gray-900/50"
                         )}
                         required
                       />
-                      <div className="absolute inset-y-0 left-0 w-0.5 rounded-l-md bg-gradient-to-b from-[#3B82F6] via-[#0EA5E9] to-[#14B8A6] opacity-0 group-focus-within:opacity-100 transition-opacity duration-200"></div>
                       <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6B7280] dark:text-[#9CA3AF] group-focus-within:text-[#3B82F6] dark:group-focus-within:text-[#3B82F6] transition-colors duration-200" />
                     </div>
                   </div>
@@ -868,12 +1044,11 @@ export default function EnrollmentForm() {
                         onChange={(e) => handleInputChange('city', e.target.value)}
                         disabled={!!profile?.address}
                         className={cn(
-                          "border border-[#3B82F6]/70 dark:border-[#3B82F6]/70 focus:border-[#3B82F6] dark:focus:border-[#3B82F6] focus:border-2 focus:border-solid focus:ring-0 dark:focus:ring-0 pl-10 transition-all duration-200 bg-white dark:bg-[#1F2937]/60 rounded-md shadow-sm",
+                          "border border-[#3B82F6] dark:border-[#3B82F6] focus-visible:ring-[#60A5FA] focus-visible:ring-[1px] pl-10 transition-all duration-200 bg-white dark:bg-[#1F2937]/60 rounded-md shadow-sm",
                           profile?.address && "bg-gray-50 dark:bg-gray-900/50"
                         )}
                         required
                       />
-                      <div className="absolute inset-y-0 left-0 w-0.5 rounded-l-md bg-gradient-to-b from-[#3B82F6] via-[#0EA5E9] to-[#14B8A6] opacity-0 group-focus-within:opacity-100 transition-opacity duration-200"></div>
                       <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6B7280] dark:text-[#9CA3AF] group-focus-within:text-[#3B82F6] dark:group-focus-within:text-[#3B82F6] transition-colors duration-200" />
                     </div>
                   </div>
@@ -893,12 +1068,11 @@ export default function EnrollmentForm() {
                         onChange={(e) => handleInputChange('province', e.target.value)}
                         disabled={!!profile?.address}
                         className={cn(
-                          "border border-[#3B82F6]/70 dark:border-[#3B82F6]/70 focus:border-[#3B82F6] dark:focus:border-[#3B82F6] focus:border-2 focus:border-solid focus:ring-0 dark:focus:ring-0 pl-10 transition-all duration-200 bg-white dark:bg-[#1F2937]/60 rounded-md shadow-sm",
+                          "border border-[#3B82F6] dark:border-[#3B82F6] focus-visible:ring-[#60A5FA] focus-visible:ring-[1px] pl-10 transition-all duration-200 bg-white dark:bg-[#1F2937]/60 rounded-md shadow-sm",
                           profile?.address && "bg-gray-50 dark:bg-gray-900/50"
                         )}
                         required
                       />
-                      <div className="absolute inset-y-0 left-0 w-0.5 rounded-l-md bg-gradient-to-b from-[#3B82F6] via-[#0EA5E9] to-[#14B8A6] opacity-0 group-focus-within:opacity-100 transition-opacity duration-200"></div>
                       <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6B7280] dark:text-[#9CA3AF] group-focus-within:text-[#3B82F6] dark:group-focus-within:text-[#3B82F6] transition-colors duration-200" />
                     </div>
                   </div>
@@ -918,12 +1092,11 @@ export default function EnrollmentForm() {
                         onChange={(e) => handleInputChange('zipCode', e.target.value)}
                         disabled={!!profile?.address}
                         className={cn(
-                          "border border-[#3B82F6]/70 dark:border-[#3B82F6]/70 focus:border-[#3B82F6] dark:focus:border-[#3B82F6] focus:border-2 focus:border-solid focus:ring-0 dark:focus:ring-0 pl-10 transition-all duration-200 bg-white dark:bg-[#1F2937]/60 rounded-md shadow-sm",
+                          "border border-[#3B82F6] dark:border-[#3B82F6] focus-visible:ring-[#60A5FA] focus-visible:ring-[1px] pl-10 transition-all duration-200 bg-white dark:bg-[#1F2937]/60 rounded-md shadow-sm",
                           profile?.address && "bg-gray-50 dark:bg-gray-900/50"
                         )}
                         required
                       />
-                      <div className="absolute inset-y-0 left-0 w-0.5 rounded-l-md bg-gradient-to-b from-[#3B82F6] via-[#0EA5E9] to-[#14B8A6] opacity-0 group-focus-within:opacity-100 transition-opacity duration-200"></div>
                       <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6B7280] dark:text-[#9CA3AF] group-focus-within:text-[#3B82F6] dark:group-focus-within:text-[#3B82F6] transition-colors duration-200" />
                     </div>
                   </div>
@@ -940,9 +1113,8 @@ export default function EnrollmentForm() {
                         id="country"
                         value="Philippines"
                         disabled
-                        className="border border-[#3B82F6]/70 dark:border-[#3B82F6]/70 focus:border-[#3B82F6] dark:focus:border-[#3B82F6] focus:border-2 focus:border-solid focus:ring-0 dark:focus:ring-0 pl-10 transition-all duration-200 bg-gray-50 dark:bg-gray-900/50 rounded-md shadow-sm"
+                        className="border border-[#3B82F6] dark:border-[#3B82F6] focus-visible:ring-[#60A5FA]/50 focus-visible:ring-[3px] pl-10 transition-all duration-200 bg-gray-50 dark:bg-gray-900/50 rounded-md shadow-sm"
                       />
-                      <div className="absolute inset-y-0 left-0 w-0.5 rounded-l-md bg-gradient-to-b from-[#3B82F6] via-[#0EA5E9] to-[#14B8A6] opacity-0 group-focus-within:opacity-100 transition-opacity duration-200"></div>
                       <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6B7280] dark:text-[#9CA3AF] group-focus-within:text-[#3B82F6] dark:group-focus-within:text-[#3B82F6] transition-colors duration-200" />
                     </div>
                   </div>
@@ -978,30 +1150,64 @@ export default function EnrollmentForm() {
                         <input
                           type="checkbox"
                           id="termsAgree"
+                          checked={termsAccepted && privacyAccepted}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setShowTerms(true)
+                            } else {
+                              setTermsAccepted(false)
+                              setPrivacyAccepted(false)
+                            }
+                          }}
                           className="h-4 w-4 mt-1 rounded border-[#3B82F6]/70 dark:border-[#3B82F6]/70 text-[#3B82F6] dark:text-[#3B82F6] focus:ring-1 focus:ring-[#3B82F6] dark:focus:ring-[#3B82F6]"
                           required
                         />
                         <label htmlFor="termsAgree" className="ml-2 text-sm text-[#1F2937] dark:text-white">
                           I agree to the{" "}
-                          <a href="#" className="text-[#3B82F6] dark:text-[#3B82F6] hover:underline">
+                          <a
+                            href="#"
+                            onClick={(e) => {
+                              e.preventDefault()
+                              setShowTerms(true)
+                            }}
+                            className="text-[#3B82F6] dark:text-[#3B82F6] hover:underline"
+                          >
                             Terms of Service
                           </a>{" "}
                           and{" "}
-                          <a href="#" className="text-[#3B82F6] dark:text-[#3B82F6] hover:underline">
+                          <a 
+                            onClick={(e) => {
+                              e.preventDefault()
+                              setShowPrivacy(true)
+                            }}
+                            className="text-[#3B82F6] dark:text-[#3B82F6] hover:underline"
+                          >
                             Privacy Policy
                           </a>
                         </label>
                       </div>
+                      
                       <div className="flex items-start">
                         <input
                           type="checkbox"
                           id="dataConsent"
+                          checked={consentAccepted}
+                          onChange={(e) => setConsentAccepted(e.target.checked)}
                           className="h-4 w-4 mt-1 rounded border-[#3B82F6]/70 dark:border-[#3B82F6]/70 text-[#3B82F6] dark:text-[#3B82F6] focus:ring-1 focus:ring-[#3B82F6] dark:focus:ring-[#3B82F6]"
                           required
                         />
                         <label htmlFor="dataConsent" className="ml-2 text-sm text-[#1F2937] dark:text-white">
-                          I consent to the collection and processing of my personal information as described in the
+                          I consent to the collection and processing of my personal information as described in the{" "}
+                          <a 
+                            href="#"
+                            onClick={(e) => {
+                              e.preventDefault()
+                              setShowPrivacy(true)
+                            }}
+                            className="text-[#3B82F6] dark:text-[#3B82F6] hover:underline"
+                          >
                           Privacy Policy
+                          </a>
                         </label>
                       </div>
                     </div>
@@ -1015,10 +1221,20 @@ export default function EnrollmentForm() {
                     type="button"
                     variant="outline"
                     onClick={handleSaveAsDraft}
+                    disabled={isSaving}
                     className="border-[#6B7280] text-[#6B7280] dark:border-[#6B7280] dark:text-[#9CA3AF] hover:bg-gray-50 dark:hover:bg-[#1F2937]/80 transition-all duration-200"
                   >
+                    {isSaving ? (
+                      <div className="flex items-center gap-2">
+                        <div className="h-4 w-4 rounded-full border-2 border-[#6B7280] border-t-transparent animate-spin"></div>
+                        <span>Saving...</span>
+                      </div>
+                    ) : (
+                      <>
                     <Save className="h-4 w-4 mr-2" />
                     Save as Draft
+                      </>
+                    )}
                   </Button>
                   {currentTabIndex > 0 && (
                     <Button
@@ -1035,12 +1251,11 @@ export default function EnrollmentForm() {
                 <div>
                   {currentTabIndex < tabOrder.length - 1 ? (
                     <Button
-                      type="button"
-                      onClick={handleNextTab}
-                      className="bg-gradient-to-r from-[#3B82F6] via-[#0EA5E9] to-[#2563EB] hover:from-[#2563EB] hover:via-[#0284C7] hover:to-[#1D4ED8] text-white shadow-md transition-all duration-300 hover:shadow-lg"
+                      type="submit"
+                      className="bg-gradient-to-r from-[#3B82F6] via-[#0EA5E9] to-[#14B8A6] hover:from-[#2563EB] hover:via-[#0284C7] hover:to-[#0D9488] text-white shadow-md transition-all duration-300 hover:shadow-lg"
                     >
-                      Next
-                      <ChevronRight className="h-4 w-4 ml-1" />
+                      Complete Enrollment
+                      <CheckCircle className="h-4 w-4 ml-2" />
                     </Button>
                   ) : (
                     <Button
@@ -1105,6 +1320,40 @@ export default function EnrollmentForm() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{successDetails.title}</DialogTitle>
+            <DialogDescription>{successDetails.message}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={() => setShowSuccessDialog(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <TermsOfServicePopup 
+        open={showTerms} 
+        onOpenChange={setShowTerms}
+        onAccept={() => {
+          setTermsAccepted(true)
+          if (privacyAccepted) {
+            setConsentAccepted(true)
+          }
+        }}
+      />
+
+      <PrivacyPolicyPopup 
+        open={showPrivacy} 
+        onOpenChange={setShowPrivacy}
+        onAccept={() => {
+          setPrivacyAccepted(true)
+          if (termsAccepted) {
+            setConsentAccepted(true)
+          }
+        }}
+      />
     </div>
   )
 }

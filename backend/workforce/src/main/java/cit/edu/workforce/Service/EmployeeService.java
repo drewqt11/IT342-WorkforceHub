@@ -632,8 +632,7 @@ public class EmployeeService {
     /**
      * Extracts ID number and name from a string containing both
      * 
-     * @param input String containing ID number and name (e.g., "22-3326-574
-     *              Katrina")
+     * @param input String containing ID number and name (e.g., "22-3326-574 Katrina" or "223326574 Katrina")
      * @return String array where [0] is the ID number and [1] is the name
      */
     private String[] extractIdNumberAndName(String input) {
@@ -650,8 +649,10 @@ public class EmployeeService {
             String potentialIdNumber = parts[0];
             String name = parts[1];
 
-            // Check if the first part matches ID number format (numbers and dashes)
-            if (potentialIdNumber.matches("\\d+(-\\d+)+")) {
+            // Check if the first part matches either:
+            // 1. ID number format with dashes (numbers and dashes only)
+            // 2. Pure number format (only digits)
+            if (potentialIdNumber.matches("^\\d+(-\\d+)*$") || potentialIdNumber.matches("^\\d+$")) {
                 return new String[] { potentialIdNumber, name };
             }
         }

@@ -1024,19 +1024,19 @@ export default function AllEmployeesPage() {
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-xs text-white/60 uppercase">Employee ID</p>
+                      <p className="text-xs text-white/60">Employee ID</p>
                       <p className="text-sm font-medium">{selectedEmployeeProfile.employeeId}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-white/60 uppercase">ID Number</p>
+                      <p className="text-xs text-white/60">ID Number</p>
                       <p className="text-sm font-medium">{selectedEmployeeProfile.idNumber || "Not provided"}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-white/60 uppercase">Employment Status</p>
+                      <p className="text-xs text-white/60">Employment Status</p>
                       <p className="text-sm font-medium">{selectedEmployeeProfile.employmentStatus}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-white/60 uppercase">Hire Date</p>
+                      <p className="text-xs text-white/60">Hire Date</p>
                       <p className="text-sm font-medium text-white dark:text-white">
                         {selectedEmployeeProfile.hireDate || "Not provided"}
                       </p>
@@ -1050,8 +1050,8 @@ export default function AllEmployeesPage() {
             <div className="w-full md:w-2/3 p-6 overflow-y-auto max-h-[calc(90vh-2rem)]">
               <DialogHeader className="mb-6 text-left">
                 <div>
-                  <DialogTitle className="text-2xl">Employee Profile</DialogTitle>
-                  <DialogDescription>Detailed information about this employee</DialogDescription>
+                  <DialogTitle className="text-2xl font-bold text-[#1F2937] dark:text-white">Employee Profile</DialogTitle>
+                  <DialogDescription className="text-[#6B7280] dark:text-[#9CA3AF]">Detailed information about this employee</DialogDescription>
                 </div>
               </DialogHeader>
 
@@ -1298,85 +1298,6 @@ export default function AllEmployeesPage() {
                       <div>
                         <p className="text-xs text-[#6B7280] dark:text-[#9CA3AF]">Manager</p>
                         <p className="text-sm font-medium text-[#1F2937] dark:text-white">Not assigned</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-[#F9FAFB] dark:bg-[#1F2937] rounded-lg p-4 border border-[#E5E7EB] dark:border-[#374151]">
-                    <h3 className="text-sm font-medium text-[#3B82F6] dark:text-[#60A5FA] mb-3 flex items-center gap-2">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="lucide lucide-activity"
-                      >
-                        <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
-                      </svg>{" "}
-                      Activity Timeline
-                    </h3>
-                    <div className="space-y-4">
-                      <div className="flex gap-3">
-                        <div className="flex flex-col items-center">
-                          <div className="w-8 h-8 rounded-full bg-[#EFF6FF] dark:bg-[#1E3A8A]/30 flex items-center justify-center">
-                            <CheckCircle className="h-4 w-4 text-[#3B82F6] dark:text-[#3B82F6]" />
-                          </div>
-                          <div className="w-0.5 h-full bg-[#E5E7EB] dark:bg-[#374151] mt-2"></div>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-[#1F2937] dark:text-white">Account Created</p>
-                          <p className="text-xs text-[#6B7280] dark:text-[#9CA3AF]">
-                            {selectedEmployeeProfile.createdAt
-                              ? new Date(selectedEmployeeProfile.createdAt).toLocaleString()
-                              : "Not provided"}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex gap-3">
-                        <div className="flex flex-col items-center">
-                          <div className="w-8 h-8 rounded-full bg-[#F0FDFA] dark:bg-[#134E4A]/30 flex items-center justify-center">
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              width="16"
-                              height="16"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              className="lucide lucide-briefcase text-[#14B8A6] dark:text-[#14B8A6]"
-                            >
-                              <rect width="20" height="14" x="2" y="7" rx="2" ry="2"></rect>
-                              <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
-                            </svg>
-                          </div>
-                          <div className="w-0.5 h-full bg-[#E5E7EB] dark:bg-[#374151] mt-2"></div>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-[#1F2937] dark:text-white">Hired</p>
-                          <p className="text-xs text-[#6B7280] dark:text-[#9CA3AF]">
-                            {selectedEmployeeProfile.hireDate || "Date not provided"}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex gap-3">
-                        <div className="flex flex-col items-center">
-                          <div className="w-8 h-8 rounded-full bg-[#EFF6FF] dark:bg-[#1E3A8A]/30 flex items-center justify-center">
-                            <Building2 className="h-4 w-4 text-[#3B82F6] dark:text-[#3B82F6]" />
-                          </div>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-[#1F2937] dark:text-white">Assigned to Department</p>
-                          <p className="text-xs text-[#6B7280] dark:text-[#9CA3AF]">
-                            {selectedEmployeeProfile.departmentName}
-                          </p>
-                        </div>
                       </div>
                     </div>
                   </div>

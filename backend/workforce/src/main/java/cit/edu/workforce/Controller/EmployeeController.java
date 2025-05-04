@@ -122,6 +122,8 @@ public class EmployeeController {
                     limitedUpdate.setAddress(employeeDTO.getAddress());
                     limitedUpdate.setPhoneNumber(employeeDTO.getPhoneNumber());
                     limitedUpdate.setMaritalStatus(employeeDTO.getMaritalStatus());
+                    limitedUpdate.setDateOfBirth(employeeDTO.getDateOfBirth());
+                    limitedUpdate.setGender(employeeDTO.getGender());
 
                     return ResponseEntity.ok(employeeService.updateEmployeePartially(
                             currentEmployee.getEmployeeId(), limitedUpdate));

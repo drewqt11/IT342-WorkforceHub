@@ -12,6 +12,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/hr/user-accounts")
@@ -31,6 +32,13 @@ public class UserAccountController {
     @PreAuthorize("hasRole('ROLE_HR')")
     public ResponseEntity<UserAccountEntity> getUserAccountByEmail(@PathVariable String email) {
         return ResponseEntity.ok(userAccountService.getUserAccountByEmail(email));
+    }
+
+    @GetMapping("/all")
+    @Operation(summary = "Get all user accounts", description = "Get all user accounts in the system")
+    @PreAuthorize("hasRole('ROLE_HR')")
+    public ResponseEntity<List<UserAccountEntity>> getAllUserAccounts() {
+        return ResponseEntity.ok(userAccountService.getAllUserAccounts());
     }
 
     @GetMapping("/{email}/last-login")

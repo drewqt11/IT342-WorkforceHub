@@ -60,14 +60,14 @@ export function AppSidebar() {
       href: "/employee/dashboard",
       icon: LayoutDashboard,
     },
-    {
-      title: "Main",
-      href: "#main-divider",
-      icon: LayoutDashboard,
-      isDivider: true,
-    },
     ...(isActive
       ? [
+        {
+          title: "Main",
+          href: "#main-divider",
+          icon: LayoutDashboard,
+          isDivider: true,
+        },
           {
             title: "My Profile",
             href: "/employee/profile",

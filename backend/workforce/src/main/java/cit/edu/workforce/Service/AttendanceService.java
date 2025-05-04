@@ -130,13 +130,8 @@ public class AttendanceService {
             record.setTotalHours(BigDecimal.ZERO);
         }
         
-        // Calculate overtime hours (anything over 8 hours)
-        if (hours > 8) {
-            BigDecimal overtimeHours = BigDecimal.valueOf(hours - 8).setScale(2, RoundingMode.HALF_UP);
-            record.setOvertimeHours(overtimeHours);
-        } else {
-            record.setOvertimeHours(BigDecimal.ZERO);
-        }
+        // Set overtime to zero for now
+        record.setOvertimeHours(BigDecimal.ZERO);
 
         // Calculate undertime minutes if scheduled time is set
         if (employee.getWorkTimeOutSched() != null) {
@@ -313,13 +308,8 @@ public class AttendanceService {
         BigDecimal totalHours = BigDecimal.valueOf(hours).setScale(2, RoundingMode.HALF_UP);
         record.setTotalHours(totalHours);
         
-        // Calculate overtime hours (anything over 8 hours)
-        if (hours > 8) {
-            BigDecimal overtimeHours = BigDecimal.valueOf(hours - 8).setScale(2, RoundingMode.HALF_UP);
-            record.setOvertimeHours(overtimeHours);
-        } else {
-            record.setOvertimeHours(BigDecimal.ZERO);
-        }
+        // Set overtime to zero for now
+        record.setOvertimeHours(BigDecimal.ZERO);
 
         // Calculate undertime minutes if scheduled time is set
         EmployeeEntity employee = record.getEmployee();
@@ -364,6 +354,23 @@ public class AttendanceService {
     public Page<AttendanceRecordDTO> getAllAttendanceRecords(Pageable pageable) {
         return attendanceRepository.findAll(pageable)
                 .map(this::convertToDTO);
+    }
+
+    /**
+     * Update overtime hours for a specific attendance record
+     */
+    @Transactional
+    public AttendanceRecordDTO updateOvertimeHours(String attendanceId, BigDecimal overtimeHours) {
+        AttendanceRecordEntity record = attendanceRepository.findById(attendanceId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Attendance record not found"));
+
+        if (overtimeHours.compareTo(BigDecimal.ZERO) < 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Overtime hours cannot be negative");
+        }
+
+        record.setOvertimeHours(overtimeHours);
+        AttendanceRecordEntity savedRecord = attendanceRepository.save(record);
+        return convertToDTO(savedRecord);
     }
 
     /**

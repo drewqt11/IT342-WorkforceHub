@@ -70,7 +70,6 @@ export const authService = {
     },
 
     async loginWithMicrosoft() {
-        // Directly redirect to the OAuth2 endpoint
         window.location.href = `${API_URL}/oauth2/authorization/microsoft`;
     },
 
@@ -182,7 +181,6 @@ export const authService = {
 
             if (!response.ok) {
                 if (response.status === 401) {
-                    // Token expired or invalid
                     this.clearTokens();
                     window.location.href = '/';
                     throw new Error('Session expired. Please log in again.');
@@ -225,7 +223,6 @@ export const authService = {
     },
 
     setTokens(token: string, refreshToken: string) {
-        // Store tokens in cookies with secure flags
         document.cookie = `token=${token}; path=/; secure; samesite=strict`;
         document.cookie = `refreshToken=${refreshToken}; path=/; secure; samesite=strict`;
     },
@@ -244,14 +241,10 @@ export const authService = {
     },
 
     clearAllCookies() {
-        // Get all cookies
         const cookies = document.cookie.split(';');
-        
-        // Clear each cookie
         cookies.forEach(cookie => {
             const eqPos = cookie.indexOf('=');
             const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
-            // Clear cookie with all possible paths and domains
             document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
             document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=${window.location.hostname}`;
             document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=.${window.location.hostname}`;
@@ -262,7 +255,6 @@ export const authService = {
         const token = this.getToken();
         if (token) {
             try {
-                // Extract userId from JWT token
                 const jwt = token.replace(/^Bearer /, "");
                 const payload = JSON.parse(Buffer.from(jwt.split('.')[1], 'base64').toString());
                 const userId = payload.userId;
@@ -288,7 +280,7 @@ export const authService = {
             throw new Error('No authentication token found');
         }
 
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hr/user-accounts/${email}/last-login`, {
+        const response = await fetch(`${API_URL}/hr/user-accounts/${email}/last-login`, {
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json',
@@ -299,8 +291,7 @@ export const authService = {
             throw new Error('Failed to fetch last login time');
         }
 
-        const lastLogin = await response.json();
-        return lastLogin;
+        return response.json();
     },
 
     async getActiveStatus(email: string): Promise<boolean> {
@@ -309,7 +300,7 @@ export const authService = {
             throw new Error('No authentication token found');
         }
 
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hr/user-accounts/${email}/active-status`, {
+        const response = await fetch(`${API_URL}/hr/user-accounts/${email}/active-status`, {
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json',
@@ -320,7 +311,6 @@ export const authService = {
             throw new Error('Failed to fetch active status');
         }
 
-        const isActive = await response.json();
-        return isActive;
+        return response.json();
     },
 }; 

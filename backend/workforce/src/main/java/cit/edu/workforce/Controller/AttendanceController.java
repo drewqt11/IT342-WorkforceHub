@@ -20,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -236,6 +237,18 @@ public class AttendanceController {
         Pageable pageable = PageRequest.of(page, size, sort);
 
         return ResponseEntity.ok(attendanceService.getAllAttendanceRecords(pageable));
+    }
+
+    /**
+     * Update overtime hours for a specific attendance record
+     */
+    @PutMapping("/employee/attendance/{id}/overtime")
+    @Operation(summary = "Update overtime hours", description = "Update overtime hours for a specific attendance record")
+    @PreAuthorize("hasAnyRole('ROLE_EMPLOYEE', 'ROLE_HR', 'ROLE_ADMIN')")
+    public ResponseEntity<AttendanceRecordDTO> updateOvertimeHours(
+            @Parameter(description = "Attendance record ID") @PathVariable String id,
+            @Parameter(description = "Overtime hours") @RequestParam BigDecimal overtimeHours) {
+        return ResponseEntity.ok(attendanceService.updateOvertimeHours(id, overtimeHours));
     }
 
     private AttendanceRecordDTO convertToDTO(AttendanceRecordEntity entity) {

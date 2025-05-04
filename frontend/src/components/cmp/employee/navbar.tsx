@@ -334,17 +334,16 @@ export function Navbar({ onMobileMenuToggle }: NavbarProps) {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator className="bg-gray-200 dark:bg-gray-700 my-2" />
-            <DropdownMenuItem
-              className="cursor-pointer rounded-lg px-3 py-2 hover:bg-blue-50 dark:hover:bg-blue-900/50 text-gray-900 dark:text-gray-100 focus:bg-blue-100 dark:focus:bg-blue-800 focus:text-gray-900 dark:focus:text-white transition-colors"
-              onClick={() => router.push('/employee/profile')}
-            >
-              <User className="mr-2 h-4 w-4" />
-              <span>Profile</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem className="cursor-pointer rounded-lg px-3 py-2 hover:bg-blue-50 dark:hover:bg-blue-900/50 text-gray-900 dark:text-gray-100 focus:bg-blue-100 dark:focus:bg-blue-800 focus:text-gray-900 dark:focus:text-white transition-colors">
-              <Settings className="mr-2 h-4 w-4" />
-              <span>Settings</span>
-            </DropdownMenuItem>
+            {userInfo.status === "Active" && (
+              <DropdownMenuItem
+                className="cursor-pointer rounded-lg px-3 py-2 hover:bg-blue-50 dark:hover:bg-blue-900/50 text-gray-900 dark:text-gray-100 focus:bg-blue-100 dark:focus:bg-blue-800 focus:text-gray-900 dark:focus:text-white transition-colors"
+                onClick={() => router.push('/employee/profile')}
+              >
+                <User className="mr-2 h-4 w-4" />
+                <span>Profile</span>
+              </DropdownMenuItem>
+            )}
+            
             <DropdownMenuItem className="cursor-pointer rounded-lg px-3 py-2 hover:bg-blue-50 dark:hover:bg-blue-900/50 text-gray-900 dark:text-gray-100 focus:bg-blue-100 dark:focus:bg-blue-800 focus:text-gray-900 dark:focus:text-white transition-colors">
               <HelpCircle className="mr-2 h-4 w-4" />
               <span>Help & Support</span>
