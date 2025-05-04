@@ -102,6 +102,7 @@ import androidx.compose.material3.ButtonDefaults
 import cit.edu.workforcehub.presentation.theme.CustomIcons
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import cit.edu.workforcehub.presentation.components.LoadingComponent
 
 @Preview(showBackground = true)
 @Composable
@@ -212,7 +213,7 @@ fun ProfileScreen(
                             .weight(1f),
                         contentAlignment = Alignment.Center
                     ) {
-                        CircularProgressIndicator(color = AppColors.blue500)
+                        LoadingComponent()
                     }
                 } else if (error != null) {
                     Box(
