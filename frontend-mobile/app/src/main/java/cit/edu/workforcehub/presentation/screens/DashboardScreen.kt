@@ -87,6 +87,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.lifecycle.viewmodel.compose.viewModel
 import cit.edu.workforcehub.presentation.viewmodels.DashboardViewModel
+import cit.edu.workforcehub.presentation.components.LoadingComponent
 
 @Composable
 fun DashboardScreen(
@@ -285,40 +286,106 @@ fun DashboardScreen(
                 Box(
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    // Content that scrolls underneath the header
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(top = 235.dp) // Increased from 190.dp to move cards further down
-                            .verticalScroll(scrollState),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        // Add some spacing before the Time Tracker Card
-                        Spacer(modifier = Modifier.height(16.dp))
-                        
-                        // Time Tracker Card
-                        TimeTrackerCardWrapper(
-                            currentDate = currentDate,
-                            currentTime = currentTime,
-                            workStatus = if (isClockedIn) "Clocked In" else "Clocked Out",
-                            hoursWorked = hoursWorked,
-                            breakTime = breakTime,
-                            isClockedIn = isClockedIn,
-                            onClockInOutClick = { isClockedIn = !isClockedIn },
-                            activeBreak = activeBreak,
-                            onActiveBreakChange = { activeBreak = it }
-                        )
-                        
-                        // Various cards for different functionality
+                    // Show loading component if data is still loading
+                    if (isLoading) {
+                        LoadingComponent()
+                    } else {
+                        // Content that scrolls underneath the header
                         Column(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 8.dp),
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                                .fillMaxSize()
+                                .padding(top = 235.dp) // Increased from 190.dp to move cards further down
+                                .verticalScroll(scrollState),
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
+                            // Add some spacing before the Time Tracker Card
+                            Spacer(modifier = Modifier.height(16.dp))
                             
-                            // Bottom spacing
-                            Spacer(modifier = Modifier.height(24.dp))
+                            // Check if user account is active and show appropriate content
+                            if (profileData?.status == true) {
+                                // Time Tracker Card - only shown if user is active
+                                TimeTrackerCardWrapper(
+                                    currentDate = currentDate,
+                                    currentTime = currentTime,
+                                    workStatus = if (isClockedIn) "Clocked In" else "Clocked Out",
+                                    hoursWorked = hoursWorked,
+                                    breakTime = breakTime,
+                                    isClockedIn = isClockedIn,
+                                    onClockInOutClick = { isClockedIn = !isClockedIn },
+                                    activeBreak = activeBreak,
+                                    onActiveBreakChange = { activeBreak = it }
+                                )
+                            } else {
+                                // Card showing inactive account status
+                                Card(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 16.dp),
+                                    shape = RoundedCornerShape(16.dp),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = Color.White
+                                    ),
+                                    elevation = CardDefaults.cardElevation(
+                                        defaultElevation = 2.dp
+                                    )
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .background(
+                                                brush = Brush.linearGradient(
+                                                    colors = listOf(AppColors.redLight, Color.White),
+                                                    start = Offset(0f, 0f),
+                                                    end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
+                                                )
+                                            )
+                                            .padding(24.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Column(
+                                            horizontalAlignment = Alignment.CenterHorizontally
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.CheckCircle,
+                                                contentDescription = "Inactive Account",
+                                                tint = AppColors.red,
+                                                modifier = Modifier.size(48.dp)
+                                            )
+                                            
+                                            Spacer(modifier = Modifier.height(16.dp))
+                                            
+                                            Text(
+                                                text = "Account Status is Inactive",
+                                                fontSize = 18.sp,
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = AppColors.gray900,
+                                                textAlign = TextAlign.Center
+                                            )
+                                            
+                                            Spacer(modifier = Modifier.height(8.dp))
+                                            
+                                            Text(
+                                                text = "Please contact HR to activate your account",
+                                                fontSize = 14.sp,
+                                                color = AppColors.gray600,
+                                                textAlign = TextAlign.Center
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            // Various cards for different functionality
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                
+                                // Bottom spacing
+                                Spacer(modifier = Modifier.height(24.dp))
+                            }
                         }
                     }
                     

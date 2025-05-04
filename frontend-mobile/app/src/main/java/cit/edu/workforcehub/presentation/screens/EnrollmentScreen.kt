@@ -95,6 +95,7 @@ import java.time.format.DateTimeFormatter
 import java.util.Date
 import java.util.Locale
 import androidx.compose.ui.tooling.preview.Preview
+import cit.edu.workforcehub.presentation.components.LoadingComponent
 
 @OptIn(ExperimentalMaterial3Api::class)
 @RequiresApi(Build.VERSION_CODES.S)
@@ -307,7 +308,7 @@ fun EnrollmentScreen(
                     .padding(paddingValues),
                 contentAlignment = Alignment.Center
             ) {
-                Text("Loading profile data...")
+                LoadingComponent()
             }
         } else if (error != null) {
             // Error state
