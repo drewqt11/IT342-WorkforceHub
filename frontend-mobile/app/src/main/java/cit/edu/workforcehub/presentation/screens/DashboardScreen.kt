@@ -159,14 +159,14 @@ fun DashboardScreen(
     var isClockedIn by rememberSaveable { mutableStateOf(viewModel.isClockedIn.value ?: false) }
     var currentTime by rememberSaveable { mutableStateOf(viewModel.currentTime.value ?: "00:00:00") }
     var hoursWorked by rememberSaveable { mutableStateOf(viewModel.hoursWorked.value ?: "00:00:00") }
-    var breakTime by rememberSaveable { mutableStateOf(viewModel.breakTime.value ?: "00:00") }
+    var breakTime by rememberSaveable { mutableStateOf(viewModel.breakTime.value ?: "00:00:00") }
     var currentDate by rememberSaveable { mutableStateOf(LocalDate.now()) }
     
     // Observe changes from viewModel
     val viewModelIsClockedIn by viewModel.isClockedIn.observeAsState(false)
     val viewModelCurrentTime by viewModel.currentTime.observeAsState("00:00:00")
     val viewModelHoursWorked by viewModel.hoursWorked.observeAsState("00:00:00")
-    val viewModelBreakTime by viewModel.breakTime.observeAsState("00:00")
+    val viewModelBreakTime by viewModel.breakTime.observeAsState("00:00:00")
     
     // New state for API operations
     val apiError by viewModel.error.observeAsState(null)
@@ -1720,7 +1720,7 @@ private fun ButtonWithIcon(
         onClick = onClick,
         colors = ButtonDefaults.buttonColors(
             containerColor = Color(0xFF3B82F6), // Bright blue color
-            disabledContainerColor = if (breakTaken) Color(0xFF9CA3AF) else Color(0xFF9CA3AF) // Red-tinted when used, lighter blue when just disabled
+            disabledContainerColor = if (breakTaken) Color(0xFFE5E7EB) else Color(0xFFE5E7EB) // Red-tinted when used, lighter blue when just disabled
         ),
         shape = RoundedCornerShape(24.dp),
         contentPadding = PaddingValues(0.dp),
@@ -1743,7 +1743,7 @@ private fun ButtonWithIcon(
                     modifier = Modifier
                         .size(20.dp)
                         .padding(bottom = 2.dp),
-                    colorFilter = ColorFilter.tint(if (breakTaken) Color.DarkGray else Color.White)
+                    colorFilter = ColorFilter.tint(if (breakTaken) Color.White else Color.White)
                 )
                 
                 // First part of text
@@ -1751,7 +1751,7 @@ private fun ButtonWithIcon(
                     text = firstLine,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
-                    color = if (breakTaken) Color.DarkGray else Color.White,
+                    color = if (breakTaken) Color.White else Color.White,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.padding(0.dp)
                 )
@@ -1762,7 +1762,7 @@ private fun ButtonWithIcon(
                         text = if (breakTaken) "Used" else secondLine,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium,
-                        color = if (breakTaken) Color.DarkGray else Color.White,
+                        color = if (breakTaken) Color.White else Color.White,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.padding(top = 0.dp)
                     )

@@ -103,6 +103,46 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import cit.edu.workforcehub.presentation.components.LoadingComponent
 
+/**
+ * Formats a date string from ISO format (YYYY-MM-DD) to a readable format (Month DD, YYYY)
+ * If the input is not a valid date or follows a different format, the original string is returned.
+ */
+private fun formatDate(dateString: String, includeTime: Boolean = false): String {
+    return try {
+        if (dateString.contains('T') && includeTime) {
+            // Handle ISO format with time: YYYY-MM-DDThh:mm:ss
+            val dateTime = LocalDate.parse(dateString.substring(0, dateString.indexOf('T')))
+            val formatter = DateTimeFormatter.ofPattern("MMMM d, yyyy")
+            
+            // Extract the time portion if it exists
+            val timePart = if (dateString.length > dateString.indexOf('T') + 1) {
+                val timeString = dateString.substring(dateString.indexOf('T') + 1)
+                try {
+                    val hour = timeString.substring(0, 2).toInt()
+                    val minute = timeString.substring(3, 5).toInt()
+                    val amPm = if (hour >= 12) "PM" else "AM"
+                    val hour12 = if (hour % 12 == 0) 12 else hour % 12
+                    " ${hour12}:${minute.toString().padStart(2, '0')} $amPm"
+                } catch (e: Exception) {
+                    ""
+                }
+            } else {
+                ""
+            }
+            
+            "${dateTime.format(formatter)}$timePart"
+        } else {
+            // Handle just date: YYYY-MM-DD
+            val date = LocalDate.parse(dateString.split('T')[0])
+            val formatter = DateTimeFormatter.ofPattern("MMMM d, yyyy")
+            date.format(formatter)
+        }
+    } catch (e: Exception) {
+        // Return the original string if parsing fails
+        dateString
+    }
+}
+
 @Preview(showBackground = true)
 @Composable
 fun ProfileScreen(
@@ -150,7 +190,6 @@ fun ProfileScreen(
                 dataDebug = "Phone: ${receivedProfile.phoneNumber}, Gender: ${receivedProfile.gender}, " +
                          "DOB: ${receivedProfile.dateOfBirth}, Address: ${receivedProfile.address}, " +
                          "Marital: ${receivedProfile.maritalStatus}, " +
-                         "UserID: ${receivedProfile.userId}, LastLogin: ${receivedProfile.lastLogin}, " +
                          "IsActive: ${receivedProfile.isActive}"
                 
                 isLoading = false
@@ -444,9 +483,9 @@ fun ProfileCard(profile: EmployeeProfile) {
             
             // Job Title
             Text(
-                text = profile.jobName ?: "N/A",
+                text = profile.jobName ?: "Not Provided",
                 fontSize = 14.sp,
-                color = AppColors.gray600,
+                color = if (profile.jobName == null) AppColors.gray400 else AppColors.gray600,
                 modifier = Modifier.padding(vertical = 4.dp)
             )
             
@@ -491,7 +530,7 @@ fun ProfileCard(profile: EmployeeProfile) {
                     icon = Icons.Default.Business,
                     iconBgColor = AppColors.teal100,
                     iconTint = AppColors.teal500,
-                    text = profile.jobName ?: "N/A"
+                    text = profile.jobName ?: "Not Provided"
                 )
             }
             
@@ -652,18 +691,14 @@ fun PersonalInfoCard(profile: EmployeeProfile) {
         InfoItem(label = "Employee ID", value = profile.employeeId)
         InfoItem(label = "ID Number", value = profile.idNumber ?: "22-4480-181")
         InfoItem(label = "Full Name", value = "${profile.firstName} ${profile.lastName}")
-        InfoItem(label = "Gender", value = profile.gender ?: "N/A")
+        InfoItem(label = "Gender", value = profile.gender ?: "Not Provided")
         InfoItem(
             label = "Date of Birth",
-            value = profile.dateOfBirth ?: "N/A",
-            icon = CustomIcons.CalendarToday,
-            iconTint = AppColors.blue500
+            value = profile.dateOfBirth?.let { formatDate(it) } ?: "Not Provided",
         )
         InfoItem(
             label = "Marital Status",
-            value = profile.maritalStatus ?: "SINGLE",
-            icon = Icons.Default.Favorite,
-            iconTint = AppColors.blue500,
+            value = profile.maritalStatus ?: "Not Provided",
             isLast = true
         )
     }
@@ -686,19 +721,19 @@ fun EmploymentInfoCard(profile: EmployeeProfile) {
         InfoItem(label = "Employment", value = profile.employmentStatus ?: "FULL_TIME")
         InfoItem(
             label = "Hire Date",
-            value = profile.hireDate ?: "May 2, 2025",
+            value = profile.hireDate?.let { formatDate(it) } ?: "May 2, 2025",
             icon = CustomIcons.CalendarToday,
             iconTint = AppColors.teal500
         )
         InfoItem(
             label = "Department",
-            value = profile.departmentName ?: "N/A",
+            value = profile.departmentName ?: "Not Provided",
             icon = CustomIcons.Business,
             iconTint = AppColors.teal500
         )
         InfoItem(
             label = "Job Title",
-            value = profile.jobName ?: "N/A",
+            value = profile.jobName ?: "Not Provided",
             icon = CustomIcons.Work,
             iconTint = AppColors.teal500
         )
@@ -720,12 +755,6 @@ fun AccountInfoCard(profile: EmployeeProfile) {
         iconTint = AppColors.blue500
     ) {
         InfoItem(
-            label = "User ID",
-            value = profile.userId ?: "N/A",
-            icon = CustomIcons.Key,
-            iconTint = AppColors.blue500
-        )
-        InfoItem(
             label = "Account Status",
             value = if (profile.isActive == true) "Active" else "Inactive",
             isHighlighted = true,
@@ -734,17 +763,13 @@ fun AccountInfoCard(profile: EmployeeProfile) {
         )
         InfoItem(
             label = "Account Created",
-            value = profile.createdAt?.let { 
-                if (it.contains('T')) it.substring(0, it.indexOf('T')) else it
-            } ?: "N/A",
+            value = profile.createdAt?.let { formatDate(it) } ?: "Not Provided",
             icon = CustomIcons.CalendarToday,
             iconTint = AppColors.blue500
         )
         InfoItem(
             label = "Last Login",
-            value = profile.lastLogin?.let { 
-                if (it.contains('T')) it.substring(0, it.indexOf('T')) else it
-            } ?: "N/A",
+            value = profile.lastLogin?.let { formatDate(it, true) } ?: "Not Provided",
             icon = CustomIcons.Login,
             iconTint = AppColors.blue500,
             isLast = true
@@ -817,7 +842,8 @@ fun InfoItem(
     highlightBgColor: Color = AppColors.blue50,
     highlightTextColor: Color = AppColors.blue500,
     isLast: Boolean = false,
-    iconDrawableRes: Int? = null
+    iconDrawableRes: Int? = null,
+    isNotProvided: Boolean = value == "Not Provided"
 ) {
     Column {
         Row(
@@ -870,7 +896,7 @@ fun InfoItem(
                             text = value,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium,
-                            color = AppColors.gray700
+                            color = if (isNotProvided) AppColors.gray400 else AppColors.gray700
                         )
                     }
                 } else if (iconDrawableRes != null) {
@@ -890,7 +916,7 @@ fun InfoItem(
                             text = value,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium,
-                            color = AppColors.gray700
+                            color = if (isNotProvided) AppColors.gray400 else AppColors.gray700
                         )
                     }
                 } else {
@@ -898,7 +924,7 @@ fun InfoItem(
                         text = value,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium,
-                        color = AppColors.gray700
+                        color = if (isNotProvided) AppColors.gray400 else AppColors.gray700
                     )
                 }
             }

@@ -453,8 +453,14 @@ class DashboardViewModel(application: Application, private val savedStateHandle:
                 val employeeId = profileResponse.body()?.employeeId
                     ?: throw Exception("Employee ID not found in profile")
                 
-                // Create clock-out request with employeeId
-                val request = ClockInRequest(employeeId = employeeId, remarks = null, latitude = null, longitude = null)
+                // Create clock-out request with employeeId, set remarks to "PRESENT" and status to "CLOCKED_OUT"
+                val request = ClockInRequest(
+                    employeeId = employeeId, 
+                    remarks = "PRESENT", 
+                    status = "CLOCKED_OUT", 
+                    latitude = null, 
+                    longitude = null
+                )
                 
                 // Stop timers
                 stopWorkTimer()
@@ -492,6 +498,13 @@ class DashboardViewModel(application: Application, private val savedStateHandle:
                     // Clear SharedPreferences
                     resetBreakStateInPreferences()
                     clearClockInDate()
+                    
+                    // Show success notification
+                    showNotification(
+                        "Clock Out Successful",
+                        "You have successfully clocked out for today.",
+                        NotificationType.SUCCESS
+                    )
                 } else {
                     _error.value = "Failed to clock out: ${response.errorBody()?.string()}"
                 }

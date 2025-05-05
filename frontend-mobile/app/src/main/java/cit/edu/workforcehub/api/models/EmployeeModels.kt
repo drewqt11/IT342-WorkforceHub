@@ -55,6 +55,7 @@ data class Employee(
 data class ClockInRequest(
     @Json(name = "employeeId") val employeeId: String,
     @Json(name = "remarks") val remarks: String? = null,
+    @Json(name = "status") val status: String? = null,
     @Json(name = "latitude") val latitude: Double? = null,
     @Json(name = "longitude") val longitude: Double? = null
 )

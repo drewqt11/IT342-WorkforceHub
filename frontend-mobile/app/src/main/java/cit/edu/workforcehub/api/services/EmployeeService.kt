@@ -57,4 +57,10 @@ interface EmployeeService {
         @Query("startDate") startDate: String,
         @Query("endDate") endDate: String
     ): Response<List<AttendanceRecord>>
+    
+    /**
+     * Get all attendance records for the authenticated employee.
+     */
+    @GET(ApiEndpoints.EMPLOYEE_ATTENDANCE)
+    suspend fun getAllAttendanceRecords(): Response<List<AttendanceRecord>>
 } 
