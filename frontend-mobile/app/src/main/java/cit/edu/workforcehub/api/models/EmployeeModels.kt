@@ -78,4 +78,23 @@ data class AttendanceRecord(
     @Json(name = "undertimeMinutes") val undertimeMinutes: Int? = null,
     @Json(name = "reasonForAbsence") val reasonForAbsence: String? = null,
     @Json(name = "approvedByManager") val approvedByManager: Boolean = false
+)
+
+/**
+ * Model for leave request.
+ */
+@JsonClass(generateAdapter = true)
+data class LeaveRequest(
+    @Json(name = "leaveRequestId") val leaveRequestId: String? = null,
+    @Json(name = "employeeId") val employeeId: String,
+    @Json(name = "startDate") val startDate: String,
+    @Json(name = "endDate") val endDate: String,
+    @Json(name = "leaveType") val leaveType: String,
+    @Json(name = "reason") val reason: String,
+    @Json(name = "status") val status: String? = "PENDING",
+    @Json(name = "approvedByManagerId") val approvedByManagerId: String? = null,
+    @Json(name = "approvedDate") val approvedDate: String? = null,
+    @Json(name = "submissionDate") val submissionDate: String? = null,
+    @Json(name = "remarks") val remarks: String? = null,
+    @Json(name = "attachmentUrl") val attachmentUrl: String? = null
 ) 

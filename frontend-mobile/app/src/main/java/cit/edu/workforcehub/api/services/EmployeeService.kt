@@ -4,6 +4,7 @@ import cit.edu.workforcehub.api.ApiEndpoints
 import cit.edu.workforcehub.api.models.AttendanceRecord
 import cit.edu.workforcehub.api.models.ClockInRequest
 import cit.edu.workforcehub.api.models.EmployeeProfile
+import cit.edu.workforcehub.api.models.LeaveRequest
 import retrofit2.Response
 import retrofit2.http.*
 
@@ -63,4 +64,17 @@ interface EmployeeService {
      */
     @GET(ApiEndpoints.EMPLOYEE_ATTENDANCE)
     suspend fun getAllAttendanceRecords(): Response<List<AttendanceRecord>>
+    
+    /**
+     * Submit a leave request.
+     */
+    @POST("/api/employee/leave-requests")
+    @Headers("Content-Type: application/json")
+    suspend fun submitLeaveRequest(@Body request: LeaveRequest): Response<LeaveRequest>
+    
+    /**
+     * Get all leave requests for the authenticated employee.
+     */
+    @GET("/api/employee/leave-requests")
+    suspend fun getLeaveRequests(): Response<List<LeaveRequest>>
 } 
