@@ -97,17 +97,25 @@ import cit.edu.workforcehub.api.ApiHelper
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.lifecycle.viewmodel.compose.viewModel
 import cit.edu.workforcehub.presentation.viewmodels.DashboardViewModel
+import cit.edu.workforcehub.presentation.viewmodels.DashboardViewModelFactory
 import cit.edu.workforcehub.presentation.components.LoadingComponent
 import cit.edu.workforcehub.presentation.components.NotificationDialog
 import cit.edu.workforcehub.presentation.components.NotificationType
 import cit.edu.workforcehub.presentation.theme.AppTheme
 import cit.edu.workforcehub.presentation.components.AppHeader
 import cit.edu.workforcehub.R
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSavedStateRegistryOwner
 
 @RequiresApi(Build.VERSION_CODES.S)
 @Composable
 fun DashboardScreen(
-    viewModel: DashboardViewModel = viewModel(),
+    viewModel: DashboardViewModel = viewModel(
+        factory = DashboardViewModelFactory(
+            application = LocalContext.current.applicationContext as android.app.Application,
+            owner = LocalSavedStateRegistryOwner.current
+        )
+    ),
     onLogout: () -> Unit = {},
     onNavigateToAttendance: () -> Unit = {},
     onNavigateToLeaveRequests: () -> Unit = {},
@@ -483,9 +491,19 @@ fun TimeTrackerCardWrapper(
     isLoading: Boolean = false,
     error: String? = null
 ) {
-    // Get the viewModel from the parent
-    val viewModel: DashboardViewModel = viewModel()
+    // Get the viewModel from the parent using the factory
+    val viewModel: DashboardViewModel = viewModel(
+        factory = DashboardViewModelFactory(
+            application = LocalContext.current.applicationContext as android.app.Application,
+            owner = LocalSavedStateRegistryOwner.current
+        )
+    )
     val clockInTime by viewModel.clockInTime.observeAsState()
+    
+    // Observe break taken status
+    val morningBreakTaken by viewModel.morningBreakTaken.observeAsState(false)
+    val lunchBreakTaken by viewModel.lunchBreakTaken.observeAsState(false)
+    val afternoonBreakTaken by viewModel.afternoonBreakTaken.observeAsState(false)
     
     if (!isClockedIn) {
         CollapsedTimeTrackerCard(
@@ -512,7 +530,10 @@ fun TimeTrackerCardWrapper(
             onActiveBreakChange = onActiveBreakChange,
             isLoading = isLoading,
             error = error,
-            clockInTime = clockInTime
+            clockInTime = clockInTime,
+            morningBreakTaken = morningBreakTaken,
+            lunchBreakTaken = lunchBreakTaken,
+            afternoonBreakTaken = afternoonBreakTaken
         )
     }
 }
@@ -899,9 +920,9 @@ private fun CollapsedTimeTrackerCard(
                             
                             Spacer(modifier = Modifier.height(8.dp))
                             
-                            // Break time value
+                            // Break time value - display static "00:00:00" when no active break
                             Text(
-                                text = breakTime,
+                                text = if (activeBreak != null) breakTime else "00:00:00",
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = AppColors.gray900
@@ -981,7 +1002,10 @@ private fun ExpandedTimeTrackerCard(
     onActiveBreakChange: (String?) -> Unit = {},
     isLoading: Boolean = false,
     error: String? = null,
-    clockInTime: String? = null
+    clockInTime: String? = null,
+    morningBreakTaken: Boolean = false,
+    lunchBreakTaken: Boolean = false,
+    afternoonBreakTaken: Boolean = false
 ) {
     val formatter = DateTimeFormatter.ofPattern("EEEE, MMM d")
     val formattedDate = currentDate.format(formatter)
@@ -1472,7 +1496,8 @@ private fun ExpandedTimeTrackerCard(
                             text = "Morning Break",
                             onClick = { onActiveBreakChange("Morning Break") },
                             modifier = Modifier.weight(1f),
-                            enabled = activeBreak == null
+                            enabled = activeBreak == null && !morningBreakTaken,
+                            breakTaken = morningBreakTaken
                         )
                     }
                     
@@ -1490,7 +1515,8 @@ private fun ExpandedTimeTrackerCard(
                             text = "Lunch Break",
                             onClick = { onActiveBreakChange("Lunch Break") },
                             modifier = Modifier.weight(1f),
-                            enabled = activeBreak == null
+                            enabled = activeBreak == null && !lunchBreakTaken,
+                            breakTaken = lunchBreakTaken
                         )
                     }
                     
@@ -1508,7 +1534,8 @@ private fun ExpandedTimeTrackerCard(
                             text = "Afternoon Break",
                             onClick = { onActiveBreakChange("Afternoon Break") },
                             modifier = Modifier.weight(1f),
-                            enabled = activeBreak == null
+                            enabled = activeBreak == null && !afternoonBreakTaken,
+                            breakTaken = afternoonBreakTaken
                         )
                     }
                 }
@@ -1561,44 +1588,44 @@ private fun ExpandedTimeTrackerCard(
                         }
                         
                         // Attendance Grid Content
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
+                            ) {
                             // Clock In Time
-                            AttendanceItem(
-                                label = "Clock In",
+                                AttendanceItem(
+                                    label = "Clock In",
                                 value = clockInTime ?: "-",
-                                modifier = Modifier.weight(1f)
-                            )
-                            
+                                    modifier = Modifier.weight(1f)
+                                )
+                                
                             // Hours worked (calculated from clockIn till now or clockOut)
-                            AttendanceItem(
-                                label = "Hours Worked",
+                                AttendanceItem(
+                                    label = "Hours Worked",
                                 value = hoursWorked,
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-                        
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                            
                         Spacer(modifier = Modifier.height(8.dp))
-                        
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
+                            
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
+                            ) {
                             // Status
-                            AttendanceItem(
+                                AttendanceItem(
                                 label = "Status",
                                 value = workStatus,
-                                modifier = Modifier.weight(1f)
-                            )
-                            
+                                    modifier = Modifier.weight(1f)
+                                )
+                                
                             // Break time
-                            AttendanceItem(
+                                AttendanceItem(
                                 label = "Break Time",
                                 value = breakTime,
-                                modifier = Modifier.weight(1f)
-                            )
+                                    modifier = Modifier.weight(1f)
+                                )
                         }
                     }
                 }
@@ -1681,7 +1708,8 @@ private fun ButtonWithIcon(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    breakTaken: Boolean = false
 ) {
     // Split text by space to show on two lines (e.g., "Morning Break" -> "Morning" + "Break")
     val parts = text.split(" ", limit = 2)
@@ -1692,7 +1720,7 @@ private fun ButtonWithIcon(
         onClick = onClick,
         colors = ButtonDefaults.buttonColors(
             containerColor = Color(0xFF3B82F6), // Bright blue color
-            disabledContainerColor = Color(0xFFBFDBFE) // Lighter blue when disabled
+            disabledContainerColor = if (breakTaken) Color(0xFF9CA3AF) else Color(0xFF9CA3AF) // Red-tinted when used, lighter blue when just disabled
         ),
         shape = RoundedCornerShape(24.dp),
         contentPadding = PaddingValues(0.dp),
@@ -1715,7 +1743,7 @@ private fun ButtonWithIcon(
                     modifier = Modifier
                         .size(20.dp)
                         .padding(bottom = 2.dp),
-                    colorFilter = ColorFilter.tint(Color.White)
+                    colorFilter = ColorFilter.tint(if (breakTaken) Color.DarkGray else Color.White)
                 )
                 
                 // First part of text
@@ -1723,7 +1751,7 @@ private fun ButtonWithIcon(
                     text = firstLine,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
-                    color = Color.White,
+                    color = if (breakTaken) Color.DarkGray else Color.White,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.padding(0.dp)
                 )
@@ -1731,10 +1759,10 @@ private fun ButtonWithIcon(
                 // Second part of text (if exists)
                 if (secondLine.isNotEmpty()) {
                     Text(
-                        text = secondLine,
+                        text = if (breakTaken) "Used" else secondLine,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium,
-                        color = Color.White,
+                        color = if (breakTaken) Color.DarkGray else Color.White,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.padding(top = 0.dp)
                     )

@@ -1,5 +1,9 @@
 package cit.edu.workforcehub.presentation.viewmodels
 
+import android.app.Application
+import android.content.Context
+import android.content.SharedPreferences
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.SavedStateHandle
@@ -25,12 +29,15 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Date
 import java.util.Locale
+import androidx.lifecycle.AbstractSavedStateViewModelFactory
+import androidx.lifecycle.ViewModelProvider
+import androidx.savedstate.SavedStateRegistryOwner
 
 /**
  * ViewModel for the DashboardScreen that handles state saving
  * across configuration changes and process death
  */
-class DashboardViewModel(private val savedStateHandle: SavedStateHandle) : ViewModel() {
+class DashboardViewModel(application: Application, private val savedStateHandle: SavedStateHandle) : AndroidViewModel(application) {
     
     companion object {
         private const val KEY_IS_CLOCKED_IN = "is_clocked_in"
@@ -43,6 +50,21 @@ class DashboardViewModel(private val savedStateHandle: SavedStateHandle) : ViewM
         private const val KEY_WORK_START_TIMESTAMP = "work_start_timestamp"
         private const val KEY_BREAK_START_TIMESTAMP = "break_start_timestamp"
         private const val KEY_TOTAL_BREAK_MILLIS = "total_break_millis"
+        private const val KEY_MORNING_BREAK_TAKEN = "morning_break_taken"
+        private const val KEY_LUNCH_BREAK_TAKEN = "lunch_break_taken"
+        private const val KEY_AFTERNOON_BREAK_TAKEN = "afternoon_break_taken"
+        
+        // SharedPreferences keys
+        private const val PREFS_NAME = "workforce_hub_prefs"
+        private const val PREF_MORNING_BREAK_TAKEN = "pref_morning_break_taken"
+        private const val PREF_LUNCH_BREAK_TAKEN = "pref_lunch_break_taken"
+        private const val PREF_AFTERNOON_BREAK_TAKEN = "pref_afternoon_break_taken"
+        private const val PREF_CLOCKIN_DATE = "pref_clockin_date"
+    }
+    
+    // SharedPreferences for persistent storage
+    private val sharedPreferences: SharedPreferences by lazy {
+        application.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     }
     
     // State values stored in SavedStateHandle will survive process death
@@ -54,6 +76,16 @@ class DashboardViewModel(private val savedStateHandle: SavedStateHandle) : ViewM
     val activeBreak: LiveData<String?> = savedStateHandle.getLiveData<String?>(KEY_ACTIVE_BREAK, null)
     val clockInTime: LiveData<String?> = savedStateHandle.getLiveData<String?>(KEY_CLOCK_IN_TIME, null)
     val attendanceId: LiveData<String?> = savedStateHandle.getLiveData<String?>(KEY_ATTENDANCE_ID, null)
+    
+    // Break tracking state
+    private val _morningBreakTaken = MutableLiveData<Boolean>()
+    val morningBreakTaken: LiveData<Boolean> = _morningBreakTaken
+    
+    private val _lunchBreakTaken = MutableLiveData<Boolean>()
+    val lunchBreakTaken: LiveData<Boolean> = _lunchBreakTaken
+    
+    private val _afternoonBreakTaken = MutableLiveData<Boolean>()
+    val afternoonBreakTaken: LiveData<Boolean> = _afternoonBreakTaken
     
     // Private saved state for calculations
     private val workStartTimestamp = savedStateHandle.getLiveData<Long>(KEY_WORK_START_TIMESTAMP, 0L)
@@ -88,6 +120,9 @@ class DashboardViewModel(private val savedStateHandle: SavedStateHandle) : ViewM
     private var breakTimerJob: Job? = null
     
     init {
+        // Load saved break state from SharedPreferences
+        loadBreakStateFromPreferences()
+        
         // Check current attendance status on initialization
         checkTodayAttendance()
         
@@ -99,6 +134,72 @@ class DashboardViewModel(private val savedStateHandle: SavedStateHandle) : ViewM
         // If on break, start the break timer
         if (activeBreak.value != null && breakStartTimestamp.value != 0L) {
             startBreakTimer(activeBreak.value)
+        }
+    }
+    
+    /**
+     * Load break state from SharedPreferences
+     * Resets the state if it's a new day
+     */
+    private fun loadBreakStateFromPreferences() {
+        val savedClockInDate = sharedPreferences.getString(PREF_CLOCKIN_DATE, "")
+        val currentDate = LocalDate.now().toString()
+        
+        // If it's a new day, reset the break states
+        if (savedClockInDate != currentDate) {
+            resetBreakStateInPreferences()
+            _morningBreakTaken.value = false
+            _lunchBreakTaken.value = false
+            _afternoonBreakTaken.value = false
+        } else {
+            // Load saved break states
+            _morningBreakTaken.value = sharedPreferences.getBoolean(PREF_MORNING_BREAK_TAKEN, false)
+            _lunchBreakTaken.value = sharedPreferences.getBoolean(PREF_LUNCH_BREAK_TAKEN, false)
+            _afternoonBreakTaken.value = sharedPreferences.getBoolean(PREF_AFTERNOON_BREAK_TAKEN, false)
+        }
+    }
+    
+    /**
+     * Save break state to SharedPreferences
+     */
+    private fun saveBreakStateToPreferences() {
+        sharedPreferences.edit().apply {
+            putBoolean(PREF_MORNING_BREAK_TAKEN, _morningBreakTaken.value ?: false)
+            putBoolean(PREF_LUNCH_BREAK_TAKEN, _lunchBreakTaken.value ?: false)
+            putBoolean(PREF_AFTERNOON_BREAK_TAKEN, _afternoonBreakTaken.value ?: false)
+            apply()
+        }
+    }
+    
+    /**
+     * Reset break state in SharedPreferences
+     */
+    private fun resetBreakStateInPreferences() {
+        sharedPreferences.edit().apply {
+            putBoolean(PREF_MORNING_BREAK_TAKEN, false)
+            putBoolean(PREF_LUNCH_BREAK_TAKEN, false)
+            putBoolean(PREF_AFTERNOON_BREAK_TAKEN, false)
+            apply()
+        }
+    }
+    
+    /**
+     * Save the current date as clock-in date
+     */
+    private fun saveClockInDate() {
+        sharedPreferences.edit().apply {
+            putString(PREF_CLOCKIN_DATE, LocalDate.now().toString())
+            apply()
+        }
+    }
+    
+    /**
+     * Clear clock-in date
+     */
+    private fun clearClockInDate() {
+        sharedPreferences.edit().apply {
+            putString(PREF_CLOCKIN_DATE, "")
+            apply()
         }
     }
     
@@ -133,6 +234,9 @@ class DashboardViewModel(private val savedStateHandle: SavedStateHandle) : ViewM
                         val clockInMillis = record?.clockInTime?.let { parseTimeToMillis(it) } ?: nowMillis
                         savedStateHandle[KEY_WORK_START_TIMESTAMP] = clockInMillis
                         
+                        // Save clock-in date to shared preferences
+                        saveClockInDate()
+                        
                         // Start timer
                         startWorkTimer()
                     } else {
@@ -143,7 +247,25 @@ class DashboardViewModel(private val savedStateHandle: SavedStateHandle) : ViewM
                         // Set total hours from server
                         val hoursStr = formatHoursWorked(record?.totalHours ?: 0.0)
                         updateHoursWorked(hoursStr)
+                        
+                        // Reset break tracking state
+                        _morningBreakTaken.value = false
+                        _lunchBreakTaken.value = false
+                        _afternoonBreakTaken.value = false
+                        
+                        // Clear SharedPreferences
+                        resetBreakStateInPreferences()
+                        clearClockInDate()
                     }
+                } else {
+                    // No attendance record found - ensure break states are reset
+                    _morningBreakTaken.value = false
+                    _lunchBreakTaken.value = false
+                    _afternoonBreakTaken.value = false
+                    
+                    // Clear SharedPreferences 
+                    resetBreakStateInPreferences()
+                    clearClockInDate()
                 }
             } catch (e: Exception) {
                 _error.value = "Failed to check attendance: ${e.localizedMessage}"
@@ -232,6 +354,15 @@ class DashboardViewModel(private val savedStateHandle: SavedStateHandle) : ViewM
                     updateBreakTime("00:00:00")
                     startWorkTimer()
                     
+                    // Reset break tracking state
+                    _morningBreakTaken.value = false
+                    _lunchBreakTaken.value = false
+                    _afternoonBreakTaken.value = false
+                    
+                    // Save to SharedPreferences
+                    resetBreakStateInPreferences()
+                    saveClockInDate()
+                    
                     // Show success notification
                     println("Debug: Showing success notification for clock in")
                     showNotification(
@@ -248,8 +379,11 @@ class DashboardViewModel(private val savedStateHandle: SavedStateHandle) : ViewM
                             "You have already clocked in today.",
                             NotificationType.WARNING
                         )
-                    } else {
-                        _error.value = "Failed to clock in: ${response.errorBody()?.string()}"
+                        
+                        // Load current break state from SharedPreferences
+                        loadBreakStateFromPreferences()
+                } else {
+                    _error.value = "Failed to clock in: ${response.errorBody()?.string()}"
                     }
                 }
             } catch (e: Exception) {
@@ -261,8 +395,11 @@ class DashboardViewModel(private val savedStateHandle: SavedStateHandle) : ViewM
                         "You have already clocked in today. Please clock out first before clocking in again.",
                         NotificationType.WARNING
                     )
+                    
+                    // Load current break state from SharedPreferences
+                    loadBreakStateFromPreferences()
                 } else {
-                    _error.value = "Failed to clock in: ${e.localizedMessage}"
+                _error.value = "Failed to clock in: ${e.localizedMessage}"
                 }
             } finally {
                 _isLoading.value = false
@@ -346,6 +483,15 @@ class DashboardViewModel(private val savedStateHandle: SavedStateHandle) : ViewM
                     savedStateHandle[KEY_BREAK_START_TIMESTAMP] = 0L
                     savedStateHandle[KEY_TOTAL_BREAK_MILLIS] = 0L
                     savedStateHandle[KEY_ATTENDANCE_ID] = null
+                    
+                    // Reset break tracking state
+                    _morningBreakTaken.value = false
+                    _lunchBreakTaken.value = false
+                    _afternoonBreakTaken.value = false
+                    
+                    // Clear SharedPreferences
+                    resetBreakStateInPreferences()
+                    clearClockInDate()
                 } else {
                     _error.value = "Failed to clock out: ${response.errorBody()?.string()}"
                 }
@@ -362,6 +508,40 @@ class DashboardViewModel(private val savedStateHandle: SavedStateHandle) : ViewM
      */
     fun startBreak(breakType: String) {
         if (isClockedIn.value != true) return
+        
+        // Check if this break type has already been taken
+        when (breakType) {
+            "Morning Break" -> {
+                if (_morningBreakTaken.value == true) {
+                    showNotification(
+                        "Break Already Taken",
+                        "You have already taken your morning break today.",
+                        NotificationType.WARNING
+                    )
+                    return
+                }
+            }
+            "Lunch Break" -> {
+                if (_lunchBreakTaken.value == true) {
+                    showNotification(
+                        "Break Already Taken",
+                        "You have already taken your lunch break today.",
+                        NotificationType.WARNING
+                    )
+                    return
+                }
+            }
+            "Afternoon Break" -> {
+                if (_afternoonBreakTaken.value == true) {
+                    showNotification(
+                        "Break Already Taken",
+                        "You have already taken your afternoon break today.",
+                        NotificationType.WARNING
+                    )
+                    return
+                }
+            }
+        }
         
         // Stop work timer
         workTimerJob?.cancel()
@@ -403,6 +583,22 @@ class DashboardViewModel(private val savedStateHandle: SavedStateHandle) : ViewM
         
         // Update break time display
         updateBreakTime(formatBreakDuration(newTotalBreak))
+        
+        // Mark the break type as taken
+        when (activeBreak.value) {
+            "Morning Break" -> {
+                _morningBreakTaken.value = true
+                saveBreakStateToPreferences()
+            }
+            "Lunch Break" -> {
+                _lunchBreakTaken.value = true
+                saveBreakStateToPreferences()
+            }
+            "Afternoon Break" -> {
+                _afternoonBreakTaken.value = true
+                saveBreakStateToPreferences()
+            }
+        }
         
         // Clear break state
         updateActiveBreak(null)
@@ -475,19 +671,19 @@ class DashboardViewModel(private val savedStateHandle: SavedStateHandle) : ViewM
                 }
             } else {
                 // Regular timer mode (counting up from zero)
-                while (isActive) {
-                    val startTime = breakStartTimestamp.value ?: 0L
-                    if (startTime > 0L) {
-                        val current = System.currentTimeMillis()
-                        val elapsed = current - startTime
-                        
-                        // Format and display current break duration
+            while (isActive) {
+                val startTime = breakStartTimestamp.value ?: 0L
+                if (startTime > 0L) {
+                    val current = System.currentTimeMillis()
+                    val elapsed = current - startTime
+                    
+                    // Format and display current break duration
                         val breakDisplay = formatBreakDuration(elapsed)
-                        
+                    
                         // Update the break time LiveData directly
                         updateBreakTime(breakDisplay)
-                    }
-                    delay(1000) // Update every second
+                }
+                delay(1000) // Update every second
                 }
             }
         }
@@ -569,7 +765,37 @@ class DashboardViewModel(private val savedStateHandle: SavedStateHandle) : ViewM
         savedStateHandle[KEY_BREAK_START_TIMESTAMP] = 0L
         savedStateHandle[KEY_TOTAL_BREAK_MILLIS] = 0L
         
+        // Reset break tracking state
+        _morningBreakTaken.value = false
+        _lunchBreakTaken.value = false
+        _afternoonBreakTaken.value = false
+        
+        // Clear SharedPreferences
+        resetBreakStateInPreferences()
+        clearClockInDate()
+        
         _attendanceRecord.value = null
         _error.value = null
+    }
+}
+
+/**
+ * Factory for creating a DashboardViewModel with proper dependencies
+ */
+class DashboardViewModelFactory(
+    private val application: Application,
+    owner: SavedStateRegistryOwner
+) : AbstractSavedStateViewModelFactory(owner, null) {
+    
+    @Suppress("UNCHECKED_CAST")
+    override fun <T : ViewModel> create(
+        key: String,
+        modelClass: Class<T>,
+        handle: SavedStateHandle
+    ): T {
+        if (modelClass.isAssignableFrom(DashboardViewModel::class.java)) {
+            return DashboardViewModel(application, handle) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
     }
 } 
