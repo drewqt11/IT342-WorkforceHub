@@ -10,6 +10,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -92,7 +93,6 @@ import androidx.compose.material.icons.filled.Shield
 import cit.edu.workforcehub.R
 import cit.edu.workforcehub.api.ApiHelper
 import cit.edu.workforcehub.api.models.EmployeeProfile
-import cit.edu.workforcehub.api.models.UserAccount
 import cit.edu.workforcehub.presentation.components.AppScreen
 import cit.edu.workforcehub.presentation.components.UniversalDrawer
 import cit.edu.workforcehub.presentation.theme.AppColors
@@ -103,6 +103,46 @@ import cit.edu.workforcehub.presentation.theme.CustomIcons
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import cit.edu.workforcehub.presentation.components.LoadingComponent
+
+/**
+ * Formats a date string from ISO format (YYYY-MM-DD) to a readable format (Month DD, YYYY)
+ * If the input is not a valid date or follows a different format, the original string is returned.
+ */
+private fun formatDate(dateString: String, includeTime: Boolean = false): String {
+    return try {
+        if (dateString.contains('T') && includeTime) {
+            // Handle ISO format with time: YYYY-MM-DDThh:mm:ss
+            val dateTime = LocalDate.parse(dateString.substring(0, dateString.indexOf('T')))
+            val formatter = DateTimeFormatter.ofPattern("MMMM d, yyyy")
+            
+            // Extract the time portion if it exists
+            val timePart = if (dateString.length > dateString.indexOf('T') + 1) {
+                val timeString = dateString.substring(dateString.indexOf('T') + 1)
+                try {
+                    val hour = timeString.substring(0, 2).toInt()
+                    val minute = timeString.substring(3, 5).toInt()
+                    val amPm = if (hour >= 12) "PM" else "AM"
+                    val hour12 = if (hour % 12 == 0) 12 else hour % 12
+                    " ${hour12}:${minute.toString().padStart(2, '0')} $amPm"
+                } catch (e: Exception) {
+                    ""
+                }
+            } else {
+                ""
+            }
+            
+            "${dateTime.format(formatter)}$timePart"
+        } else {
+            // Handle just date: YYYY-MM-DD
+            val date = LocalDate.parse(dateString.split('T')[0])
+            val formatter = DateTimeFormatter.ofPattern("MMMM d, yyyy")
+            date.format(formatter)
+        }
+    } catch (e: Exception) {
+        // Return the original string if parsing fails
+        dateString
+    }
+}
 
 @Preview(showBackground = true)
 @Composable
@@ -123,7 +163,6 @@ fun ProfileScreen(
     
     // State for profile data
     var profileData by remember { mutableStateOf<EmployeeProfile?>(null) }
-    var userData by remember { mutableStateOf<UserAccount?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
     var dataDebug by remember { mutableStateOf("") }
@@ -151,22 +190,8 @@ fun ProfileScreen(
                 // Create debug info
                 dataDebug = "Phone: ${receivedProfile.phoneNumber}, Gender: ${receivedProfile.gender}, " +
                          "DOB: ${receivedProfile.dateOfBirth}, Address: ${receivedProfile.address}, " +
-                         "Marital: ${receivedProfile.maritalStatus}"
-                
-                // Now fetch user account details using the email
-                try {
-                    val hrService = ApiHelper.getHrService()
-                    val userResponse = hrService.getUserAccountByEmail(receivedProfile.email)
-                    
-                    if (userResponse.isSuccessful && userResponse.body() != null) {
-                        userData = userResponse.body()
-                        dataDebug += "\nUser account fetched successfully: ${userData?.userId}"
-                    } else {
-                        dataDebug += "\nFailed to fetch user account: ${userResponse.message()}"
-                    }
-                } catch (e: Exception) {
-                    dataDebug += "\nError fetching user account: ${e.message}"
-                }
+                         "Marital: ${receivedProfile.maritalStatus}, " +
+                         "IsActive: ${receivedProfile.isActive}"
                 
                 isLoading = false
             } else {
@@ -231,7 +256,6 @@ fun ProfileScreen(
                     ) {
                         ProfileContent(
                             profile = profileData!!, 
-                            userData = userData,
                             scrollState = scrollState, 
                             debugInfo = dataDebug
                         )
@@ -328,7 +352,6 @@ fun ProfileAppHeader(
 @Composable
 fun ProfileContent(
     profile: EmployeeProfile, 
-    userData: UserAccount? = null,
     scrollState: ScrollState, 
     debugInfo: String = ""
 ) {
@@ -399,7 +422,7 @@ fun ProfileContent(
         Spacer(modifier = Modifier.height(16.dp))
         
         // Account Information
-        AccountInfoCard(profile = profile, userData = userData)
+        AccountInfoCard(profile = profile)
 
         // Add extra space at the bottom to ensure the last card is fully visible when scrolling
         Spacer(modifier = Modifier.height(24.dp))
@@ -414,7 +437,8 @@ fun ProfileCard(profile: EmployeeProfile) {
             .padding(horizontal = 16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        shape = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(12.dp),
+        border = BorderStroke(1.dp, AppColors.gray200)
     ) {
         Column(
             modifier = Modifier
@@ -461,9 +485,9 @@ fun ProfileCard(profile: EmployeeProfile) {
             
             // Job Title
             Text(
-                text = profile.jobName ?: "N/A",
+                text = profile.jobName ?: "Not Provided",
                 fontSize = 14.sp,
-                color = AppColors.gray600,
+                color = if (profile.jobName == null) AppColors.gray400 else AppColors.gray600,
                 modifier = Modifier.padding(vertical = 4.dp)
             )
             
@@ -508,7 +532,7 @@ fun ProfileCard(profile: EmployeeProfile) {
                     icon = Icons.Default.Business,
                     iconBgColor = AppColors.teal100,
                     iconTint = AppColors.teal500,
-                    text = profile.jobName ?: "N/A"
+                    text = profile.jobName ?: "Not Provided"
                 )
             }
             
@@ -669,18 +693,14 @@ fun PersonalInfoCard(profile: EmployeeProfile) {
         InfoItem(label = "Employee ID", value = profile.employeeId)
         InfoItem(label = "ID Number", value = profile.idNumber ?: "22-4480-181")
         InfoItem(label = "Full Name", value = "${profile.firstName} ${profile.lastName}")
-        InfoItem(label = "Gender", value = profile.gender ?: "N/A")
+        InfoItem(label = "Gender", value = profile.gender ?: "Not Provided")
         InfoItem(
             label = "Date of Birth",
-            value = profile.dateOfBirth ?: "N/A",
-            icon = CustomIcons.CalendarToday,
-            iconTint = AppColors.blue500
+            value = profile.dateOfBirth?.let { formatDate(it) } ?: "Not Provided",
         )
         InfoItem(
             label = "Marital Status",
-            value = profile.maritalStatus ?: "SINGLE",
-            icon = Icons.Default.Favorite,
-            iconTint = AppColors.blue500,
+            value = profile.maritalStatus ?: "Not Provided",
             isLast = true
         )
     }
@@ -703,19 +723,19 @@ fun EmploymentInfoCard(profile: EmployeeProfile) {
         InfoItem(label = "Employment", value = profile.employmentStatus ?: "FULL_TIME")
         InfoItem(
             label = "Hire Date",
-            value = profile.hireDate ?: "May 2, 2025",
+            value = profile.hireDate?.let { formatDate(it) } ?: "May 2, 2025",
             icon = CustomIcons.CalendarToday,
             iconTint = AppColors.teal500
         )
         InfoItem(
             label = "Department",
-            value = profile.departmentName ?: "N/A",
+            value = profile.departmentName ?: "Not Provided",
             icon = CustomIcons.Business,
             iconTint = AppColors.teal500
         )
         InfoItem(
             label = "Job Title",
-            value = profile.jobName ?: "N/A",
+            value = profile.jobName ?: "Not Provided",
             icon = CustomIcons.Work,
             iconTint = AppColors.teal500
         )
@@ -730,40 +750,28 @@ fun EmploymentInfoCard(profile: EmployeeProfile) {
 }
 
 @Composable
-fun AccountInfoCard(profile: EmployeeProfile, userData: UserAccount? = null) {
+fun AccountInfoCard(profile: EmployeeProfile) {
     InfoCard(
         title = "Account Information",
         icon = Icons.Default.Shield,
         iconTint = AppColors.blue500
     ) {
         InfoItem(
-            label = "User ID",
-            value = userData?.userId ?: "N/A",
-            icon = CustomIcons.Key,
-            iconTint = AppColors.blue500
-        )
-        InfoItem(
             label = "Account Status",
-            value = if (userData?.active == true) "Active" else "Inactive",
+            value = if (profile.isActive == true) "Active" else "Inactive",
             isHighlighted = true,
-            highlightBgColor = if (userData?.active == true) AppColors.teal100 else AppColors.redLight,
-            highlightTextColor = if (userData?.active == true) AppColors.teal900 else AppColors.red
+            highlightBgColor = if (profile.isActive == true) AppColors.teal100 else AppColors.redLight,
+            highlightTextColor = if (profile.isActive == true) AppColors.teal900 else AppColors.red
         )
         InfoItem(
             label = "Account Created",
-            value = userData?.createdAt?.let { 
-                if (it.contains('T')) it.substring(0, it.indexOf('T')) else it
-            } ?: (profile.createdAt?.let { 
-                if (it.contains('T')) it.substring(0, it.indexOf('T')) else it
-            } ?: "N/A"),
+            value = profile.createdAt?.let { formatDate(it) } ?: "Not Provided",
             icon = CustomIcons.CalendarToday,
             iconTint = AppColors.blue500
         )
         InfoItem(
             label = "Last Login",
-            value = userData?.lastLogin?.let { 
-                if (it.contains('T')) it.substring(0, it.indexOf('T')) else it
-            } ?: "N/A",
+            value = profile.lastLogin?.let { formatDate(it, true) } ?: "Not Provided",
             icon = CustomIcons.Login,
             iconTint = AppColors.blue500,
             isLast = true
@@ -784,7 +792,8 @@ fun InfoCard(
             .padding(horizontal = 16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        shape = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(12.dp),
+        border = BorderStroke(1.dp, AppColors.gray200)
     ) {
         Column(
             modifier = Modifier
@@ -836,7 +845,8 @@ fun InfoItem(
     highlightBgColor: Color = AppColors.blue50,
     highlightTextColor: Color = AppColors.blue500,
     isLast: Boolean = false,
-    iconDrawableRes: Int? = null
+    iconDrawableRes: Int? = null,
+    isNotProvided: Boolean = value == "Not Provided"
 ) {
     Column {
         Row(
@@ -889,7 +899,7 @@ fun InfoItem(
                             text = value,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium,
-                            color = AppColors.gray700
+                            color = if (isNotProvided) AppColors.gray400 else AppColors.gray700
                         )
                     }
                 } else if (iconDrawableRes != null) {
@@ -909,7 +919,7 @@ fun InfoItem(
                             text = value,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium,
-                            color = AppColors.gray700
+                            color = if (isNotProvided) AppColors.gray400 else AppColors.gray700
                         )
                     }
                 } else {
@@ -917,7 +927,7 @@ fun InfoItem(
                         text = value,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium,
-                        color = AppColors.gray700
+                        color = if (isNotProvided) AppColors.gray400 else AppColors.gray700
                     )
                 }
             }

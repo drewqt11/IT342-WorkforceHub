@@ -28,7 +28,10 @@ data class EmployeeProfile(
     @Json(name = "jobName") val jobName: String? = null,
     @Json(name = "roleId") val roleId: String? = null,
     @Json(name = "roleName") val roleName: String? = null,
-    @Json(name = "createdAt") val createdAt: String? = null
+    @Json(name = "createdAt") val createdAt: String? = null,
+    @Json(name = "userId") val userId: String? = null,
+    @Json(name = "lastLogin") val lastLogin: String? = null,
+    @Json(name = "isActive") val isActive: Boolean? = null
 )
 
 /**
@@ -50,7 +53,9 @@ data class Employee(
  */
 @JsonClass(generateAdapter = true)
 data class ClockInRequest(
-    @Json(name = "notes") val notes: String? = null,
+    @Json(name = "employeeId") val employeeId: String,
+    @Json(name = "remarks") val remarks: String? = null,
+    @Json(name = "status") val status: String? = null,
     @Json(name = "latitude") val latitude: Double? = null,
     @Json(name = "longitude") val longitude: Double? = null
 )
@@ -60,14 +65,36 @@ data class ClockInRequest(
  */
 @JsonClass(generateAdapter = true)
 data class AttendanceRecord(
-    @Json(name = "recordId") val recordId: String,
+    @Json(name = "attendanceId") val recordId: String,
     @Json(name = "employeeId") val employeeId: String,
-    @Json(name = "date") val date: Date,
-    @Json(name = "clockInTime") val clockInTime: Date,
-    @Json(name = "clockOutTime") val clockOutTime: Date? = null,
+    @Json(name = "date") val date: String,
+    @Json(name = "clockInTime") val clockInTime: String,
+    @Json(name = "clockOutTime") val clockOutTime: String? = null,
     @Json(name = "totalHours") val totalHours: Double? = null,
-    @Json(name = "notes") val notes: String? = null,
-    @Json(name = "latitude") val latitude: Double? = null,
-    @Json(name = "longitude") val longitude: Double? = null,
-    @Json(name = "status") val status: String
+    @Json(name = "remarks") val remarks: String? = null,
+    @Json(name = "status") val status: String,
+    @Json(name = "overtimeHours") val overtimeHours: Double? = null,
+    @Json(name = "tardinessMinutes") val tardinessMinutes: Int? = null,
+    @Json(name = "undertimeMinutes") val undertimeMinutes: Int? = null,
+    @Json(name = "reasonForAbsence") val reasonForAbsence: String? = null,
+    @Json(name = "approvedByManager") val approvedByManager: Boolean = false
+)
+
+/**
+ * Model for leave request.
+ */
+@JsonClass(generateAdapter = true)
+data class LeaveRequest(
+    @Json(name = "leaveRequestId") val leaveRequestId: String? = null,
+    @Json(name = "employeeId") val employeeId: String,
+    @Json(name = "startDate") val startDate: String,
+    @Json(name = "endDate") val endDate: String,
+    @Json(name = "leaveType") val leaveType: String,
+    @Json(name = "reason") val reason: String,
+    @Json(name = "status") val status: String? = "PENDING",
+    @Json(name = "approvedByManagerId") val approvedByManagerId: String? = null,
+    @Json(name = "approvedDate") val approvedDate: String? = null,
+    @Json(name = "submissionDate") val submissionDate: String? = null,
+    @Json(name = "remarks") val remarks: String? = null,
+    @Json(name = "attachmentUrl") val attachmentUrl: String? = null
 ) 
