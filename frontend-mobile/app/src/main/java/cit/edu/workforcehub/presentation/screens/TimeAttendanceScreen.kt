@@ -165,7 +165,7 @@ fun TimeAttendanceScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(top = 245.dp) // Adjust based on your header height
+                        .padding(top = 235.dp) // Adjust based on your header height
                 ) {
                     if (isLoading) {
                         LoadingComponent()
@@ -185,7 +185,7 @@ fun TimeAttendanceScreen(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(start = 2.dp, top = 8.dp, bottom = 30.dp),
+                                    .padding(start = 2.dp, top = 8.dp, bottom = 10.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 // Attendance icon in circular blue background
@@ -232,7 +232,8 @@ fun TimeAttendanceScreen(
                                     .fillMaxWidth()
                                     .shadow(4.dp, RoundedCornerShape(16.dp)),
                                 colors = CardDefaults.cardColors(containerColor = AppColors.white),
-                                shape = RoundedCornerShape(16.dp)
+                                shape = RoundedCornerShape(16.dp),
+                                border = BorderStroke(1.dp, AppColors.gray200)
                             ) {
                                 Box(
                                     modifier = Modifier
@@ -452,7 +453,7 @@ fun AttendanceRecord(
                         Text(
                             text = "Clocked in",
                             fontSize = 12.sp,
-                            color = AppColors.gray500
+                            color = AppColors.gray900
                         )
                     }
                     
@@ -492,7 +493,7 @@ fun AttendanceRecord(
                         Text(
                             text = "Clocked out",
                             fontSize = 12.sp,
-                            color = AppColors.gray500
+                            color = AppColors.gray900
                         )
                     }
                 }

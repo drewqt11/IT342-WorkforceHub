@@ -16,6 +16,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -572,261 +573,106 @@ private fun CollapsedTimeTrackerCard(
     val amPm = if (currentTimeState.hour < 12) "AM" else "PM"
     
     // Split the UI into frame and content
-    Column(
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp),
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(1.dp, AppColors.gray200)
     ) {
-        // Header gradient
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(12.dp)
-                .background(
-                    brush = Brush.horizontalGradient(
-                        colors = listOf(AppColors.blue500, AppColors.teal500)
-                    ),
-                    shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
-                )
-        )
-        
-        // Main content
-        Card(
-            modifier = Modifier
-                .fillMaxWidth(),
-            shape = RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = Color.White
-            ),
-            elevation = CardDefaults.cardElevation(
-                defaultElevation = 2.dp
-            )
+        Column(
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
+            // Header gradient
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .height(12.dp)
                     .background(
-                        brush = Brush.linearGradient(
-                            colors = listOf(Color.White, AppColors.teal100, AppColors.blue100),
-                            start = Offset(1f, 1f),
-                            end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
-                        )
+                        brush = Brush.horizontalGradient(
+                            colors = listOf(AppColors.blue500, AppColors.teal500)
+                        ),
+                        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
                     )
-                    .padding(24.dp)
+            )
+            
+            // Main content
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                shape = RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color.White
+                ),
+                elevation = CardDefaults.cardElevation(
+                    defaultElevation = 2.dp
+                )
             ) {
-                // Time Tracker header section
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 16.dp)
-                ) {
-                    // Clock icon with gradient border
-                    Box(
-                        modifier = Modifier
-                            .size(72.dp)
-                            .clip(CircleShape)
-                            .border(
-                                width = 2.dp,
-                                brush = Brush.horizontalGradient(
-                                    colors = listOf(AppColors.blue500, AppColors.teal500)
-                                ),
-                                shape = CircleShape
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            painter = painterResource(id = android.R.drawable.ic_menu_recent_history),
-                            contentDescription = "Time Tracker",
-                            tint = AppColors.blue500,
-                            modifier = Modifier.size(32.dp)
+                        .background(
+                            brush = Brush.linearGradient(
+                                colors = listOf(Color.White, AppColors.teal100, AppColors.blue100),
+                                start = Offset(1f, 1f),
+                                end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
+                            )
                         )
-                    }
-                    
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    // Title
-                    Text(
-                        text = "Time Tracker",
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = AppColors.gray900
-                    )
-                    
-                    Text(
-                        text = "Record your work hours",
-                        fontSize = 14.sp,
-                        color = AppColors.gray600
-                    )
-                }
-                
-                // Time Card
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color.White
-                    ),
-                    elevation = CardDefaults.cardElevation(
-                        defaultElevation = 1.dp
-                    ),
-                    shape = RoundedCornerShape(16.dp)
+                        .padding(24.dp)
                 ) {
+                    // Time Tracker header section
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(24.dp)
+                            .padding(bottom = 16.dp)
                     ) {
-                        // Date display
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center,
-                            modifier = Modifier.fillMaxWidth()
+                        // Clock icon with gradient border
+                        Box(
+                            modifier = Modifier
+                                .size(72.dp)
+                                .clip(CircleShape)
+                                .border(
+                                    width = 2.dp,
+                                    brush = Brush.horizontalGradient(
+                                        colors = listOf(AppColors.blue500, AppColors.teal500)
+                                    ),
+                                    shape = CircleShape
+                                ),
+                            contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                painter = painterResource(id = android.R.drawable.ic_menu_my_calendar),
-                                contentDescription = "Calendar",
+                                painter = painterResource(id = android.R.drawable.ic_menu_recent_history),
+                                contentDescription = "Time Tracker",
                                 tint = AppColors.blue500,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            
-                            Spacer(modifier = Modifier.width(8.dp))
-                            
-                            Text(
-                                text = formattedDate,
-                                fontSize = 14.sp,
-                                color = AppColors.gray600
+                                modifier = Modifier.size(32.dp)
                             )
                         }
                         
                         Spacer(modifier = Modifier.height(16.dp))
                         
-                        // Current time display with individual segments
-                        Row(
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(
-                                text = displayHours,
-                                fontSize = 40.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = AppColors.gray900
-                            )
-                            
-                            Text(
-                                text = ":",
-                                fontSize = 40.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = AppColors.gray900
-                            )
-                            
-                            Text(
-                                text = minutes,
-                                fontSize = 40.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = AppColors.gray900
-                            )
-                            
-                            Text(
-                                text = ":",
-                                fontSize = 40.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = AppColors.gray900
-                            )
-                            
-                            Text(
-                                text = seconds,
-                                fontSize = 40.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = AppColors.gray900
-                            )
-                            
-                            Spacer(modifier = Modifier.width(8.dp))
-                            
-                            Text(
-                                text = amPm,
-                                fontSize = 24.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = AppColors.gray600,
-                            )
-                        }
-                    }
-                }
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                // Status Card
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color.White
-                    ),
-                    elevation = CardDefaults.cardElevation(
-                        defaultElevation = 1.dp
-                    ),
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 24.dp, vertical = 16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // Work Status with dot
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(8.dp)
-                                    .background(
-                                        color = if (isClockedIn) AppColors.green else AppColors.gray500,
-                                        shape = CircleShape
-                                    )
-                            )
-                            
-                            Spacer(modifier = Modifier.width(8.dp))
-                            
-                            Text(
-                                text = "Work Status",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = AppColors.gray700
-                            )
-                        }
-                        
-                        // Status badge (Clocked In/Out)
+                        // Title
                         Text(
-                            text = workStatus,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = AppColors.gray700,
-                            modifier = Modifier
-                                .background(
-                                    color = AppColors.gray200,
-                                    shape = RoundedCornerShape(16.dp)
-                                )
-                                .padding(horizontal = 12.dp, vertical = 6.dp)
+                            text = "Time Tracker",
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = AppColors.gray900
+                        )
+                        
+                        Text(
+                            text = "Record your work hours",
+                            fontSize = 14.sp,
+                            color = AppColors.gray600
                         )
                     }
-                }
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                // Info Cards (Hours Worked and Break Time) in a Row
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    // Hours Worked Card
+                    
+                    // Time Card
                     Card(
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier
+                            .fillMaxWidth(),
                         colors = CardDefaults.cardColors(
-                            containerColor = Color.White // Changed from light green
+                            containerColor = Color.White
                         ),
                         elevation = CardDefaults.cardElevation(
                             defaultElevation = 1.dp
@@ -834,156 +680,317 @@ private fun CollapsedTimeTrackerCard(
                         shape = RoundedCornerShape(16.dp)
                     ) {
                         Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
                             modifier = Modifier
-                                .fillMaxSize()
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(
-                                    brush = Brush.horizontalGradient(
-                                        colors = listOf(AppColors.teal50, Color.White) // teal100 to white
-                                    )
-                                )
-                                .padding(16.dp)
+                                .fillMaxWidth()
+                                .padding(24.dp)
                         ) {
-                            // Hours worked label with icon
+                            // Date display
                             Row(
-                                verticalAlignment = Alignment.CenterVertically
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center,
+                                modifier = Modifier.fillMaxWidth()
                             ) {
                                 Icon(
-                                    painter = painterResource(id = android.R.drawable.ic_menu_recent_history),
-                                    contentDescription = "Hours",
-                                    tint = Color(0xFF4ECCA3), // Green color
+                                    painter = painterResource(id = android.R.drawable.ic_menu_my_calendar),
+                                    contentDescription = "Calendar",
+                                    tint = AppColors.blue500,
                                     modifier = Modifier.size(16.dp)
                                 )
                                 
                                 Spacer(modifier = Modifier.width(8.dp))
                                 
                                 Text(
-                                    text = "Hours Worked",
-                                    fontSize = 13.sp,
+                                    text = formattedDate,
+                                    fontSize = 14.sp,
                                     color = AppColors.gray600
                                 )
                             }
                             
-                            Spacer(modifier = Modifier.height(8.dp))
+                            Spacer(modifier = Modifier.height(16.dp))
                             
-                            // Hours worked value
-                            Text(
-                                text = hoursWorked,
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = AppColors.gray900
-                            )
+                            // Current time display with individual segments
+                            Row(
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    text = displayHours,
+                                    fontSize = 40.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = AppColors.gray900
+                                )
+                                
+                                Text(
+                                    text = ":",
+                                    fontSize = 40.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = AppColors.gray900
+                                )
+                                
+                                Text(
+                                    text = minutes,
+                                    fontSize = 40.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = AppColors.gray900
+                                )
+                                
+                                Text(
+                                    text = ":",
+                                    fontSize = 40.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = AppColors.gray900
+                                )
+                                
+                                Text(
+                                    text = seconds,
+                                    fontSize = 40.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = AppColors.gray900
+                                )
+                                
+                                Spacer(modifier = Modifier.width(8.dp))
+                                
+                                Text(
+                                    text = amPm,
+                                    fontSize = 24.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = AppColors.gray600,
+                                )
+                            }
                         }
                     }
                     
-                    // Break Time Card
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    // Status Card
                     Card(
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.fillMaxWidth(),
                         colors = CardDefaults.cardColors(
-                            containerColor = Color.White // Changed from light blue
+                            containerColor = Color.White
                         ),
                         elevation = CardDefaults.cardElevation(
                             defaultElevation = 1.dp
                         ),
                         shape = RoundedCornerShape(16.dp)
                     ) {
-                        Column(
+                        Row(
                             modifier = Modifier
-                                .fillMaxSize()
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(
-                                    brush = Brush.horizontalGradient(
-                                        colors = listOf(AppColors.blue50, Color.White)
-                                    )
-                                )
-                                .padding(16.dp)
+                                .fillMaxWidth()
+                                .padding(horizontal = 24.dp, vertical = 16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            // Break time label with icon
+                            // Work Status with dot
                             Row(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Image(
-                                    painter = painterResource(id = R.drawable.coffee),
-                                    contentDescription = "Break",
-                                    modifier = Modifier.size(16.dp),
-                                    colorFilter = ColorFilter.tint(AppColors.blue500)
+                                Box(
+                                    modifier = Modifier
+                                        .size(8.dp)
+                                        .background(
+                                            color = if (isClockedIn) AppColors.green else AppColors.gray500,
+                                            shape = CircleShape
+                                        )
                                 )
                                 
                                 Spacer(modifier = Modifier.width(8.dp))
                                 
                                 Text(
-                                    text = if (activeBreak != null) "Active Break" else "No Active Break",
-                                    fontSize = 13.sp,
-                                    color = AppColors.gray600
+                                    text = "Work Status",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = AppColors.gray700
                                 )
                             }
                             
-                            Spacer(modifier = Modifier.height(8.dp))
-                            
-                            // Break time value - display static "00:00:00" when no active break
+                            // Status badge (Clocked In/Out)
                             Text(
-                                text = if (activeBreak != null) breakTime else "00:00:00",
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = AppColors.gray900
+                                text = workStatus,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = AppColors.gray700,
+                                modifier = Modifier
+                                    .background(
+                                        color = AppColors.gray200,
+                                        shape = RoundedCornerShape(16.dp)
+                                    )
+                                    .padding(horizontal = 12.dp, vertical = 6.dp)
                             )
                         }
                     }
-                }
-                
-                // Clock In/Out button
-                Button(
-                    onClick = onClockInOutClick,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = AppColors.blue500
-                    ),
-                    shape = RoundedCornerShape(16.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 24.dp)
-                        .height(56.dp),
-                    elevation = ButtonDefaults.buttonElevation(
-                        defaultElevation = 2.dp
-                    ),
-                    enabled = !isLoading // Disable when loading
-                ) {
-                    if (isLoading) {
-                        // Show loading indicator
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            color = Color.White,
-                            strokeWidth = 2.dp
-                        )
-                    } else {
-                        Icon(
-                            imageVector = Icons.Default.CheckCircle,
-                            contentDescription = "Clock In",
-                            tint = Color.White,
-                            modifier = Modifier.size(20.dp)
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    // Info Cards (Hours Worked and Break Time) in a Row
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        // Hours Worked Card
+                        Card(
+                            modifier = Modifier.weight(1f),
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color.White // Changed from light green
+                            ),
+                            elevation = CardDefaults.cardElevation(
+                                defaultElevation = 1.dp
+                            ),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(
+                                        brush = Brush.horizontalGradient(
+                                            colors = listOf(AppColors.teal50, Color.White) // teal100 to white
+                                        )
+                                    )
+                                    .padding(16.dp)
+                            ) {
+                                // Hours worked label with icon
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        painter = painterResource(id = android.R.drawable.ic_menu_recent_history),
+                                        contentDescription = "Hours",
+                                        tint = Color(0xFF4ECCA3), // Green color
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    
+                                    Text(
+                                        text = "Hours Worked",
+                                        fontSize = 13.sp,
+                                        color = AppColors.gray600
+                                    )
+                                }
+                                
+                                Spacer(modifier = Modifier.height(8.dp))
+                                
+                                // Hours worked value
+                                Text(
+                                    text = hoursWorked,
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = AppColors.gray900
+                                )
+                            }
+                        }
+                        
+                        // Break Time Card
+                        Card(
+                            modifier = Modifier.weight(1f),
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color.White // Changed from light blue
+                            ),
+                            elevation = CardDefaults.cardElevation(
+                                defaultElevation = 1.dp
+                            ),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(
+                                        brush = Brush.horizontalGradient(
+                                            colors = listOf(AppColors.blue50, Color.White)
+                                        )
+                                    )
+                                    .padding(16.dp)
+                            ) {
+                                // Break time label with icon
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Image(
+                                        painter = painterResource(id = R.drawable.coffee),
+                                        contentDescription = "Break",
+                                        modifier = Modifier.size(16.dp),
+                                        colorFilter = ColorFilter.tint(AppColors.blue500)
+                                    )
+                                    
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    
+                                    Text(
+                                        text = if (activeBreak != null) "Active Break" else "No Active Break",
+                                        fontSize = 13.sp,
+                                        color = AppColors.gray600
+                                    )
+                                }
+                                
+                                Spacer(modifier = Modifier.height(8.dp))
+                                
+                                // Break time value - display static "00:00:00" when no active break
+                                Text(
+                                    text = if (activeBreak != null) breakTime else "00:00:00",
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = AppColors.gray900
+                                )
+                            }
+                        }
+                    }
+                    
+                    // Clock In/Out button
+                    Button(
+                        onClick = onClockInOutClick,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = AppColors.blue500
+                        ),
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 24.dp)
+                            .height(56.dp),
+                        elevation = ButtonDefaults.buttonElevation(
+                            defaultElevation = 2.dp
+                        ),
+                        enabled = !isLoading // Disable when loading
+                    ) {
+                        if (isLoading) {
+                            // Show loading indicator
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                color = Color.White,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.CheckCircle,
+                                contentDescription = "Clock In",
+                                tint = Color.White,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        
+                        Spacer(modifier = Modifier.width(8.dp))
+                        
+                        Text(
+                            text = if (isLoading) "Processing..." else "Clock In",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color.White
                         )
                     }
                     
-                    Spacer(modifier = Modifier.width(8.dp))
-                    
-                    Text(
-                        text = if (isLoading) "Processing..." else "Clock In",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color.White
-                    )
-                }
-                
-                // Display error if any
-                if (error != null) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = error,
-                        color = Color.Red,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    // Display error if any
+                    if (error != null) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = error,
+                            color = Color.Red,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                 }
             }
         }
@@ -1030,347 +1037,201 @@ private fun ExpandedTimeTrackerCard(
     val amPm = if (currentTimeState.hour < 12) "AM" else "PM"
     
     // Split the UI into frame and content
-    Column(
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp),
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(1.dp, AppColors.gray200)
     ) {
-        // Header gradient
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(12.dp)
-                .background(
-                    brush = Brush.horizontalGradient(
-                        colors = listOf(AppColors.blue500, AppColors.teal500)
-                    ),
-                    shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
-                )
-        )
-        
-        // Main content
-        Card(
-            modifier = Modifier
-                .fillMaxWidth(),
-            shape = RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = Color.White
-            ),
-            elevation = CardDefaults.cardElevation(
-                defaultElevation = 2.dp
-            )
+        Column(
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Column(
+            // Header gradient
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .height(12.dp)
                     .background(
-                        brush = Brush.linearGradient(
-                            colors = listOf(Color.White, AppColors.teal100, AppColors.blue100),
-                            start = Offset(1f, 1f),
-                            end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
-                        )
+                        brush = Brush.horizontalGradient(
+                            colors = listOf(AppColors.blue500, AppColors.teal500)
+                        ),
+                        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
                     )
-                    .padding(24.dp)
+            )
+            
+            // Main content
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                shape = RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color.White
+                ),
+                elevation = CardDefaults.cardElevation(
+                    defaultElevation = 2.dp
+                )
             ) {
-                // Time Tracker header section
                 Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 16.dp)
-                ) {
-                    // Clock icon with gradient border
-                    Box(
-                        modifier = Modifier
-                            .size(72.dp)
-                            .clip(CircleShape)
-                            .border(
-                                width = 2.dp,
-                                brush = Brush.horizontalGradient(
-                                    colors = listOf(AppColors.blue500, AppColors.teal500)
-                                ),
-                                shape = CircleShape
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            painter = painterResource(id = android.R.drawable.ic_menu_recent_history),
-                            contentDescription = "Time Tracker",
-                            tint = AppColors.blue500,
-                            modifier = Modifier.size(32.dp)
+                        .background(
+                            brush = Brush.linearGradient(
+                                colors = listOf(Color.White, AppColors.teal100, AppColors.blue100),
+                                start = Offset(1f, 1f),
+                                end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
+                            )
                         )
-                    }
-                    
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    // Title
-                    Text(
-                        text = "Time Tracker",
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = AppColors.gray900
-                    )
-                    
-                    Text(
-                        text = "Record your work hours",
-                        fontSize = 14.sp,
-                        color = AppColors.gray600
-                    )
-                }
-                
-                // Time Card
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color.White
-                    ),
-                    elevation = CardDefaults.cardElevation(
-                        defaultElevation = 1.dp
-                    ),
-                    shape = RoundedCornerShape(16.dp)
+                        .padding(24.dp)
                 ) {
+                    // Time Tracker header section
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(24.dp)
+                            .padding(bottom = 16.dp)
                     ) {
-                        // Date display
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center,
-                            modifier = Modifier.fillMaxWidth()
+                        // Clock icon with gradient border
+                        Box(
+                            modifier = Modifier
+                                .size(72.dp)
+                                .clip(CircleShape)
+                                .border(
+                                    width = 2.dp,
+                                    brush = Brush.horizontalGradient(
+                                        colors = listOf(AppColors.blue500, AppColors.teal500)
+                                    ),
+                                    shape = CircleShape
+                                ),
+                            contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                painter = painterResource(id = android.R.drawable.ic_menu_my_calendar),
-                                contentDescription = "Calendar",
+                                painter = painterResource(id = android.R.drawable.ic_menu_recent_history),
+                                contentDescription = "Time Tracker",
                                 tint = AppColors.blue500,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            
-                            Spacer(modifier = Modifier.width(8.dp))
-                            
-                            Text(
-                                text = formattedDate,
-                                fontSize = 14.sp,
-                                color = AppColors.gray600
+                                modifier = Modifier.size(32.dp)
                             )
                         }
                         
                         Spacer(modifier = Modifier.height(16.dp))
                         
-                        // Current time display with individual segments
-                        Row(
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(
-                                text = displayHours,
-                                fontSize = 40.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = AppColors.gray900
-                            )
-                            
-                            Text(
-                                text = ":",
-                                fontSize = 40.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = AppColors.gray900
-                            )
-                            
-                            Text(
-                                text = minutes,
-                                fontSize = 40.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = AppColors.gray900
-                            )
-                            
-                            Text(
-                                text = ":",
-                                fontSize = 40.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = AppColors.gray900
-                            )
-                            
-                            Text(
-                                text = seconds,
-                                fontSize = 40.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = AppColors.gray900
-                            )
-                            
-                            Spacer(modifier = Modifier.width(8.dp))
-                            
-                            Text(
-                                text = amPm,
-                                fontSize = 24.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = AppColors.gray600,
-                            )
-                        }
+                        // Title
+                        Text(
+                            text = "Time Tracker",
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = AppColors.gray900
+                        )
+                        
+                        Text(
+                            text = "Record your work hours",
+                            fontSize = 14.sp,
+                            color = AppColors.gray600
+                        )
                     }
-                }
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                // Work Status Card with Progress Bar
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color.White
-                    ),
-                    elevation = CardDefaults.cardElevation(
-                        defaultElevation = 1.dp
-                    ),
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Column(
+                    
+                    // Time Card
+                    Card(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                            .fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                                containerColor = Color.White
+                            ),
+                            elevation = CardDefaults.cardElevation(
+                                defaultElevation = 1.dp
+                            ),
+                            shape = RoundedCornerShape(16.dp)
                         ) {
-                            // Work Status with dot
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(24.dp)
+                        ) {
+                            // Date display
                             Row(
-                                verticalAlignment = Alignment.CenterVertically
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center,
+                                modifier = Modifier.fillMaxWidth()
                             ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(8.dp)
-                                        .background(
-                                            color = AppColors.teal700,
-                                            shape = CircleShape
-                                        )
+                                Icon(
+                                    painter = painterResource(id = android.R.drawable.ic_menu_my_calendar),
+                                    contentDescription = "Calendar",
+                                    tint = AppColors.blue500,
+                                    modifier = Modifier.size(16.dp)
                                 )
                                 
                                 Spacer(modifier = Modifier.width(8.dp))
                                 
                                 Text(
-                                    text = "Work Status",
+                                    text = formattedDate,
                                     fontSize = 14.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = AppColors.gray700
+                                    color = AppColors.gray600
                                 )
                             }
                             
-                            // Status badge (Clocked In)
-                            Text(
-                                text = workStatus,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = AppColors.teal900,
-                                modifier = Modifier
-                                    .background(
-                                        color = Color(0xFFCCFBF1), // Light green
-                                        shape = RoundedCornerShape(16.dp)
-                                    )
-                                    .padding(horizontal = 12.dp, vertical = 6.dp)
-                            )
-                        }
-                        
-                        Spacer(modifier = Modifier.height(12.dp))
-                        
-                        // Progress bar
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(4.dp)
-                                .background(
-                                    color = AppColors.gray200,
-                                    shape = RoundedCornerShape(2.dp)
+                            Spacer(modifier = Modifier.height(16.dp))
+                            
+                            // Current time display with individual segments
+                            Row(
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    text = displayHours,
+                                    fontSize = 40.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = AppColors.gray900
                                 )
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(4.dp)
-                                    .background(
-                                        color = AppColors.teal700,
-                                        shape = RoundedCornerShape(2.dp)
-                                    )
-                            )
+                                
+                                Text(
+                                    text = ":",
+                                    fontSize = 40.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = AppColors.gray900
+                                )
+                                
+                                Text(
+                                    text = minutes,
+                                    fontSize = 40.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = AppColors.gray900
+                                )
+                                
+                                Text(
+                                    text = ":",
+                                    fontSize = 40.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = AppColors.gray900
+                                )
+                                
+                                Text(
+                                    text = seconds,
+                                    fontSize = 40.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = AppColors.gray900
+                                )
+                                
+                                Spacer(modifier = Modifier.width(8.dp))
+                                
+                                Text(
+                                    text = amPm,
+                                    fontSize = 24.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = AppColors.gray600,
+                                )
+                            }
                         }
                     }
-                }
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                // Break Status Card
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color.White
-                    ),
-                    elevation = CardDefaults.cardElevation(
-                        defaultElevation = 1.dp
-                    ),
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // Break Status with dot
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(8.dp)
-                                    .background(
-                                        color = if (activeBreak != null) AppColors.teal700 else AppColors.gray500,
-                                        shape = CircleShape
-                                    )
-                            )
-                            
-                            Spacer(modifier = Modifier.width(8.dp))
-                            
-                            Text(
-                                text = "Break Status",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = AppColors.gray700
-                            )
-                        }
-                        
-                        // Status badge (Working/On Break)
-                        Text(
-                            text = activeBreak ?: "Working",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = if (activeBreak != null) AppColors.teal900 else AppColors.gray700,
-                            modifier = Modifier
-                                .background(
-                                    color = if (activeBreak != null) Color(0xFFCCFBF1) else AppColors.gray200,
-                                    shape = RoundedCornerShape(16.dp)
-                                )
-                                .padding(horizontal = 12.dp, vertical = 6.dp)
-                        )
-                    }
-                }
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                // Info Cards (Hours Worked and Break Time) in a Row
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    // Hours Worked Card
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    // Work Status Card with Progress Bar
                     Card(
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.fillMaxWidth(),
                         colors = CardDefaults.cardColors(
-                            containerColor = Color.White // Changed from Color(0xFFF0FFF4)
+                            containerColor = Color.White
                         ),
                         elevation = CardDefaults.cardElevation(
                             defaultElevation = 1.dp
@@ -1379,6 +1240,334 @@ private fun ExpandedTimeTrackerCard(
                     ) {
                         Column(
                             modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                // Work Status with dot
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(8.dp)
+                                            .background(
+                                                color = AppColors.teal700,
+                                                shape = CircleShape
+                                            )
+                                    )
+                                    
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    
+                                    Text(
+                                        text = "Work Status",
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = AppColors.gray700
+                                    )
+                                }
+                                
+                                // Status badge (Clocked In)
+                                Text(
+                                    text = workStatus,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = AppColors.teal900,
+                                    modifier = Modifier
+                                        .background(
+                                            color = Color(0xFFCCFBF1), // Light green
+                                            shape = RoundedCornerShape(16.dp)
+                                        )
+                                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                                )
+                            }
+                            
+                            Spacer(modifier = Modifier.height(12.dp))
+                            
+                            // Progress bar
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(4.dp)
+                                    .background(
+                                        color = AppColors.gray200,
+                                        shape = RoundedCornerShape(2.dp)
+                                    )
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(4.dp)
+                                        .background(
+                                            color = AppColors.teal700,
+                                            shape = RoundedCornerShape(2.dp)
+                                        )
+                                )
+                            }
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    // Break Status Card
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color.White
+                        ),
+                        elevation = CardDefaults.cardElevation(
+                            defaultElevation = 1.dp
+                        ),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // Break Status with dot
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(8.dp)
+                                        .background(
+                                            color = if (activeBreak != null) AppColors.teal700 else AppColors.gray500,
+                                            shape = CircleShape
+                                        )
+                                )
+                                
+                                Spacer(modifier = Modifier.width(8.dp))
+                                
+                                Text(
+                                    text = "Break Status",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = AppColors.gray700
+                                )
+                            }
+                            
+                            // Status badge (Working/On Break)
+                            Text(
+                                text = activeBreak ?: "Working",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = if (activeBreak != null) AppColors.teal900 else AppColors.gray700,
+                                modifier = Modifier
+                                    .background(
+                                        color = if (activeBreak != null) Color(0xFFCCFBF1) else AppColors.gray200,
+                                        shape = RoundedCornerShape(16.dp)
+                                    )
+                                    .padding(horizontal = 12.dp, vertical = 6.dp)
+                            )
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    // Info Cards (Hours Worked and Break Time) in a Row
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        // Hours Worked Card
+                        Card(
+                            modifier = Modifier.weight(1f),
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color.White // Changed from Color(0xFFF0FFF4)
+                            ),
+                            elevation = CardDefaults.cardElevation(
+                                defaultElevation = 1.dp
+                            ),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(
+                                        brush = Brush.horizontalGradient(
+                                            colors = listOf(AppColors.teal50, Color.White) // teal100 to white
+                                        )
+                                    )
+                                    .padding(16.dp)
+                            ) {
+                                // Hours worked label with icon
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        painter = painterResource(id = android.R.drawable.ic_menu_recent_history),
+                                        contentDescription = "Hours",
+                                        tint = Color(0xFF4ECCA3), // Green color
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    
+                                    Text(
+                                        text = "Hours Worked",
+                                        fontSize = 13.sp,
+                                        color = AppColors.gray600
+                                    )
+                                }
+                                
+                                Spacer(modifier = Modifier.height(8.dp))
+                                
+                                // Hours worked value - use the passed in parameter instead of hardcoded value
+                                Text(
+                                    text = hoursWorked,
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = AppColors.gray900
+                                )
+                            }
+                        }
+                        
+                        // Break Time Card
+                        Card(
+                            modifier = Modifier.weight(1f),
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color.White // Changed from light blue
+                            ),
+                            elevation = CardDefaults.cardElevation(
+                                defaultElevation = 1.dp
+                            ),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(
+                                        brush = Brush.horizontalGradient(
+                                            colors = listOf(AppColors.blue50, Color.White)
+                                        )
+                                    )
+                                    .padding(16.dp)
+                            ) {
+                                // Break time label with icon
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Image(
+                                        painter = painterResource(id = R.drawable.coffee),
+                                        contentDescription = "Break",
+                                        modifier = Modifier.size(16.dp),
+                                        colorFilter = ColorFilter.tint(AppColors.blue500)
+                                    )
+                                    
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    
+                                    Text(
+                                        text = if (activeBreak != null) "On Break" else "Break Time",
+                                        fontSize = 13.sp,
+                                        color = AppColors.gray600
+                                    )
+                                }
+                                
+                                Spacer(modifier = Modifier.height(8.dp))
+                                
+                                // Break time value
+                                Text(
+                                    text = breakTime,
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = AppColors.gray900
+                                )
+                            }
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    // Break Buttons Row
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        // Morning Break Button
+                        if (activeBreak == "Morning Break") {
+                            // Active Morning Break Button (Green)
+                            ActiveBreakButton(
+                                breakType = "Morning Break",
+                                onEndBreakClick = { onActiveBreakChange(null) },
+                                modifier = Modifier.weight(1f)
+                            )
+                        } else {
+                            // Regular Morning Break Button (Blue)
+                            ButtonWithIcon(
+                                text = "Morning Break",
+                                onClick = { onActiveBreakChange("Morning Break") },
+                                modifier = Modifier.weight(1f),
+                                enabled = activeBreak == null && !morningBreakTaken,
+                                breakTaken = morningBreakTaken
+                            )
+                        }
+                        
+                        // Lunch Break Button
+                        if (activeBreak == "Lunch Break") {
+                            // Active Lunch Break Button (Green)
+                            ActiveBreakButton(
+                                breakType = "Lunch Break",
+                                onEndBreakClick = { onActiveBreakChange(null) },
+                                modifier = Modifier.weight(1f)
+                            )
+                        } else {
+                            // Regular Lunch Break Button (Blue)
+                            ButtonWithIcon(
+                                text = "Lunch Break",
+                                onClick = { onActiveBreakChange("Lunch Break") },
+                                modifier = Modifier.weight(1f),
+                                enabled = activeBreak == null && !lunchBreakTaken,
+                                breakTaken = lunchBreakTaken
+                            )
+                        }
+                        
+                        // Afternoon Break Button
+                        if (activeBreak == "Afternoon Break") {
+                            // Active Afternoon Break Button (Green)
+                            ActiveBreakButton(
+                                breakType = "Afternoon Break",
+                                onEndBreakClick = { onActiveBreakChange(null) },
+                                modifier = Modifier.weight(1f)
+                            )
+                        } else {
+                            // Regular Afternoon Break Button (Blue)
+                            ButtonWithIcon(
+                                text = "Afternoon Break",
+                                onClick = { onActiveBreakChange("Afternoon Break") },
+                                modifier = Modifier.weight(1f),
+                                enabled = activeBreak == null && !afternoonBreakTaken,
+                                breakTaken = afternoonBreakTaken
+                            )
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    // Attendance Section
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color.White
+                        ),
+                        elevation = CardDefaults.cardElevation(
+                            defaultElevation = 1.dp
+                        ),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
                                 .fillMaxSize()
                                 .clip(RoundedCornerShape(16.dp))
                                 .background(
@@ -1388,315 +1577,139 @@ private fun ExpandedTimeTrackerCard(
                                 )
                                 .padding(16.dp)
                         ) {
-                            // Hours worked label with icon
+                            // Attendance Header
                             Row(
-                                verticalAlignment = Alignment.CenterVertically
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(bottom = 16.dp)
                             ) {
                                 Icon(
-                                    painter = painterResource(id = android.R.drawable.ic_menu_recent_history),
-                                    contentDescription = "Hours",
-                                    tint = Color(0xFF4ECCA3), // Green color
+                                    painter = painterResource(id = android.R.drawable.ic_menu_my_calendar),
+                                    contentDescription = "Calendar",
+                                    tint = AppColors.teal500,
                                     modifier = Modifier.size(16.dp)
                                 )
                                 
                                 Spacer(modifier = Modifier.width(8.dp))
                                 
                                 Text(
-                                    text = "Hours Worked",
-                                    fontSize = 13.sp,
-                                    color = AppColors.gray600
+                                    text = "Today's Attendance",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = AppColors.gray700
+                                )
+                            }
+                            
+                            // Attendance Grid Content
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                // Clock In Time
+                                AttendanceItem(
+                                    label = "Clock In",
+                                    value = clockInTime ?: "-",
+                                    modifier = Modifier.weight(1f)
+                                )
+                                
+                                // Hours worked (calculated from clockIn till now or clockOut)
+                                AttendanceItem(
+                                    label = "Hours Worked",
+                                    value = hoursWorked,
+                                    modifier = Modifier.weight(1f)
                                 )
                             }
                             
                             Spacer(modifier = Modifier.height(8.dp))
                             
-                            // Hours worked value - use the passed in parameter instead of hardcoded value
-                            Text(
-                                text = hoursWorked,
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = AppColors.gray900
-                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                // Status
+                                AttendanceItem(
+                                    label = "Status",
+                                    value = workStatus,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                
+                                // Break time
+                                AttendanceItem(
+                                    label = "Break Time",
+                                    value = breakTime,
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
                         }
                     }
                     
-                    // Break Time Card
-                    Card(
-                        modifier = Modifier.weight(1f),
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color.White // Changed from light blue
-                        ),
-                        elevation = CardDefaults.cardElevation(
-                            defaultElevation = 1.dp
-                        ),
-                        shape = RoundedCornerShape(16.dp)
+                    // Clock Out button
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 24.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        shadowElevation = 2.dp
                     ) {
-                        Column(
+                        Box(
                             modifier = Modifier
-                                .fillMaxSize()
-                                .clip(RoundedCornerShape(16.dp))
+                                .fillMaxWidth()
+                                .height(56.dp)
                                 .background(
                                     brush = Brush.horizontalGradient(
-                                        colors = listOf(AppColors.blue50, Color.White)
-                                    )
+                                        colors = listOf(
+                                            AppColors.blue500,
+                                            AppColors.teal500
+                                        )
+                                    ),
+                                    shape = RoundedCornerShape(16.dp)
                                 )
-                                .padding(16.dp)
+                                .clickable(enabled = !isLoading) { onClockOutClick() }
                         ) {
-                            // Break time label with icon
                             Row(
-                                verticalAlignment = Alignment.CenterVertically
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center,
+                                modifier = Modifier.fillMaxSize()
                             ) {
-                                Image(
-                                    painter = painterResource(id = R.drawable.coffee),
-                                    contentDescription = "Break",
-                                    modifier = Modifier.size(16.dp),
-                                    colorFilter = ColorFilter.tint(AppColors.blue500)
-                                )
+                                if (isLoading) {
+                                    // Show loading indicator
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(20.dp),
+                                        color = Color.White,
+                                        strokeWidth = 2.dp
+                                    )
+                                } else {
+                                    Icon(
+                                        imageVector = Icons.Default.CheckCircle,
+                                        contentDescription = "Clock Out",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
                                 
                                 Spacer(modifier = Modifier.width(8.dp))
                                 
                                 Text(
-                                    text = if (activeBreak != null) "On Break" else "Break Time",
-                                    fontSize = 13.sp,
-                                    color = AppColors.gray600
+                                    text = if (isLoading) "Processing..." else "Clock Out",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color.White
                                 )
                             }
-                            
-                            Spacer(modifier = Modifier.height(8.dp))
-                            
-                            // Break time value
-                            Text(
-                                text = breakTime,
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = AppColors.gray900
-                            )
                         }
                     }
-                }
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                // Break Buttons Row
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    // Morning Break Button
-                    if (activeBreak == "Morning Break") {
-                        // Active Morning Break Button (Green)
-                        ActiveBreakButton(
-                            breakType = "Morning Break",
-                            onEndBreakClick = { onActiveBreakChange(null) },
-                            modifier = Modifier.weight(1f)
-                        )
-                    } else {
-                        // Regular Morning Break Button (Blue)
-                        ButtonWithIcon(
-                            text = "Morning Break",
-                            onClick = { onActiveBreakChange("Morning Break") },
-                            modifier = Modifier.weight(1f),
-                            enabled = activeBreak == null && !morningBreakTaken,
-                            breakTaken = morningBreakTaken
-                        )
-                    }
                     
-                    // Lunch Break Button
-                    if (activeBreak == "Lunch Break") {
-                        // Active Lunch Break Button (Green)
-                        ActiveBreakButton(
-                            breakType = "Lunch Break",
-                            onEndBreakClick = { onActiveBreakChange(null) },
-                            modifier = Modifier.weight(1f)
-                        )
-                    } else {
-                        // Regular Lunch Break Button (Blue)
-                        ButtonWithIcon(
-                            text = "Lunch Break",
-                            onClick = { onActiveBreakChange("Lunch Break") },
-                            modifier = Modifier.weight(1f),
-                            enabled = activeBreak == null && !lunchBreakTaken,
-                            breakTaken = lunchBreakTaken
-                        )
-                    }
-                    
-                    // Afternoon Break Button
-                    if (activeBreak == "Afternoon Break") {
-                        // Active Afternoon Break Button (Green)
-                        ActiveBreakButton(
-                            breakType = "Afternoon Break",
-                            onEndBreakClick = { onActiveBreakChange(null) },
-                            modifier = Modifier.weight(1f)
-                        )
-                    } else {
-                        // Regular Afternoon Break Button (Blue)
-                        ButtonWithIcon(
-                            text = "Afternoon Break",
-                            onClick = { onActiveBreakChange("Afternoon Break") },
-                            modifier = Modifier.weight(1f),
-                            enabled = activeBreak == null && !afternoonBreakTaken,
-                            breakTaken = afternoonBreakTaken
-                        )
-                    }
-                }
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                // Attendance Section
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color.White
-                    ),
-                    elevation = CardDefaults.cardElevation(
-                        defaultElevation = 1.dp
-                    ),
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .fillMaxSize()
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(
-                                brush = Brush.horizontalGradient(
-                                    colors = listOf(AppColors.teal50, Color.White) // teal100 to white
-                                )
-                            )
-                            .padding(16.dp)
-                    ) {
-                        // Attendance Header
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(bottom = 16.dp)
-                        ) {
-                            Icon(
-                                painter = painterResource(id = android.R.drawable.ic_menu_my_calendar),
-                                contentDescription = "Calendar",
-                                tint = AppColors.teal500,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            
-                            Spacer(modifier = Modifier.width(8.dp))
-                            
-                            Text(
-                                text = "Today's Attendance",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = AppColors.gray700
-                            )
-                        }
-                        
-                        // Attendance Grid Content
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
-                            ) {
-                            // Clock In Time
-                                AttendanceItem(
-                                    label = "Clock In",
-                                value = clockInTime ?: "-",
-                                    modifier = Modifier.weight(1f)
-                                )
-                                
-                            // Hours worked (calculated from clockIn till now or clockOut)
-                                AttendanceItem(
-                                    label = "Hours Worked",
-                                value = hoursWorked,
-                                    modifier = Modifier.weight(1f)
-                                )
-                            }
-                            
+                    // Display error if any
+                    if (error != null) {
                         Spacer(modifier = Modifier.height(8.dp))
-                            
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
-                            ) {
-                            // Status
-                                AttendanceItem(
-                                label = "Status",
-                                value = workStatus,
-                                    modifier = Modifier.weight(1f)
-                                )
-                                
-                            // Break time
-                                AttendanceItem(
-                                label = "Break Time",
-                                value = breakTime,
-                                    modifier = Modifier.weight(1f)
-                                )
-                        }
+                        Text(
+                            text = error,
+                            color = Color.Red,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
                     }
-                }
-                
-                // Clock Out button
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 24.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    shadowElevation = 2.dp
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp)
-                            .background(
-                                brush = Brush.horizontalGradient(
-                                    colors = listOf(
-                                        AppColors.blue500,
-                                        AppColors.teal500
-                                    )
-                                ),
-                                shape = RoundedCornerShape(16.dp)
-                            )
-                            .clickable(enabled = !isLoading) { onClockOutClick() }
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center,
-                            modifier = Modifier.fillMaxSize()
-                        ) {
-                            if (isLoading) {
-                                // Show loading indicator
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(20.dp),
-                                    color = Color.White,
-                                    strokeWidth = 2.dp
-                                )
-                            } else {
-                                Icon(
-                                    imageVector = Icons.Default.CheckCircle,
-                                    contentDescription = "Clock Out",
-                                    tint = Color.White,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                            
-                            Spacer(modifier = Modifier.width(8.dp))
-                            
-                            Text(
-                                text = if (isLoading) "Processing..." else "Clock Out",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = Color.White
-                            )
-                        }
-                    }
-                }
-                
-                // Display error if any
-                if (error != null) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = error,
-                        color = Color.Red,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
-                    )
                 }
             }
         }

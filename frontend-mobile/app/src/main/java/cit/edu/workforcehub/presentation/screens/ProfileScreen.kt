@@ -10,6 +10,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -436,7 +437,8 @@ fun ProfileCard(profile: EmployeeProfile) {
             .padding(horizontal = 16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        shape = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(12.dp),
+        border = BorderStroke(1.dp, AppColors.gray200)
     ) {
         Column(
             modifier = Modifier
@@ -790,7 +792,8 @@ fun InfoCard(
             .padding(horizontal = 16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        shape = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(12.dp),
+        border = BorderStroke(1.dp, AppColors.gray200)
     ) {
         Column(
             modifier = Modifier
