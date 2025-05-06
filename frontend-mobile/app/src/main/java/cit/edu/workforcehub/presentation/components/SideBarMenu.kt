@@ -383,7 +383,7 @@ fun SideBarMenu(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(AppColors.blue50)
-                    .padding(top = 26.dp, bottom = 16.dp, start = 36.dp, end = 16.dp),
+                    .padding(top = 36.dp, bottom = 16.dp, start = 26.dp, end = 16.dp),
                 contentAlignment = Alignment.CenterStart
             ) {
                 Row(

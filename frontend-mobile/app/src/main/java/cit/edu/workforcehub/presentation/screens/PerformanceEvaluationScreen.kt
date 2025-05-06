@@ -39,10 +39,9 @@ import cit.edu.workforcehub.presentation.components.AppHeader
 import cit.edu.workforcehub.presentation.components.AppScreen
 import cit.edu.workforcehub.presentation.components.LoadingComponent
 import cit.edu.workforcehub.presentation.components.UniversalDrawer
-import cit.edu.workforcehub.presentation.theme.AppColors
 
 @Composable
-fun TrainingScreen(
+fun PerformanceScreen(
     onLogout: () -> Unit = {},
     onNavigateToDashboard: () -> Unit = {},
     onNavigateToAttendance: () -> Unit = {},
@@ -89,13 +88,13 @@ fun TrainingScreen(
         // Using the UniversalDrawer
         UniversalDrawer(
             drawerState = drawerState,
-            currentScreen = AppScreen.TRAINING,
+            currentScreen = AppScreen.PERFORMANCE,
             onLogout = onLogout,
             onNavigateToDashboard = onNavigateToDashboard,
             onNavigateToAttendance = onNavigateToAttendance,
             onNavigateToLeaveRequests = onNavigateToLeaveRequests,
-            onNavigateToPerformance = onNavigateToPerformance,
-            onNavigateToTraining = {}, // Already on training, no need to navigate
+            onNavigateToPerformance = {}, // Already on performance, no need to navigate
+            onNavigateToTraining = onNavigateToTraining,
             onNavigateToProfile = onNavigateToProfile
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
@@ -137,7 +136,7 @@ fun TrainingScreen(
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                     verticalArrangement = Arrangement.Center
                                 ) {
-
+                                    
                                     Text(
                                         text = "Under Development",
                                         color = cit.edu.workforcehub.presentation.theme.AppColors.gray800,
@@ -145,7 +144,7 @@ fun TrainingScreen(
                                         fontWeight = FontWeight.Bold,
                                         modifier = Modifier.padding(bottom = 8.dp)
                                     )
-
+                                    
                                     Text(
                                         text = "We're working hard to bring you the best experience.",
                                         color = cit.edu.workforcehub.presentation.theme.AppColors.gray700,
@@ -153,7 +152,7 @@ fun TrainingScreen(
                                         modifier = Modifier.padding(bottom = 16.dp),
                                         textAlign = androidx.compose.ui.text.style.TextAlign.Center
                                     )
-
+                                    
                                     Box(
                                         modifier = Modifier
                                             .background(
@@ -176,7 +175,6 @@ fun TrainingScreen(
 
                 // Fixed header on top (doesn't scroll)
                 AppHeader(
-                    title = "Training Programs",
                     profileData = profileData,
                     isLoading = isLoading,
                     onMenuClick = {
@@ -189,4 +187,4 @@ fun TrainingScreen(
             }
         }
     }
-} 
+}
