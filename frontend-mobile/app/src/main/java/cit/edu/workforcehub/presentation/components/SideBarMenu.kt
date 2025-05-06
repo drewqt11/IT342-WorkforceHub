@@ -325,7 +325,7 @@ fun SideBarMenu(
     val perfFeedbackItems = listOf(
         MenuItem(
             title = "Performance Evaluation",
-            icon = R.drawable.performance_icon,
+            icon = R.drawable.performance,
             screen = AppScreen.PERFORMANCE,
             onClick = {
                 scope.launch {
@@ -370,13 +370,13 @@ fun SideBarMenu(
         modifier = Modifier
             .fillMaxHeight()
             .width(300.dp),
-        color = AppColors.blue50,
+        color = AppColors.headerBackground,
         shadowElevation = 4.dp
     ) {
         Column(
             modifier = Modifier
                 .fillMaxHeight()
-                .background(AppColors.blue50)
+                .background(AppColors.headerBackground)
         ) {
             // Fixed Drawer header with app logo and title - This part won't scroll
             Box(

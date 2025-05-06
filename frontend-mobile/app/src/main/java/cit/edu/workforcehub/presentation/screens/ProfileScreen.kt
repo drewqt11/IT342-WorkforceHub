@@ -94,6 +94,7 @@ import cit.edu.workforcehub.R
 import cit.edu.workforcehub.api.ApiHelper
 import cit.edu.workforcehub.api.models.EmployeeProfile
 import cit.edu.workforcehub.presentation.components.AppScreen
+import cit.edu.workforcehub.presentation.components.AppHeader
 import cit.edu.workforcehub.presentation.components.UniversalDrawer
 import cit.edu.workforcehub.presentation.theme.AppColors
 import kotlinx.coroutines.launch
@@ -206,7 +207,7 @@ fun ProfileScreen(
 
     Surface(
         modifier = Modifier.fillMaxSize(),
-        color = AppColors.gray50
+        color = AppColors.gray100
     ) {
         // Using the Universal Drawer
         UniversalDrawer(
@@ -221,13 +222,18 @@ fun ProfileScreen(
             onNavigateToProfile = {} // Already on profile
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
-                // Add the simplified header at the top with the drawer toggle
-                ProfileAppHeader(
+                // Replace custom header with common AppHeader
+                AppHeader(
                     onMenuClick = { 
                         scope.launch {
                             drawerState.open()
                         }
-                    }
+                    },
+                    modifier = Modifier.zIndex(1f),
+                    providedFirstName = profileData?.firstName ?: "",
+                    providedLastName = profileData?.lastName ?: "",
+                    providedRole = profileData?.jobName ?: "Employee",
+                    onProfileClick = {}  // Already on profile
                 )
                 
                 // Main content
@@ -260,89 +266,6 @@ fun ProfileScreen(
                             debugInfo = dataDebug
                         )
                     }
-                }
-            }
-        }
-    }
-}
-
-/**
- * A simplified header component specifically for the Profile screen.
- * This is based on AppHeader but without user info and date display.
- * 
- * @param title Optional title to display in the header
- * @param onMenuClick Callback when the menu button is clicked
- * @param modifier Modifier for the component
- */
-@Composable
-fun ProfileAppHeader(
-    title: String? = null,
-    onMenuClick: () -> Unit = {},
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(bottomStart = 22.dp, bottomEnd = 22.dp))
-            .height(90.dp)  // Reduced height
-            .background(
-                brush = Brush.horizontalGradient(
-                    colors = listOf(AppColors.blue500, AppColors.teal500),
-                    startX = 0f,
-                    endX = 1200f
-                )
-            )
-    ) {
-        // Decorative circles (kept from original design)
-        Canvas(
-            modifier = Modifier
-                .fillMaxSize()
-                .alpha(0.15f)
-        ) {
-            // Large circle
-            drawCircle(
-                color = Color.White,
-                center = Offset(size.width * 0.85f, size.height * 0.2f),
-                radius = size.width * 0.35f
-            )
-        }
-
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 16.dp, end = 16.dp, top = 30.dp, bottom = 16.dp)
-        ) {
-            // Top row with menu button and title
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(
-                    onClick = onMenuClick,
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(Color(0x22FFFFFF), CircleShape)
-                ) {
-                    Icon(
-                        painter = painterResource(id = android.R.drawable.ic_menu_sort_by_size),
-                        contentDescription = "Menu",
-                        tint = AppColors.white,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-                
-                if (title != null) {
-                    Text(
-                        text = title,
-                        color = AppColors.white,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    
-                    // Empty spacer to balance layout if title is shown
-                    Spacer(modifier = Modifier.size(40.dp))
                 }
             }
         }

@@ -83,7 +83,7 @@ fun TrainingScreen(
 
     Surface(
         modifier = Modifier.fillMaxSize(),
-        color = cit.edu.workforcehub.presentation.theme.AppColors.gray50
+        color = cit.edu.workforcehub.presentation.theme.AppColors.gray100
     ) {
         // Using the UniversalDrawer
         UniversalDrawer(
@@ -175,14 +175,14 @@ fun TrainingScreen(
 
                 // Fixed header on top (doesn't scroll)
                 AppHeader(
-                    profileData = profileData,
-                    isLoading = isLoading,
                     onMenuClick = {
                         scope.launch {
                             drawerState.open()
                         }
                     },
-                    modifier = Modifier.zIndex(1f) // Ensure header stays on top
+                    modifier = Modifier.zIndex(1f), // Ensure header stays on top
+                    onProfileClick = onNavigateToProfile,
+                    forceAutoFetch = true // Let AppHeader handle profile data fetching
                 )
             }
         }

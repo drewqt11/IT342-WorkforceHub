@@ -15,6 +15,9 @@ object AppColors {
     val blue700 = Color(0xFF2563EB)
     val blue900 = Color(0xFF1E3A8A)
     
+    // Header background
+    val headerBackground = Color(0xFFF0F4FC)
+    
     // Secondary teals
     val teal50 = Color(0xFFF0FDFA)
     val teal100 = Color(0xFFCCFBF1)
