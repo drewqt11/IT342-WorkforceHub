@@ -1,19 +1,48 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { format } from "date-fns"
-import { Search, Clock, RefreshCw, CalendarDays, Filter, Users, CheckCircle, XCircle, AlertCircle } from "lucide-react"
-import { useRouter } from "next/navigation"
-import { authService } from "@/lib/auth"
-import { Skeleton } from "@/components/ui/skeleton"
-import { cn } from "@/lib/utils"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
-import { Toaster } from "sonner"
+import { useEffect, useState } from "react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { format } from "date-fns";
+import {
+  Search,
+  Clock,
+  RefreshCw,
+  CalendarDays,
+  Filter,
+  Users,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { authService } from "@/lib/auth";
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Toaster } from "sonner";
 import {
   Pagination,
   PaginationContent,
@@ -21,222 +50,234 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
-} from "@/components/ui/pagination"
+} from "@/components/ui/pagination";
 
 interface AttendanceRecord {
-  attendanceId: string
-  employeeId: string
-  employeeName: string
-  employeeEmail: string
-  date: string
-  clockInTime: string | null
-  clockOutTime: string | null
-  totalHours: number | null
-  status: string
-  remarks: string | null
-  overtimeHours: number | null
-  approvedByManager: boolean
+  attendanceId: string;
+  employeeId: string;
+  employeeName: string;
+  employeeEmail: string;
+  date: string;
+  clockInTime: string | null;
+  clockOutTime: string | null;
+  totalHours: number | null;
+  status: string;
+  remarks: string | null;
+  overtimeHours: number | null;
+  approvedByManager: boolean;
 }
 
 interface EmployeeProfile {
-  employeeId: string
-  idNumber: string
-  firstName: string
-  lastName: string
-  email: string
-  gender: string
-  hireDate: string
-  dateOfBirth: string
-  address: string
-  phoneNumber: string
-  maritalStatus: string
-  status: boolean
-  employmentStatus: string
-  departmentId: string
-  departmentName: string
-  jobId: string
-  jobName: string
-  roleId: string
-  roleName: string
-  createdAt: string
+  employeeId: string;
+  idNumber: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  gender: string;
+  hireDate: string;
+  dateOfBirth: string;
+  address: string;
+  phoneNumber: string;
+  maritalStatus: string;
+  status: boolean;
+  employmentStatus: string;
+  departmentId: string;
+  departmentName: string;
+  jobId: string;
+  jobName: string;
+  roleId: string;
+  roleName: string;
+  createdAt: string;
 }
 
 export default function AttendanceRecordsPage() {
-  const router = useRouter()
-  const [records, setRecords] = useState<AttendanceRecord[]>([])
-  const [employeeProfiles, setEmployeeProfiles] = useState<Record<string, EmployeeProfile>>({})
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [page, setPage] = useState(0)
-  const [size, setSize] = useState(10)
-  const [totalPages, setTotalPages] = useState(0)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [sortBy, setSortBy] = useState("date")
-  const [direction, setDirection] = useState("desc")
-  const [totalRecords, setTotalRecords] = useState(0)
-  const [statusFilter, setStatusFilter] = useState<string>("all")
+  const router = useRouter();
+  const [records, setRecords] = useState<AttendanceRecord[]>([]);
+  const [employeeProfiles, setEmployeeProfiles] = useState<
+    Record<string, EmployeeProfile>
+  >({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
+  const [size, setSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(0);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState("date");
+  const [direction, setDirection] = useState("desc");
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
 
   const getEmployeeProfile = async (employeeId: string) => {
     try {
-      const data = await authService.getEmployeeProfile()
+      const data = await authService.getEmployeeProfile();
       if (!data) {
-        router.push("/")
-        return null
+        router.push("/");
+        return null;
       }
-      return data
+      return data;
     } catch (err) {
-      console.error("Error fetching employee profile:", err)
+      console.error("Error fetching employee profile:", err);
       if (err instanceof Error) {
         if (err.message.includes("Network error")) {
-          setError("Unable to connect to the server. Please check your internet connection and try again.")
+          setError(
+            "Unable to connect to the server. Please check your internet connection and try again."
+          );
         } else if (err.message.includes("Session expired")) {
-          setError("Your session has expired. Please log in again.")
+          setError("Your session has expired. Please log in again.");
         } else {
-          setError(`Failed to load profile data: ${err.message}`)
-          authService.logout()
-          window.location.href = '/'
+          setError(`Failed to load profile data: ${err.message}`);
+          authService.logout();
+          router.push("/");
         }
       } else {
-        setError("An unexpected error occurred while loading your profile.")
+        setError("An unexpected error occurred while loading your profile.");
       }
-      return null
+      return null;
     }
-  }
+  };
 
   const fetchRecords = async () => {
     try {
-      setLoading(true)
+      setLoading(true);
 
-      const token = authService.getToken()
+      const token = authService.getToken();
       if (!token) {
-        router.push("/")
-        return
+        router.push("/");
+        return;
       }
 
       const response = await fetch(
-        `/api/hr/attendance/all?page=${page}&size=${size}&sortBy=${sortBy}&direction=${direction}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/hr/attendance/all?page=${page}&size=${size}&sortBy=${sortBy}&direction=${direction}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        },
-      )
+        }
+      );
 
       if (!response.ok) {
         if (response.status === 401) {
-          router.push("/")
-          return
+          router.push("/");
+          return;
         }
-        throw new Error("Failed to fetch attendance records")
+        throw new Error("Failed to fetch attendance records");
       }
 
-      const data = await response.json()
-      setRecords(data.content)
-      setTotalPages(data.totalPages)
-      setTotalRecords(data.totalElements)
+      const data = await response.json();
+      setRecords(data.content);
+      setTotalPages(data.totalPages);
+      setTotalRecords(data.totalElements);
 
       // Fetch employee profiles for all records
-      const profiles: Record<string, EmployeeProfile> = {}
+      const profiles: Record<string, EmployeeProfile> = {};
       for (const record of data.content) {
         if (!profiles[record.employeeId]) {
-          const profile = await getEmployeeProfile(record.employeeId)
+          const profile = await getEmployeeProfile(record.employeeId);
           if (profile) {
-            profiles[record.employeeId] = profile
+            profiles[record.employeeId] = profile;
           }
         }
       }
-      setEmployeeProfiles(profiles)
+      setEmployeeProfiles(profiles);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred")
+      setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    fetchRecords()
-  }, [page, size, sortBy, direction])
+    fetchRecords();
+  }, [page, size, sortBy, direction]);
 
   const handleSort = (column: string) => {
     if (sortBy === column) {
-      setDirection(direction === "asc" ? "desc" : "asc")
+      setDirection(direction === "asc" ? "desc" : "asc");
     } else {
-      setSortBy(column)
-      setDirection("asc")
+      setSortBy(column);
+      setDirection("asc");
     }
-  }
+  };
 
   const filteredRecords = records.filter((record) => {
     // Apply search filter
     const matchesSearch =
       record.employeeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      record.remarks?.toLowerCase().includes(searchTerm.toLowerCase())
+      record.remarks?.toLowerCase().includes(searchTerm.toLowerCase());
 
     // Apply status filter
     const matchesStatus =
       statusFilter === "all" ||
-      (statusFilter === "present" && record.remarks?.toLowerCase() === "present") ||
-      (statusFilter === "absent" && record.remarks?.toLowerCase() === "absent") ||
+      (statusFilter === "present" &&
+        record.remarks?.toLowerCase() === "present") ||
+      (statusFilter === "absent" &&
+        record.remarks?.toLowerCase() === "absent") ||
       (statusFilter === "late" && record.remarks?.toLowerCase() === "late") ||
       (statusFilter === "leave" && record.remarks?.toLowerCase() === "leave") ||
-      (statusFilter === "half day" && record.remarks?.toLowerCase() === "half day")
+      (statusFilter === "half day" &&
+        record.remarks?.toLowerCase() === "half day");
 
-    return matchesSearch && matchesStatus
-  })
+    return matchesSearch && matchesStatus;
+  });
 
   const getStatusColor = (remarks: string | null) => {
     switch (remarks?.toLowerCase()) {
       case "present":
-        return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+        return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
       case "absent":
-        return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+        return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400";
       case "late":
-        return "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400"
+        return "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400";
       case "half day":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
+        return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400";
       case "leave":
-        return "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400"
+        return "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400";
       default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400"
+        return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400";
     }
-  }
+  };
 
   const getStatusIcon = (remarks: string | null) => {
     switch (remarks?.toLowerCase()) {
       case "present":
-        return <CheckCircle className="h-3.5 w-3.5 mr-1" />
+        return <CheckCircle className="h-3.5 w-3.5 mr-1" />;
       case "absent":
-        return <XCircle className="h-3.5 w-3.5 mr-1" />
+        return <XCircle className="h-3.5 w-3.5 mr-1" />;
       case "late":
-        return <Clock className="h-3.5 w-3.5 mr-1" />
+        return <Clock className="h-3.5 w-3.5 mr-1" />;
       default:
-        return null
+        return null;
     }
-  }
+  };
 
   // Calculate statistics
   const getPresentCount = () => {
-    return records.filter((record) => record.remarks?.toLowerCase() === "present").length
-  }
+    return records.filter(
+      (record) => record.remarks?.toLowerCase() === "present"
+    ).length;
+  };
 
   const getAbsentCount = () => {
-    return records.filter((record) => record.remarks?.toLowerCase() === "absent").length
-  }
+    return records.filter(
+      (record) => record.remarks?.toLowerCase() === "absent"
+    ).length;
+  };
 
   const getLateCount = () => {
-    return records.filter((record) => record.remarks?.toLowerCase() === "late").length
-  }
+    return records.filter((record) => record.remarks?.toLowerCase() === "late")
+      .length;
+  };
 
   const getPresentPercentage = () => {
-    if (records.length === 0) return 0
-    return Math.round((getPresentCount() / records.length) * 100)
-  }
+    if (records.length === 0) return 0;
+    return Math.round((getPresentCount() / records.length) * 100);
+  };
 
   const getPaginatedRecords = () => {
-    const startIndex = 0
-    const endIndex = filteredRecords.length
-    return filteredRecords.slice(startIndex, endIndex)
-  }
+    const startIndex = 0;
+    const endIndex = filteredRecords.length;
+    return filteredRecords.slice(startIndex, endIndex);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#F9FAFB] via-[#F0FDFA] to-[#E0F2FE] dark:from-[#1F2937] dark:via-[#134E4A] dark:to-[#0F172A] p-4 md:p-6">
@@ -258,7 +299,9 @@ export default function AttendanceRecordsPage() {
               </div>
               Attendance Records
             </h1>
-            <p className="text-[#6B7280] dark:text-[#9CA3AF] mt-1">View and manage employee attendance data</p>
+            <p className="text-[#6B7280] dark:text-[#9CA3AF] mt-1">
+              View and manage employee attendance data
+            </p>
           </div>
           <Button
             onClick={fetchRecords}
@@ -276,7 +319,9 @@ export default function AttendanceRecordsPage() {
             <CardContent className="p-6">
               <div className="flex justify-between items-center">
                 <div>
-                  <p className="text-sm font-medium text-[#6B7280] dark:text-[#9CA3AF]">Total Records</p>
+                  <p className="text-sm font-medium text-[#6B7280] dark:text-[#9CA3AF]">
+                    Total Records
+                  </p>
                   <h3 className="text-3xl font-bold text-[#1F2937] dark:text-white mt-1">
                     {loading ? <Skeleton className="h-9 w-16" /> : totalRecords}
                   </h3>
@@ -293,9 +338,15 @@ export default function AttendanceRecordsPage() {
             <CardContent className="p-6">
               <div className="flex justify-between items-center">
                 <div>
-                  <p className="text-sm font-medium text-[#6B7280] dark:text-[#9CA3AF]">Present</p>
+                  <p className="text-sm font-medium text-[#6B7280] dark:text-[#9CA3AF]">
+                    Present
+                  </p>
                   <h3 className="text-3xl font-bold text-[#1F2937] dark:text-white mt-1">
-                    {loading ? <Skeleton className="h-9 w-16" /> : getPresentCount()}
+                    {loading ? (
+                      <Skeleton className="h-9 w-16" />
+                    ) : (
+                      getPresentCount()
+                    )}
                   </h3>
                 </div>
                 <div className="h-12 w-12 bg-[#F0FDF4] dark:bg-[#166534]/30 rounded-full flex items-center justify-center">
@@ -310,9 +361,15 @@ export default function AttendanceRecordsPage() {
             <CardContent className="p-6">
               <div className="flex justify-between items-center">
                 <div>
-                  <p className="text-sm font-medium text-[#6B7280] dark:text-[#9CA3AF]">Absent</p>
+                  <p className="text-sm font-medium text-[#6B7280] dark:text-[#9CA3AF]">
+                    Absent
+                  </p>
                   <h3 className="text-3xl font-bold text-[#1F2937] dark:text-white mt-1">
-                    {loading ? <Skeleton className="h-9 w-16" /> : getAbsentCount()}
+                    {loading ? (
+                      <Skeleton className="h-9 w-16" />
+                    ) : (
+                      getAbsentCount()
+                    )}
                   </h3>
                 </div>
                 <div className="h-12 w-12 bg-[#FEF2F2] dark:bg-[#991B1B]/30 rounded-full flex items-center justify-center">
@@ -330,7 +387,9 @@ export default function AttendanceRecordsPage() {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Users className="h-5 w-5 text-[#3B82F6] dark:text-[#3B82F6]" />
-                <h3 className="text-lg font-semibold text-[#1F2937] dark:text-white">Attendance Rate</h3>
+                <h3 className="text-lg font-semibold text-[#1F2937] dark:text-white">
+                  Attendance Rate
+                </h3>
               </div>
               <Badge
                 variant="outline"
@@ -343,7 +402,9 @@ export default function AttendanceRecordsPage() {
 
             <div className="space-y-3">
               <div className="flex justify-between mb-1">
-                <span className="text-sm font-medium text-[#6B7280] dark:text-[#9CA3AF]">Present Rate</span>
+                <span className="text-sm font-medium text-[#6B7280] dark:text-[#9CA3AF]">
+                  Present Rate
+                </span>
                 <span className="text-sm font-medium text-[#14B8A6] dark:text-[#14B8A6]">
                   {loading ? "..." : `${getPresentPercentage()}%`}
                 </span>
@@ -410,7 +471,10 @@ export default function AttendanceRecordsPage() {
                     <SelectItem value="half day">Half Day</SelectItem>
                   </SelectContent>
                 </Select>
-                <Select value={sortBy} onValueChange={(value) => handleSort(value)}>
+                <Select
+                  value={sortBy}
+                  onValueChange={(value) => handleSort(value)}
+                >
                   <SelectTrigger className="w-[180px] border-[#E5E7EB] dark:border-[#374151] bg-white dark:bg-[#111827] focus:ring-[#3B82F6]">
                     <div className="flex items-center gap-2">
                       <Filter className="h-4 w-4 text-[#6B7280] dark:text-[#9CA3AF]" />
@@ -427,7 +491,9 @@ export default function AttendanceRecordsPage() {
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={() => setDirection(direction === "asc" ? "desc" : "asc")}
+                  onClick={() =>
+                    setDirection(direction === "asc" ? "desc" : "asc")
+                  }
                   className="border-[#E5E7EB] dark:border-[#374151] w-10 h-10"
                 >
                   {direction === "asc" ? "↑" : "↓"}
@@ -458,16 +524,18 @@ export default function AttendanceRecordsPage() {
                     <AlertCircle className="h-8 w-8 text-[#6B7280] dark:text-[#9CA3AF]" />
                   </div>
                 </div>
-                <h3 className="text-xl font-medium text-[#1F2937] dark:text-white mb-2">No records found</h3>
+                <h3 className="text-xl font-medium text-[#1F2937] dark:text-white mb-2">
+                  No records found
+                </h3>
                 <p className="text-[#6B7280] dark:text-[#9CA3AF] max-w-md mx-auto mb-6">
-                  We couldn't find any attendance records matching your current filters. Try adjusting your search
-                  criteria.
+                  We couldn't find any attendance records matching your current
+                  filters. Try adjusting your search criteria.
                 </p>
                 <Button
                   className="bg-gradient-to-r from-[#3B82F6] to-[#14B8A6] hover:from-[#2563EB] hover:to-[#0D9488] text-white shadow-md"
                   onClick={() => {
-                    setSearchTerm("")
-                    setStatusFilter("all")
+                    setSearchTerm("");
+                    setStatusFilter("all");
                   }}
                 >
                   <RefreshCw className="h-4 w-4 mr-2" />
@@ -479,15 +547,33 @@ export default function AttendanceRecordsPage() {
                 <Table>
                   <TableHeader className="bg-[#F9FAFB] dark:bg-[#111827]">
                     <TableRow className="hover:bg-[#F3F4F6] dark:hover:bg-[#1F2937] border-b border-[#E5E7EB] dark:border-[#374151]">
-                      <TableHead className="text-[#4B5563] dark:text-[#D1D5DB] font-medium">Employee</TableHead>
-                      <TableHead className="text-[#4B5563] dark:text-[#D1D5DB] font-medium">Date</TableHead>
-                      <TableHead className="text-[#4B5563] dark:text-[#D1D5DB] font-medium">Clock In</TableHead>
-                      <TableHead className="text-[#4B5563] dark:text-[#D1D5DB] font-medium">Clock Out</TableHead>
-                      <TableHead className="text-[#4B5563] dark:text-[#D1D5DB] font-medium">Total Hours</TableHead>
-                      <TableHead className="text-[#4B5563] dark:text-[#D1D5DB] font-medium">Status</TableHead>
-                      <TableHead className="text-[#4B5563] dark:text-[#D1D5DB] font-medium">Remarks</TableHead>
-                      <TableHead className="text-[#4B5563] dark:text-[#D1D5DB] font-medium">Overtime</TableHead>
-                      <TableHead className="text-[#4B5563] dark:text-[#D1D5DB] font-medium">Approved</TableHead>
+                      <TableHead className="text-[#4B5563] dark:text-[#D1D5DB] font-medium">
+                        Employee
+                      </TableHead>
+                      <TableHead className="text-[#4B5563] dark:text-[#D1D5DB] font-medium">
+                        Date
+                      </TableHead>
+                      <TableHead className="text-[#4B5563] dark:text-[#D1D5DB] font-medium">
+                        Clock In
+                      </TableHead>
+                      <TableHead className="text-[#4B5563] dark:text-[#D1D5DB] font-medium">
+                        Clock Out
+                      </TableHead>
+                      <TableHead className="text-[#4B5563] dark:text-[#D1D5DB] font-medium">
+                        Total Hours
+                      </TableHead>
+                      <TableHead className="text-[#4B5563] dark:text-[#D1D5DB] font-medium">
+                        Status
+                      </TableHead>
+                      <TableHead className="text-[#4B5563] dark:text-[#D1D5DB] font-medium">
+                        Remarks
+                      </TableHead>
+                      <TableHead className="text-[#4B5563] dark:text-[#D1D5DB] font-medium">
+                        Overtime
+                      </TableHead>
+                      <TableHead className="text-[#4B5563] dark:text-[#D1D5DB] font-medium">
+                        Approved
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -496,16 +582,21 @@ export default function AttendanceRecordsPage() {
                         key={record.attendanceId}
                         className={cn(
                           "hover:bg-[#F3F4F6] dark:hover:bg-[#1F2937] border-b border-[#E5E7EB] dark:border-[#374151] group transition-colors",
-                          index % 2 === 0 ? "bg-[#F9FAFB] dark:bg-[#111827]/50" : "",
+                          index % 2 === 0
+                            ? "bg-[#F9FAFB] dark:bg-[#111827]/50"
+                            : ""
                         )}
                       >
                         <TableCell className="font-medium text-[#1F2937] dark:text-white">
                           <div className="flex items-center gap-2">
                             <div className="h-6 w-1 rounded-full bg-gradient-to-b from-[#3B82F6] to-[#14B8A6] transition-all duration-300 group-hover:h-full"></div>
                             <div>
-                              <div className="font-medium">{record.employeeName}</div>
+                              <div className="font-medium">
+                                {record.employeeName}
+                              </div>
                               <div className="text-sm text-[#6B7280] dark:text-[#9CA3AF]">
-                                {employeeProfiles[record.employeeId]?.email || record.employeeEmail}
+                                {employeeProfiles[record.employeeId]?.email ||
+                                  record.employeeEmail}
                               </div>
                             </div>
                           </div>
@@ -519,7 +610,10 @@ export default function AttendanceRecordsPage() {
                               variant="outline"
                               className="bg-[#e8f3fa] text-[#148ab8] border-[#99e3f6] dark:bg-[#134E4A]/30 dark:text-[#14B8A6] dark:border-[#134E4A]"
                             >
-                              {format(new Date(`2000-01-01T${record.clockInTime}`), "hh:mm a")}
+                              {format(
+                                new Date(`2000-01-01T${record.clockInTime}`),
+                                "hh:mm a"
+                              )}
                             </Badge>
                           ) : (
                             "-"
@@ -531,7 +625,10 @@ export default function AttendanceRecordsPage() {
                               variant="outline"
                               className="bg-[#e8f3fa] text-[#148ab8] border-[#99e3f6] dark:bg-[#134E4A]/30 dark:text-[#14B8A6] dark:border-[#134E4A]"
                             >
-                              {format(new Date(`2000-01-01T${record.clockOutTime}`), "hh:mm a")}
+                              {format(
+                                new Date(`2000-01-01T${record.clockOutTime}`),
+                                "hh:mm a"
+                              )}
                             </Badge>
                           ) : (
                             "-"
@@ -543,7 +640,10 @@ export default function AttendanceRecordsPage() {
                         <TableCell>
                           <Badge
                             variant="outline"
-                            className={cn("border-2 flex items-center", getStatusColor(record.status))}
+                            className={cn(
+                              "border-2 flex items-center",
+                              getStatusColor(record.status)
+                            )}
                           >
                             {getStatusIcon(record.status)}
                             <span>{record.status || "-"}</span>
@@ -552,14 +652,17 @@ export default function AttendanceRecordsPage() {
                         <TableCell>
                           <Badge
                             variant="outline"
-                            className={cn("border-2 flex items-center", getStatusColor(record.remarks))}
+                            className={cn(
+                              "border-2 flex items-center",
+                              getStatusColor(record.remarks)
+                            )}
                           >
                             {getStatusIcon(record.remarks)}
                             <span>{record.remarks || "-"}</span>
                           </Badge>
                         </TableCell>
                         <TableCell className="text-[#4B5563] dark:text-[#D1D5DB]">
-                        {record.overtimeHours?.toFixed(2) || "-"}
+                          {record.overtimeHours?.toFixed(2) || "-"}
                         </TableCell>
                         <TableCell>
                           {record.approvedByManager ? (
@@ -590,35 +693,39 @@ export default function AttendanceRecordsPage() {
                           "border border-[#E5E7EB] dark:border-[#374151]",
                           page === 0
                             ? "pointer-events-none opacity-50"
-                            : "hover:border-[#3B82F6] dark:hover:border-[#3B82F6] text-[#4B5563] dark:text-[#D1D5DB]",
+                            : "hover:border-[#3B82F6] dark:hover:border-[#3B82F6] text-[#4B5563] dark:text-[#D1D5DB]"
                         )}
                       />
                     </PaginationItem>
 
-                    {Array.from({ length: totalPages }, (_, i) => i).map((pageNum) => (
-                      <PaginationItem key={pageNum}>
-                        <PaginationLink
-                          onClick={() => setPage(pageNum)}
-                          isActive={page === pageNum}
-                          className={
-                            page === pageNum
-                              ? "bg-gradient-to-r from-[#3B82F6] to-[#14B8A6] text-white border-transparent hover:from-[#2563EB] hover:to-[#0D9488]"
-                              : "text-[#4B5563] dark:text-[#D1D5DB] border border-[#E5E7EB] dark:border-[#374151] hover:border-[#3B82F6] dark:hover:border-[#3B82F6]"
-                          }
-                        >
-                          {pageNum + 1}
-                        </PaginationLink>
-                      </PaginationItem>
-                    ))}
+                    {Array.from({ length: totalPages }, (_, i) => i).map(
+                      (pageNum) => (
+                        <PaginationItem key={pageNum}>
+                          <PaginationLink
+                            onClick={() => setPage(pageNum)}
+                            isActive={page === pageNum}
+                            className={
+                              page === pageNum
+                                ? "bg-gradient-to-r from-[#3B82F6] to-[#14B8A6] text-white border-transparent hover:from-[#2563EB] hover:to-[#0D9488]"
+                                : "text-[#4B5563] dark:text-[#D1D5DB] border border-[#E5E7EB] dark:border-[#374151] hover:border-[#3B82F6] dark:hover:border-[#3B82F6]"
+                            }
+                          >
+                            {pageNum + 1}
+                          </PaginationLink>
+                        </PaginationItem>
+                      )
+                    )}
 
                     <PaginationItem>
                       <PaginationNext
-                        onClick={() => setPage((prev) => Math.min(prev + 1, totalPages - 1))}
+                        onClick={() =>
+                          setPage((prev) => Math.min(prev + 1, totalPages - 1))
+                        }
                         className={cn(
                           "border border-[#E5E7EB] dark:border-[#374151]",
                           page === totalPages - 1
                             ? "pointer-events-none opacity-50"
-                            : "hover:border-[#3B82F6] dark:hover:border-[#3B82F6] text-[#4B5563] dark:text-[#D1D5DB]",
+                            : "hover:border-[#3B82F6] dark:hover:border-[#3B82F6] text-[#4B5563] dark:text-[#D1D5DB]"
                         )}
                       />
                     </PaginationItem>
@@ -629,8 +736,13 @@ export default function AttendanceRecordsPage() {
 
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
               <div className="flex items-center gap-2">
-                <span className="text-sm text-[#6B7280] dark:text-[#9CA3AF]">Show</span>
-                <Select value={size.toString()} onValueChange={(value) => setSize(Number(value))}>
+                <span className="text-sm text-[#6B7280] dark:text-[#9CA3AF]">
+                  Show
+                </span>
+                <Select
+                  value={size.toString()}
+                  onValueChange={(value) => setSize(Number(value))}
+                >
                   <SelectTrigger className="w-[80px] h-9 border-[#E5E7EB] dark:border-[#374151]">
                     <SelectValue placeholder="10" />
                   </SelectTrigger>
@@ -641,12 +753,14 @@ export default function AttendanceRecordsPage() {
                     <SelectItem value="50">50</SelectItem>
                   </SelectContent>
                 </Select>
-                <span className="text-sm text-[#6B7280] dark:text-[#9CA3AF]">entries</span>
+                <span className="text-sm text-[#6B7280] dark:text-[#9CA3AF]">
+                  entries
+                </span>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
     </div>
-  )
+  );
 }

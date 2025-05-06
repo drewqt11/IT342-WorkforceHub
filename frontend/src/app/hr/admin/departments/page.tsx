@@ -140,7 +140,7 @@ export default function DepartmentsPage() {
         return
       }
 
-      const response = await fetch("/api/hr/departments", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hr/departments`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -181,7 +181,7 @@ export default function DepartmentsPage() {
         formData.append("description", newDepartmentDescription)
       }
 
-      const response = await fetch("/api/hr/departments", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hr/departments`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -227,7 +227,7 @@ export default function DepartmentsPage() {
         formData.append("description", editDepartmentDescription)
       }
 
-      const response = await fetch(`/api/hr/departments/${selectedDepartment.departmentId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hr/departments/${selectedDepartment.departmentId}`, {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -268,7 +268,7 @@ export default function DepartmentsPage() {
         return
       }
 
-      const response = await fetch(`/api/hr/departments/${id}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hr/departments/${id}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -314,7 +314,7 @@ export default function DepartmentsPage() {
         return
       }
 
-      const response = await fetch(`/api/hr/departments/${department.departmentId}/job-titles`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hr/job-titles/department/${department.departmentId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -490,8 +490,7 @@ export default function DepartmentsPage() {
         return
       }
 
-      // Use the correct endpoint: /api/hr/job-titles/{jobId}
-      const response = await fetch(`/api/hr/job-titles/${jobId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hr/job-titles/${jobId}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -503,14 +502,19 @@ export default function DepartmentsPage() {
       }
 
       toast.success("Job title deleted successfully")
-      setIsEditJobTitleDialogOpen(false)
-      setSelectedJobTitle(null)
+      setIsDeleteJobTitleDialogOpen(false)
+      setJobTitleToDelete(null)
+      
       // Refresh the job titles list
-      const jobsRes = await fetch(`/api/hr/departments/${selectedDepartmentForJobs.departmentId}/job-titles`, {
+      const jobsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hr/job-titles/department/${selectedDepartmentForJobs.departmentId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      
       if (jobsRes.ok) {
-        setJobTitles(await jobsRes.json());
+        const updatedJobs = await jobsRes.json();
+        setJobTitles(updatedJobs);
+      } else {
+        console.error("Failed to refresh job titles after deletion");
       }
     } catch (error) {
       toast.error("Failed to delete job title. Please try again.")
@@ -1059,7 +1063,7 @@ export default function DepartmentsPage() {
             if (selectedDepartmentForJobs) {
               const token = authService.getToken();
               if (token) {
-                const response = await fetch(`/api/hr/departments/${selectedDepartmentForJobs.departmentId}/job-titles`, {
+                const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hr/departments/${selectedDepartmentForJobs.departmentId}/job-titles`, {
                   headers: { Authorization: `Bearer ${token}` },
                 });
                 if (response.ok) {
@@ -1212,7 +1216,7 @@ export default function DepartmentsPage() {
                 if (selectedDepartmentForJobs) {
                   const token = authService.getToken();
                   if (token) {
-                    const response = await fetch(`/api/hr/departments/${selectedDepartmentForJobs.departmentId}/job-titles`, {
+                    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hr/departments/${selectedDepartmentForJobs.departmentId}/job-titles`, {
                       headers: { Authorization: `Bearer ${token}` },
                     });
                     if (response.ok) {
@@ -1352,7 +1356,7 @@ export default function DepartmentsPage() {
                   const min = parseInt(editPayGradeMin.replace(/,/g, ''), 10);
                   const max = parseInt(editPayGradeMax.replace(/,/g, ''), 10);
                   const payGrade = `Php ${min.toLocaleString("en-US")}.00 - ${max.toLocaleString("en-US")}.00`;
-                  const response = await fetch(`/api/hr/job-titles/${selectedJobTitle.jobId}`, {
+                  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hr/job-titles/${selectedJobTitle.jobId}`, {
                     method: "PUT",
                     headers: {
                       "Content-Type": "application/json",
@@ -1373,7 +1377,7 @@ export default function DepartmentsPage() {
                   setSelectedJobTitle(null);
                   // Refresh job titles
                   if (selectedDepartmentForJobs) {
-                    const jobsRes = await fetch(`/api/hr/departments/${selectedDepartmentForJobs.departmentId}/job-titles`, {
+                    const jobsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hr/job-titles/department/${selectedDepartmentForJobs.departmentId}`, {
                       headers: { Authorization: `Bearer ${token}` },
                     });
                     if (jobsRes.ok) {

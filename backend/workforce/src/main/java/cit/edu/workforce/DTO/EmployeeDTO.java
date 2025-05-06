@@ -45,7 +45,7 @@ public class EmployeeDTO {
 
     private Boolean status = false;
 
-    private String employmentStatus = "FULL_TIME";
+    private String employmentStatus = "PENDING";
 
     private String departmentId;
 
@@ -64,4 +64,9 @@ public class EmployeeDTO {
     private LocalTime workTimeInSched;
 
     private LocalTime workTimeOutSched;
+
+    // User account fields
+    private String userId;
+    private LocalDateTime lastLogin;
+    private Boolean isActive;
 }

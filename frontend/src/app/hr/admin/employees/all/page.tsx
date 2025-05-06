@@ -73,43 +73,18 @@ interface Employee {
   employmentStatus: string
   createdAt: string
   isActive: boolean
+  userId: string
+  lastLogin: string
+  workTimeIn: string
+  workTimeOut: string
+  roleId: string
+  roleName: string
 }
 
 interface Department {
   departmentId: string
   departmentName: string
   description?: string
-}
-
-interface EmployeeProfile {
-  employeeId: string
-  idNumber: string
-  firstName: string
-  lastName: string
-  email: string
-  gender: string
-  hireDate: string
-  dateOfBirth: string
-  address: string
-  phoneNumber: string
-  maritalStatus: string
-  status: boolean
-  employmentStatus: string
-  departmentId: string
-  departmentName: string
-  jobId: string
-  jobName: string
-  roleId: string
-  roleName: string
-  createdAt: string
-}
-
-interface UserAccountInfo {
-  userId: string
-  emailAddress: string
-  createdAt: string
-  lastLogin: string
-  isActive: boolean
 }
 
 export default function AllEmployeesPage() {
@@ -133,8 +108,8 @@ export default function AllEmployeesPage() {
   const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false)
   const [selectedEmployeeProfile, setSelectedEmployeeProfile] = useState<Employee | null>(null)
   const [loadingProfile, setLoadingProfile] = useState(false)
-  const [profile, setProfile] = useState<EmployeeProfile | null>(null)
-  const [userAccount, setUserAccount] = useState<UserAccountInfo | null>(null)
+  const [profile, setProfile] = useState<Employee | null>(null)
+  const [userAccount, setUserAccount] = useState<Employee | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [processingDepartment, setProcessingDepartment] = useState<string | null>(null)
   const [percentages, setPercentages] = useState({
@@ -158,21 +133,23 @@ export default function AllEmployeesPage() {
           const userData = await authService.getOAuth2UserInfo()
           console.log('OAuth2 User Info:', userData)
           setUserAccount({
+            ...data,
             userId: userData.userId || "N/A",
             emailAddress: userData.email || data.email,
-            createdAt: userData.createdAt,
-            lastLogin: userData.lastLogin,
-            isActive: userData.isActive,
+            createdAt: userData.createdAt ? new Date(userData.createdAt).toLocaleString() : "Not available",
+            lastLogin: data.lastLogin ? new Date(data.lastLogin).toLocaleString() : "Not available",
+            isActive: data.status
           })
         } catch (userErr) {
           console.error("Error fetching OAuth2 user info:", userErr)
           if (data) {
             setUserAccount({
+              ...data,
               userId: data.userId || "N/A",
               emailAddress: data.email,
-              createdAt: data.createdAt || new Date().toISOString(),
-              lastLogin: "Not available",
-              isActive: data.status,
+              createdAt: data.createdAt ? new Date(data.createdAt).toLocaleString() : "Not available",
+              lastLogin: data.lastLogin ? new Date(data.lastLogin).toLocaleString() : "Not available",
+              isActive: data.status
             })
           }
         }
@@ -186,7 +163,7 @@ export default function AllEmployeesPage() {
           } else {
             setError(`Failed to load profile data: ${err.message}`)
             authService.logout();
-            window.location.href = '/';
+            router.push('/');
           }
         } else {
           setError("An unexpected error occurred while loading your profile.")
@@ -235,36 +212,29 @@ export default function AllEmployeesPage() {
       // Process employees and check their active status
       const processedEmployees = await Promise.all(
         employeesData.map(async (emp: any) => {
-          try {
-            const isActive = await authService.getActiveStatus(emp.email)
-            return {
-              employeeId: emp.employeeId || "",
-              idNumber: emp.idNumber || "Not provided",
-              firstName: emp.firstName || "",
-              lastName: emp.lastName || "",
-              email: emp.email || "",
-              phoneNumber: emp.phoneNumber || "Not provided",
-              gender: emp.gender || "Not specified",
-              dateOfBirth: emp.dateOfBirth ? new Date(emp.dateOfBirth).toLocaleDateString() : "Not provided",
-              address: emp.address || "Not provided",
-              maritalStatus: emp.maritalStatus || "Not specified",
-              hireDate: emp.hireDate ? new Date(emp.hireDate).toLocaleDateString() : "Not provided",
-              departmentId: emp.departmentId || "",
-              departmentName: emp.departmentName || "Unassigned",
-              jobId: emp.jobId || "",
-              jobName: emp.jobName || "",
-              role: emp.roleId || emp.role || "ROLE_EMPLOYEE",
-              status: emp.status || false,
-              employmentStatus: emp.employmentStatus || "INACTIVE",
-              createdAt: emp.createdAt ? new Date(emp.createdAt).toLocaleString() : "Not provided",
-              isActive: isActive
-            }
-          } catch (error) {
-            console.error(`Error checking active status for ${emp.email}:`, error)
-            return {
-              ...emp,
-              isActive: false
-            }
+          return {
+            employeeId: emp.employeeId || "",
+            idNumber: emp.idNumber || "Not provided",
+            firstName: emp.firstName || "",
+            lastName: emp.lastName || "",
+            email: emp.email || "",
+            phoneNumber: emp.phoneNumber || "Not provided",
+            gender: emp.gender || "Not specified",
+            dateOfBirth: emp.dateOfBirth ? new Date(emp.dateOfBirth).toLocaleDateString() : "Not provided",
+            address: emp.address || "Not provided",
+            maritalStatus: emp.maritalStatus || "Not specified",
+            hireDate: emp.hireDate ? new Date(emp.hireDate).toLocaleDateString() : "Not provided",
+            departmentId: emp.departmentId || "",
+            departmentName: emp.departmentName || "Unassigned",
+            jobId: emp.jobId || "",
+            jobName: emp.jobName || "",
+            role: emp.roleId || emp.role || "ROLE_EMPLOYEE",
+            status: emp.status || false,
+            employmentStatus: emp.employmentStatus || "INACTIVE",
+            createdAt: emp.createdAt ? new Date(emp.createdAt).toLocaleString() : "Not provided",
+            isActive: emp.status || false,
+            lastLogin: emp.lastLogin ? new Date(emp.lastLogin).toLocaleString() : "Not available",
+            userId: emp.userId || emp.employeeId
           }
         })
       )
@@ -272,15 +242,19 @@ export default function AllEmployeesPage() {
       // Filter out null values but keep all employees
       const validEmployees = processedEmployees.filter(emp => emp !== null) as Employee[]
       
+      console.log('Processed Employees:', validEmployees);
+      console.log('Total Employees:', validEmployees.length);
+      console.log('Active Employees:', validEmployees.filter(emp => emp.status).length);
+      console.log('Inactive Employees:', validEmployees.filter(emp => !emp.status).length);
+      
       // Set employees for display (active only)
-      const activeEmployeesForDisplay = validEmployees.filter(emp => emp.status && emp.isActive)
+      const activeEmployeesForDisplay = validEmployees.filter(emp => emp.status)
       setEmployees(activeEmployeesForDisplay)
       setTotalPages(Math.ceil(activeEmployeesForDisplay.length / itemsPerPage))
 
       // Calculate total employees and active employees for percentage
-      // Exclude employees with isActive status as false
-      const totalEmployees = validEmployees.filter(emp => emp.isActive).length
-      const activeEmployees = validEmployees.filter(emp => emp.status && emp.isActive).length
+      const totalEmployees = validEmployees.length
+      const activeEmployees = validEmployees.filter(emp => emp.status).length
       const inactiveEmployees = totalEmployees - activeEmployees
 
       // Update the percentage state
@@ -327,7 +301,7 @@ export default function AllEmployeesPage() {
     let filtered = [...employees]
 
     // Filter out inactive employees first
-    filtered = filtered.filter(emp => emp.status && emp.isActive)
+    filtered = filtered.filter(emp => emp.status)
 
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase()
@@ -343,9 +317,9 @@ export default function AllEmployeesPage() {
     if (statusFilter !== "all") {
       filtered = filtered.filter((emp) => {
         if (statusFilter === "active") {
-          return emp.status && emp.isActive;
+          return emp.status;
         } else if (statusFilter === "inactive") {
-          return !emp.status || !emp.isActive;
+          return !emp.status;
         }
         return true;
       });
@@ -398,20 +372,13 @@ export default function AllEmployeesPage() {
       // Fetch employee profile
       const profileData = await authService.getEmployeeProfile();
       setProfile(profileData);
-
-      // Fetch last login time and active status
-      const [lastLoginTime, isActive] = await Promise.all([
-        authService.getLastLogin(employee.email),
-        authService.getActiveStatus(employee.email)
-      ]);
       
-      // Update user account with the last login time and active status
+      // Use existing employee data for status and last login
       setUserAccount({
+        ...employee,
         userId: employee.employeeId,
-        emailAddress: employee.email,
-        createdAt: employee.createdAt || new Date().toISOString(),
-        lastLogin: lastLoginTime,
-        isActive: isActive
+        lastLogin: employee.lastLogin ? new Date(employee.lastLogin).toLocaleString() : "Not available",
+        isActive: employee.status
       });
     } catch (error) {
       console.error("Error fetching profile:", error);
@@ -450,7 +417,7 @@ export default function AllEmployeesPage() {
       }
 
       const response = await fetch(
-        `/api/hr/user-accounts/${employee.email}/account/${action}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/hr/user-accounts/${employee.email}/account/${action}`,
         {
           method: "PUT",
           headers: {
@@ -610,10 +577,10 @@ export default function AllEmployeesPage() {
               <div>
                 <CardTitle className="text-xl text-[#1F2937] dark:text-white flex items-center gap-2">
                   <Users className="h-5 w-5 text-[#3B82F6] dark:text-[#3B82F6]" />
-                  Employee List
+                  Employee Directory
                 </CardTitle>
                 <CardDescription className="text-[#6B7280] dark:text-[#9CA3AF] mt-1">
-                  View and manage all employees in the system
+                  View and manage all active employees
                 </CardDescription>
               </div>
               <div className="flex items-center gap-2">
@@ -897,7 +864,7 @@ export default function AllEmployeesPage() {
                     }
 
                     const response = await fetch(
-                      `/api/hr/employees/${selectedEmployeeForDepartment.employeeId}/assign-department`,
+                      `${process.env.NEXT_PUBLIC_API_URL}/hr/employees/${selectedEmployeeForDepartment.employeeId}/assign-department`,
                       {
                         method: "PUT",
                         headers: {

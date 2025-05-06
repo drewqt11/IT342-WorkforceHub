@@ -96,6 +96,38 @@ public class EmployeeController {
         return ResponseEntity.ok(employeeService.getAllActiveEmployeesPaged(pageable));
     }
 
+    @GetMapping("/hr/employees/inactive")
+    @Operation(summary = "Get all inactive employees", description = "Get a paginated list of all inactive employees")
+    @PreAuthorize("hasAnyRole('ROLE_HR', 'ROLE_ADMIN')")
+    public ResponseEntity<Page<EmployeeDTO>> getAllInactiveEmployees(
+            @Parameter(description = "Page number (0-based)") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Page size") @RequestParam(defaultValue = "10") int size,
+            @Parameter(description = "Sort field") @RequestParam(defaultValue = "lastName") String sortBy,
+            @Parameter(description = "Sort direction") @RequestParam(defaultValue = "asc") String direction) {
+
+        Sort sort = "desc".equalsIgnoreCase(direction) ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        return ResponseEntity.ok(employeeService.getAllInactiveEmployeesPaged(pageable));
+    }
+
+    @GetMapping("/hr/employees/accounts/deactivated")
+    @Operation(summary = "Get all deactivated employees", description = "Get a paginated list of all deactivated employees")
+    @PreAuthorize("hasAnyRole('ROLE_HR', 'ROLE_ADMIN')")
+    public ResponseEntity<Page<EmployeeDTO>> getAllDeactivatedEmployees(
+            @Parameter(description = "Page number (0-based)") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Page size") @RequestParam(defaultValue = "10") int size,
+            @Parameter(description = "Sort field") @RequestParam(defaultValue = "lastName") String sortBy,
+            @Parameter(description = "Sort direction") @RequestParam(defaultValue = "asc") String direction) {
+
+        Sort sort = "desc".equalsIgnoreCase(direction) ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        return ResponseEntity.ok(employeeService.getAllDeactivatedEmployeesPaged(pageable));
+    }
+
     @PostMapping("/hr/employees")
     @Operation(summary = "Create employee", description = "Create a new employee")
     @PreAuthorize("hasAnyRole('ROLE_HR', 'ROLE_ADMIN')")

@@ -2,6 +2,7 @@ package cit.edu.workforce.Service;
 
 import cit.edu.workforce.Entity.UserAccountEntity;
 import cit.edu.workforce.Entity.EmployeeEntity;
+import cit.edu.workforce.Entity.RoleEntity;
 import cit.edu.workforce.Repository.UserAccountRepository;
 import cit.edu.workforce.Repository.EmployeeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,11 +18,13 @@ public class UserAccountService {
 
     private final UserAccountRepository userAccountRepository;
     private final EmployeeRepository employeeRepository;
+    private final RoleService roleService;
 
     @Autowired
-    public UserAccountService(UserAccountRepository userAccountRepository, EmployeeRepository employeeRepository) {
+    public UserAccountService(UserAccountRepository userAccountRepository, EmployeeRepository employeeRepository, RoleService roleService) {
         this.userAccountRepository = userAccountRepository;
         this.employeeRepository = employeeRepository;
+        this.roleService = roleService;
     }
 
     @Transactional
@@ -57,6 +60,20 @@ public class UserAccountService {
     @Transactional
     public UserAccountEntity activateUser(UserAccountEntity userAccount) {
         userAccount.setActive(true);
+
+        Optional<EmployeeEntity> employeeOptional = employeeRepository.findByUserAccount(userAccount);
+        if (employeeOptional.isPresent()) {
+            EmployeeEntity employee = employeeOptional.get();
+            employee.setStatus(false);
+            employee.setEmploymentStatus("PENDING");
+            
+            // Get the ROLE_EMPLOYEE role and set it
+            RoleEntity role = roleService.getRoleById("ROLE_EMPLOYEE")
+                    .orElseThrow(() -> new RuntimeException("ROLE_EMPLOYEE not found"));
+            employee.setRole(role);
+            
+            employeeRepository.save(employee);
+        }
         return userAccountRepository.save(userAccount);
     }
 
@@ -69,7 +86,8 @@ public class UserAccountService {
         if (employeeOptional.isPresent()) {
             EmployeeEntity employee = employeeOptional.get();
             employee.setStatus(false);
-            employee.setEmploymentStatus("INACTIVE");
+            employee.setEmploymentStatus("RESIGNED / TERMINATED");
+            employee.setRole(null);
             employeeRepository.save(employee);
         }
         

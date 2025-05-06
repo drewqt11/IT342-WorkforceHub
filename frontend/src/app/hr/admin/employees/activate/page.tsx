@@ -66,39 +66,19 @@ interface Employee {
   status: boolean
   employmentStatus: string
   isActive: boolean
-  createdAt?: string
-  idNumber?: string
-  hireDate?: string
+  createdAt: string
+  idNumber: string
+  hireDate: string
+  userId: string
+  lastLogin: string
+  workTimeIn: string
+  workTimeOut: string
 }
 
 interface Department {
   departmentId: string
   departmentName: string
   description?: string
-}
-
-
-interface EmployeeProfile {
-  employeeId: string
-  idNumber: string
-  firstName: string
-  lastName: string
-  email: string
-  gender: string
-  hireDate: string
-  dateOfBirth: string
-  address: string
-  phoneNumber: string
-  maritalStatus: string
-  status: boolean
-  employmentStatus: string
-  departmentId: string
-  departmentName: string
-  jobId: string
-  jobName: string
-  roleId: string
-  roleName: string
-  createdAt: string
 }
 
 interface UserAccountInfo {
@@ -137,7 +117,7 @@ export default function ActivateEmployeesPage() {
   const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false)
   const [selectedEmployeeProfile, setSelectedEmployeeProfile] = useState<Employee | null>(null)
   const [loadingProfile, setLoadingProfile] = useState(false)
-  const [profile, setProfile] = useState<EmployeeProfile | null>(null)
+  const [profile, setProfile] = useState<Employee | null>(null)
   const [userAccount, setUserAccount] = useState<UserAccountInfo | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [processingDepartment, setProcessingDepartment] = useState<string | null>(null)
@@ -149,6 +129,11 @@ export default function ActivateEmployeesPage() {
   const [loadingJobTitles, setLoadingJobTitles] = useState(false)
   const [jobTitleError, setJobTitleError] = useState<string | null>(null)
   const [viewedProfiles, setViewedProfiles] = useState<Set<string>>(new Set());
+  const [percentages, setPercentages] = useState({
+    active: 0,
+    inactive: 0,
+    total: 0
+  })
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -165,8 +150,8 @@ export default function ActivateEmployeesPage() {
             userId: userData.userId || "N/A",
             email: userData.email || data.email,
             createdAt: data.createdAt || new Date().toISOString(), // Use actual createdAt from profile
-            lastLogin: new Date().toISOString(), // Default value since not in OAuth2 user info
-            isActive: true, // Default value since not in OAuth2 user info
+            lastLogin: data.lastLogin || new Date().toISOString(), // Default value since not in OAuth2 user info
+            isActive: data.isActive, // Default value since not in OAuth2 user info
           })
         } catch (userErr) {
           console.error("Error fetching OAuth2 user info:", userErr)
@@ -176,8 +161,8 @@ export default function ActivateEmployeesPage() {
               userId: data.userId || "N/A",
               email: data.email,
               createdAt: data.createdAt || new Date().toISOString(), // Use actual createdAt from profile
-              lastLogin: new Date().toISOString(), // Default value
-              isActive: true, // Default value
+              lastLogin: data.lastLogin || new Date().toISOString(), // Default value
+              isActive: data.isActive, // Default value
             })
           }
         }
@@ -221,7 +206,7 @@ export default function ActivateEmployeesPage() {
           const token = authService.getToken()
           if (!token) return
 
-          const response = await fetch(`/api/hr/departments/${selectedDepartmentId}/job-titles`, {
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hr/job-titles/department/${selectedDepartmentId}`, {
             headers: { Authorization: `Bearer ${token}` },
           })
 
@@ -257,7 +242,7 @@ export default function ActivateEmployeesPage() {
         return
       }
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hr/employees`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hr/employees/inactive`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -272,14 +257,8 @@ export default function ActivateEmployeesPage() {
       // Check if data is an array, if not, try to access the correct property
       const employeesData = Array.isArray(data) ? data : data.employees || data.content || []
       
-      // Process employees and check their active status
-      const processedEmployees = await Promise.all(
-        employeesData.map(async (emp: any) => {
-          try {
-            // Check if the employee's user account is active
-            const isActive = await authService.getActiveStatus(emp.email)
-            
-            return {
+      // Process employees data
+      const processedEmployees = employeesData.map((emp: any) => ({
         employeeId: emp.employeeId || "",
         firstName: emp.firstName || "",
         lastName: emp.lastName || "",
@@ -295,21 +274,27 @@ export default function ActivateEmployeesPage() {
         jobName: emp.jobName || "",
         role: emp.roleId || emp.role || "ROLE_EMPLOYEE",
         status: emp.status || false,
-              employmentStatus: emp.employmentStatus || "INACTIVE",
-              isActive: isActive // Add the active status from user account
-            }
-          } catch (error) {
-            console.error(`Error checking active status for employee ${emp.email}:`, error)
-            return null // Return null for employees we couldn't check
-          }
-        })
-      )
+        employmentStatus: emp.employmentStatus || "INACTIVE",
+        lastLogin: emp.lastLogin || new Date().toISOString(),
+        isActive: emp.isActive
+      }))
 
-      // Filter out null values and inactive employees
-      const validEmployees = processedEmployees.filter(emp => emp !== null && emp.isActive) as Employee[]
+      console.log('Processed Employees:', processedEmployees);
       
-      setEmployees(validEmployees)
-      setTotalPages(Math.ceil(validEmployees.length / itemsPerPage))
+      setEmployees(processedEmployees)
+      setTotalPages(Math.ceil(processedEmployees.length / itemsPerPage))
+
+      // Calculate total employees and active employees for percentage
+      const totalEmployees = processedEmployees.length
+      const activeEmployees = processedEmployees.filter((emp: Employee) => emp.isActive).length
+      const inactiveEmployees = totalEmployees - activeEmployees
+
+      // Update the percentage state
+      setPercentages({
+        active: totalEmployees > 0 ? Math.round((activeEmployees / totalEmployees) * 100) : 0,
+        inactive: totalEmployees > 0 ? Math.round((inactiveEmployees / totalEmployees) * 100) : 0,
+        total: totalEmployees
+      })
     } catch (error) {
       console.error("Error fetching employees:", error)
       toast.error("Failed to load employees. Please try again.")
@@ -359,7 +344,7 @@ export default function ActivateEmployeesPage() {
   }
 
   const filterEmployees = () => {
-    let filtered = employees.filter(employee => !employee.status); // Only show inactive employees
+    let filtered = employees; // Show all employees without filtering
     
     if (searchTerm) {
       filtered = filtered.filter(employee => 
@@ -408,7 +393,7 @@ export default function ActivateEmployeesPage() {
       toast.success("Employee activated successfully")
       
       // Only refresh the employee list
-      const updatedResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hr/employees`, {
+      const updatedResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hr/employees/inactive`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -421,43 +406,32 @@ export default function ActivateEmployeesPage() {
       const data = await updatedResponse.json()
       const employeesData = Array.isArray(data) ? data : data.employees || data.content || []
       
-      // Process employees and check their active status
-      const processedEmployees = await Promise.all(
-        employeesData.map(async (emp: any) => {
-          try {
-            const isActive = await authService.getActiveStatus(emp.email)
-            
-            return {
-              employeeId: emp.employeeId || "",
-              firstName: emp.firstName || "",
-              lastName: emp.lastName || "",
-              email: emp.email || "",
-              phoneNumber: emp.phoneNumber || "Not provided",
-              gender: emp.gender || "Not specified",
-              dateOfBirth: emp.dateOfBirth ? new Date(emp.dateOfBirth).toLocaleDateString() : "Not provided",
-              address: emp.address || "Not provided",
-              maritalStatus: emp.maritalStatus || "Not specified",
-              departmentId: emp.departmentId || "",
-              departmentName: emp.departmentName || "Unassigned",
-              jobId: emp.jobId || "",
-              jobName: emp.jobName || "",
-              role: emp.roleId || emp.role || "ROLE_EMPLOYEE",
-              status: emp.status || false,
-              employmentStatus: emp.employmentStatus || "INACTIVE",
-              isActive: isActive
-            }
-          } catch (error) {
-            console.error(`Error checking active status for employee ${emp.email}:`, error)
-            return null
-          }
-        })
-      )
+      // Process employees data
+      const processedEmployees = employeesData.map((emp: any) => ({
+        employeeId: emp.employeeId || "",
+        firstName: emp.firstName || "",
+        lastName: emp.lastName || "",
+        email: emp.email || "",
+        phoneNumber: emp.phoneNumber || "Not provided",
+        gender: emp.gender || "Not specified",
+        dateOfBirth: emp.dateOfBirth ? new Date(emp.dateOfBirth).toLocaleDateString() : "Not provided",
+        address: emp.address || "Not provided",
+        maritalStatus: emp.maritalStatus || "Not specified",
+        departmentId: emp.departmentId || "",
+        departmentName: emp.departmentName || "Unassigned",
+        jobId: emp.jobId || "",
+        jobName: emp.jobName || "",
+        role: emp.roleId || emp.role || "ROLE_EMPLOYEE",
+        status: emp.status || false,
+        employmentStatus: emp.employmentStatus || "INACTIVE",
+        lastLogin: emp.lastLogin || new Date().toISOString(),
+        isActive: emp.isActive
+      }))
 
-      // Filter out null values and inactive employees
-      const validEmployees = processedEmployees.filter(emp => emp !== null && emp.isActive) as Employee[]
+      console.log('Processed Employees:', processedEmployees);
       
-      setEmployees(validEmployees)
-      setTotalPages(Math.ceil(validEmployees.length / itemsPerPage))
+      setEmployees(processedEmployees)
+      setTotalPages(Math.ceil(processedEmployees.length / itemsPerPage))
       setCurrentPage(1)
       filterEmployees()
     } catch (error) {
@@ -512,7 +486,7 @@ export default function ActivateEmployeesPage() {
         return;
       }
       
-      const response = await fetch(`/api/hr/employees/${employeeId}/assign-department`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hr/employees/${employeeId}/department?departmentId=${departmentId}`, {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -535,11 +509,11 @@ export default function ActivateEmployeesPage() {
       toast.success("Department updated successfully");
       
       // Only refresh the employee list
-      const updatedResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hr/employees`, {
+      const updatedResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hr/employees/inactive`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
-      });
+      })
 
       if (!updatedResponse.ok) {
         throw new Error("Failed to fetch updated employee list");
@@ -548,43 +522,32 @@ export default function ActivateEmployeesPage() {
       const employeesResponse = await updatedResponse.json();
       const employeesData = Array.isArray(employeesResponse) ? employeesResponse : employeesResponse.employees || employeesResponse.content || [];
       
-      // Process employees and check their active status
-      const processedEmployees = await Promise.all(
-        employeesData.map(async (emp: any) => {
-          try {
-            const isActive = await authService.getActiveStatus(emp.email);
-            
-            return {
-              employeeId: emp.employeeId || "",
-              firstName: emp.firstName || "",
-              lastName: emp.lastName || "",
-              email: emp.email || "",
-              phoneNumber: emp.phoneNumber || "Not provided",
-              gender: emp.gender || "Not specified",
-              dateOfBirth: emp.dateOfBirth ? new Date(emp.dateOfBirth).toLocaleDateString() : "Not provided",
-              address: emp.address || "Not provided",
-              maritalStatus: emp.maritalStatus || "Not specified",
-              departmentId: emp.departmentId || "",
-              departmentName: emp.departmentName || "Unassigned",
-              jobId: emp.jobId || "",
-              jobName: emp.jobName || "",
-              role: emp.roleId || emp.role || "ROLE_EMPLOYEE",
-              status: emp.status || false,
-              employmentStatus: emp.employmentStatus || "INACTIVE",
-              isActive: isActive
-            };
-          } catch (error) {
-            console.error(`Error checking active status for employee ${emp.email}:`, error);
-            return null;
-          }
-        })
-      );
+      // Process employees data
+      const processedEmployees = employeesData.map((emp: any) => ({
+        employeeId: emp.employeeId || "",
+        firstName: emp.firstName || "",
+        lastName: emp.lastName || "",
+        email: emp.email || "",
+        phoneNumber: emp.phoneNumber || "Not provided",
+        gender: emp.gender || "Not specified",
+        dateOfBirth: emp.dateOfBirth ? new Date(emp.dateOfBirth).toLocaleDateString() : "Not provided",
+        address: emp.address || "Not provided",
+        maritalStatus: emp.maritalStatus || "Not specified",
+        departmentId: emp.departmentId || "",
+        departmentName: emp.departmentName || "Unassigned",
+        jobId: emp.jobId || "",
+        jobName: emp.jobName || "",
+        role: emp.roleId || emp.role || "ROLE_EMPLOYEE",
+        status: emp.status || false,
+        employmentStatus: emp.employmentStatus || "INACTIVE",
+        lastLogin: emp.lastLogin || new Date().toISOString(),
+        isActive: emp.isActive
+      }))
 
-      // Filter out null values and inactive employees
-      const validEmployees = processedEmployees.filter(emp => emp !== null && emp.isActive) as Employee[];
+      console.log('Processed Employees:', processedEmployees);
       
-      setEmployees(validEmployees);
-      setTotalPages(Math.ceil(validEmployees.length / itemsPerPage));
+      setEmployees(processedEmployees);
+      setTotalPages(Math.ceil(processedEmployees.length / itemsPerPage));
       setCurrentPage(1);
       filterEmployees();
       
@@ -648,19 +611,13 @@ export default function ActivateEmployeesPage() {
       const profileData = await authService.getEmployeeProfile();
       setProfile(profileData);
 
-      // Fetch last login time and active status
-      const [lastLoginTime, isActive] = await Promise.all([
-        authService.getLastLogin(employee.email),
-        authService.getActiveStatus(employee.email)
-      ]);
-      
       // Update user account with the last login time and active status
       setUserAccount({
         userId: employee.employeeId,
         email: employee.email,
         createdAt: employee.createdAt || new Date().toISOString(),
-        lastLogin: lastLoginTime,
-        isActive: isActive
+        lastLogin: employee.lastLogin || new Date().toISOString(),
+        isActive: employee.isActive
       });
     } catch (error) {
       console.error("Error fetching profile:", error);
@@ -680,7 +637,7 @@ export default function ActivateEmployeesPage() {
       }
 
       const response = await fetch(
-        `/api/hr/user-accounts/${selectedEmployeeProfile?.email}/account/${action}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/hr/user-accounts/${selectedEmployeeProfile?.email}/account/${action}`,
         {
           method: "PUT",
           headers: {
@@ -778,19 +735,19 @@ export default function ActivateEmployeesPage() {
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-xs text-white/60 uppercase">Employee ID</p>
+                    <p className="text-xs text-white/60">Employee ID</p>
                     <p className="text-sm font-medium">{selectedEmployeeProfile.employeeId}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-white/60 uppercase">ID Number</p>
+                    <p className="text-xs text-white/60">ID Number</p>
                     <p className="text-sm font-medium">{formatText(selectedEmployeeProfile.idNumber)}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-white/60 uppercase">Employment Status</p>
+                    <p className="text-xs text-white/60">Employment Status</p>
                     <p className="text-sm font-medium">{formatText(selectedEmployeeProfile.employmentStatus)}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-white/60 uppercase">Hire Date</p>
+                    <p className="text-xs text-white/60">Hire Date</p>
                     <p className="text-sm font-medium text-white dark:text-white">
                       {formatText(selectedEmployeeProfile.hireDate)}
                     </p>
@@ -1106,11 +1063,11 @@ export default function ActivateEmployeesPage() {
       toast.success("Job title updated successfully");
       
       // Only refresh the employee list
-      const updatedResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hr/employees`, {
+      const updatedResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hr/employees/inactive`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
-      });
+      })
 
       if (!updatedResponse.ok) {
         throw new Error("Failed to fetch updated employee list");
@@ -1119,43 +1076,30 @@ export default function ActivateEmployeesPage() {
       const employeesResponse = await updatedResponse.json();
       const employeesData = Array.isArray(employeesResponse) ? employeesResponse : employeesResponse.employees || employeesResponse.content || [];
       
-      // Process employees and check their active status
-      const processedEmployees = await Promise.all(
-        employeesData.map(async (emp: any) => {
-          try {
-            const isActive = await authService.getActiveStatus(emp.email);
-            
-            return {
-              employeeId: emp.employeeId || "",
-              firstName: emp.firstName || "",
-              lastName: emp.lastName || "",
-              email: emp.email || "",
-              phoneNumber: emp.phoneNumber || "Not provided",
-              gender: emp.gender || "Not specified",
-              dateOfBirth: emp.dateOfBirth ? new Date(emp.dateOfBirth).toLocaleDateString() : "Not provided",
-              address: emp.address || "Not provided",
-              maritalStatus: emp.maritalStatus || "Not specified",
-              departmentId: emp.departmentId || "",
-              departmentName: emp.departmentName || "Unassigned",
-              jobId: emp.jobId || "",
-              jobName: emp.jobName || "",
-              role: emp.roleId || emp.role || "ROLE_EMPLOYEE",
-              status: emp.status || false,
-              employmentStatus: emp.employmentStatus || "INACTIVE",
-              isActive: isActive
-            };
-          } catch (error) {
-            console.error(`Error checking active status for employee ${emp.email}:`, error);
-            return null;
-          }
-        })
-      );
+      // Process employees data
+      const processedEmployees = employeesData.map((emp: any) => ({
+        employeeId: emp.employeeId || "",
+        firstName: emp.firstName || "",
+        lastName: emp.lastName || "",
+        email: emp.email || "",
+        phoneNumber: emp.phoneNumber || "Not provided",
+        gender: emp.gender || "Not specified",
+        dateOfBirth: emp.dateOfBirth ? new Date(emp.dateOfBirth).toLocaleDateString() : "Not provided",
+        address: emp.address || "Not provided",
+        maritalStatus: emp.maritalStatus || "Not specified",
+        departmentId: emp.departmentId || "",
+        departmentName: emp.departmentName || "Unassigned",
+        jobId: emp.jobId || "",
+        jobName: emp.jobName || "",
+        role: emp.roleId || emp.role || "ROLE_EMPLOYEE",
+        status: emp.status || false,
+        employmentStatus: emp.employmentStatus || "INACTIVE"
+      }))
 
-      // Filter out null values and inactive employees
-      const validEmployees = processedEmployees.filter(emp => emp !== null && emp.isActive) as Employee[];
+      console.log('Processed Employees:', processedEmployees);
       
-      setEmployees(validEmployees);
-      setTotalPages(Math.ceil(validEmployees.length / itemsPerPage));
+      setEmployees(processedEmployees);
+      setTotalPages(Math.ceil(processedEmployees.length / itemsPerPage));
       setCurrentPage(1);
       filterEmployees();
       
@@ -1377,93 +1321,41 @@ export default function ActivateEmployeesPage() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4">
           <Card className="border border-[#E5E7EB] dark:border-[#374151] shadow-md overflow-hidden bg-white dark:bg-[#1F2937] hover:shadow-lg transition-shadow duration-200">
             <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#3B82F6] via-[#0EA5E9] to-[#14B8A6]"></div>
             <CardContent className="p-6">
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="text-sm font-medium text-[#6B7280] dark:text-[#9CA3AF]">Total Employees</p>
-                  <h3 className="text-3xl font-bold text-[#1F2937] dark:text-white mt-1">
-                    {loading ? <Skeleton className="h-9 w-16" /> : employees.length}
-                  </h3>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-[#3B82F6] dark:text-[#3B82F6]" />
+                  <h3 className="text-lg font-semibold text-[#1F2937] dark:text-white">Activation Status</h3>
                 </div>
-                <div className="h-12 w-12 bg-[#EFF6FF] dark:bg-[#1E3A8A]/30 rounded-full flex items-center justify-center">
-                  <Users className="h-6 w-6 text-[#3B82F6] dark:text-[#3B82F6]" />
-                </div>
+                <Badge
+                  variant="outline"
+                  className="bg-[#EFF6FF] text-[#3B82F6] border-[#BFDBFE] dark:bg-[#1E3A8A]/30 dark:text-[#3B82F6] dark:border-[#1E3A8A]"
+                >
+                  <Sparkles className="h-3.5 w-3.5 mr-1.5" />
+                  {percentages.active}% Active
+                </Badge>
               </div>
-            </CardContent>
-          </Card>
 
-          <Card className="border border-[#E5E7EB] dark:border-[#374151] shadow-md overflow-hidden bg-white dark:bg-[#1F2937] hover:shadow-lg transition-shadow duration-200">
-            <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#14B8A6] via-[#0EA5E9] to-[#3B82F6]"></div>
-            <CardContent className="p-6">
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="text-sm font-medium text-[#6B7280] dark:text-[#9CA3AF]">Active Employees</p>
-                  <h3 className="text-3xl font-bold text-[#1F2937] dark:text-white mt-1">
-                    {loading ? <Skeleton className="h-9 w-16" /> : getActiveCount()}
-                  </h3>
+              <div className="space-y-3">
+                <div className="flex justify-between mb-1">
+                  <span className="text-sm font-medium text-[#6B7280] dark:text-[#9CA3AF]">Active Employees</span>
+                  <span className="text-sm font-medium text-[#14B8A6] dark:text-[#14B8A6]">
+                    {loading ? "..." : `${percentages.active}%`}
+                  </span>
                 </div>
-                <div className="h-12 w-12 bg-[#F0FDFA] dark:bg-[#134E4A]/30 rounded-full flex items-center justify-center">
-                  <UserCheck className="h-6 w-6 text-[#14B8A6] dark:text-[#14B8A6]" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border border-[#E5E7EB] dark:border-[#374151] shadow-md overflow-hidden bg-white dark:bg-[#1F2937] hover:shadow-lg transition-shadow duration-200">
-            <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#F59E0B] to-[#EF4444]"></div>
-            <CardContent className="p-6">
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="text-sm font-medium text-[#6B7280] dark:text-[#9CA3AF]">Inactive Employees</p>
-                  <h3 className="text-3xl font-bold text-[#1F2937] dark:text-white mt-1">
-                    {loading ? <Skeleton className="h-9 w-16" /> : getInactiveCount()}
-                  </h3>
-                </div>
-                <div className="h-12 w-12 bg-[#FEF3C7] dark:bg-[#78350F]/30 rounded-full flex items-center justify-center">
-                  <UserX className="h-6 w-6 text-[#F59E0B] dark:text-[#F59E0B]" />
+                <div className="h-3 w-full bg-[#F3F4F6] dark:bg-[#374151] rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-[#3B82F6] to-[#14B8A6] rounded-full transition-all duration-1000 ease-out"
+                    style={{ width: `${loading ? 0 : percentages.active}%` }}
+                  ></div>
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
-
-        {/* Status Overview Card */}
-        <Card className="border border-[#E5E7EB] dark:border-[#374151] shadow-md overflow-hidden bg-white dark:bg-[#1F2937] hover:shadow-lg transition-shadow duration-200">
-          <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#3B82F6] via-[#0EA5E9] to-[#14B8A6]"></div>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Clock className="h-5 w-5 text-[#3B82F6] dark:text-[#3B82F6]" />
-                <h3 className="text-lg font-semibold text-[#1F2937] dark:text-white">Activation Status</h3>
-              </div>
-              <Badge
-                variant="outline"
-                className="bg-[#EFF6FF] text-[#3B82F6] border-[#BFDBFE] dark:bg-[#1E3A8A]/30 dark:text-[#3B82F6] dark:border-[#1E3A8A]"
-              >
-                <Sparkles className="h-3.5 w-3.5 mr-1.5" />
-                {getActivePercentage()}% Active
-              </Badge>
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex justify-between mb-1">
-                <span className="text-sm font-medium text-[#6B7280] dark:text-[#9CA3AF]">Active Employees</span>
-                <span className="text-sm font-medium text-[#14B8A6] dark:text-[#14B8A6]">
-                  {loading ? "..." : `${getActivePercentage()}%`}
-                </span>
-              </div>
-              <div className="h-3 w-full bg-[#F3F4F6] dark:bg-[#374151] rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-[#3B82F6] to-[#14B8A6] rounded-full transition-all duration-1000 ease-out"
-                  style={{ width: `${loading ? 0 : getActivePercentage()}%` }}
-                ></div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
 
         {/* Main Employee Table Card */}
         <Card className="border border-[#E5E7EB] dark:border-[#374151] shadow-xl overflow-hidden bg-white dark:bg-[#1F2937]">
@@ -1549,7 +1441,7 @@ export default function ActivateEmployeesPage() {
                   }}
                 >
                   <RefreshCw className="h-4 w-4 mr-2" />
-                  Reset Filters
+                  Refresh List
                 </Button>
               </div>
             ) : (

@@ -57,7 +57,7 @@ public class EmployeeEntity {
     private Boolean status = false;
 
     @Column(name = "employment_status", nullable = false)
-    private String employmentStatus = "FULL_TIME";
+    private String employmentStatus = "PENDING";
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;

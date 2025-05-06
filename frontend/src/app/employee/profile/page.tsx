@@ -80,8 +80,8 @@ const formatText = (text: string | null | undefined): string => {
     return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase()
   }
   
-  // Handle marital status
-  if (["SINGLE", "MARRIED", "DIVORCED", "WIDOWED"].includes(text.toUpperCase())) {
+  // Handle marital status and other enum values
+  if (["SINGLE", "MARRIED", "DIVORCED", "WIDOWED", "MALE", "FEMALE", "OTHER"].includes(text.toUpperCase())) {
     return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase()
   }
   
@@ -688,13 +688,12 @@ export default function EmployeeProfile() {
         }
       }
       
-      // Format address on input
+      // Format address on input - keep as is, no uppercase conversion
       if (field === 'address' && value) {
-        // Capitalize first letter of each word
-        formattedValue = value
-          .split(/\s+/)
-          .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-          .join(' ');
+        formattedValue = value;
+      } else if (value) {
+        // Convert other fields to uppercase for storage
+        formattedValue = value.toUpperCase();
       }
       
       setEditedProfile(prev => ({
@@ -786,7 +785,15 @@ export default function EmployeeProfile() {
     { label: "Date of Birth", field: "dateOfBirth" as keyof EmployeeProfile, type: "date" },
     { label: "Address", field: "address" as keyof EmployeeProfile, type: "text" },
     { label: "Phone Number", field: "phoneNumber" as keyof EmployeeProfile, type: "text" },
-    { label: "Marital Status", field: "maritalStatus" as keyof EmployeeProfile, type: "select", options: ["SINGLE", "MARRIED", "DIVORCED", "WIDOWED"] }
+    { label: "Marital Status", field: "maritalStatus" as keyof EmployeeProfile, type: "select", options: ["SINGLE", "MARRIED", "DIVORCED", "WIDOWED"] },
+    { label: "Email", field: "email" as keyof EmployeeProfile, type: "text" },
+    { label: "Hire Date", field: "hireDate" as keyof EmployeeProfile, type: "date" },
+    { label: "Employment Status", field: "employmentStatus" as keyof EmployeeProfile, type: "select", options: ["ACTIVE", "INACTIVE"] },
+    { label: "Department", field: "departmentName" as keyof EmployeeProfile, type: "text" },
+    { label: "Job Title", field: "jobName" as keyof EmployeeProfile, type: "text" },
+    { label: "Role", field: "roleName" as keyof EmployeeProfile, type: "text" },
+    { label: "Work Time In", field: "workTimeInSched" as keyof EmployeeProfile, type: "time" },
+    { label: "Work Time Out", field: "workTimeOutSched" as keyof EmployeeProfile, type: "time" }
   ], []) as ProfileField[]
 
   if (loading) {

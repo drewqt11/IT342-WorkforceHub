@@ -44,7 +44,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     @Autowired
     private RoleRepository roleRepository;
 
-    //@Value("${app.oauth2.redirect-uri:http://localhost:5173/oauth2/redirect}")
+    //@Value("${app.oauth2.redirect-uri:https://workforcehub.vercel.app/oauth2/redirect}")
     @Value("${app.oauth2.redirect-uri:http://localhost:3000/oauth2/redirect}")
     private String frontendRedirectUri;
 

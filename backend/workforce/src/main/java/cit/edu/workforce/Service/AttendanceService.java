@@ -67,8 +67,14 @@ public class AttendanceService {
             record.setDate(today);
         }
 
-        // Set clock in time and status - Truncate to seconds to avoid nanosecond issues
+        // Set clock in time and status - Ensure military time format
         LocalTime currentTime = LocalTime.now().truncatedTo(ChronoUnit.SECONDS);
+        // Validate time format
+        if (currentTime.getHour() < 0 || currentTime.getHour() > 23 || 
+            currentTime.getMinute() < 0 || currentTime.getMinute() > 59 ||
+            currentTime.getSecond() < 0 || currentTime.getSecond() > 59) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid time format");
+        }
         record.setClockInTime(currentTime);
         record.setStatus("CLOCKED_IN");
         
@@ -113,8 +119,14 @@ public class AttendanceService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "You have already clocked out today");
         }
 
-        // Update record with clock out time
-        LocalTime currentTime = LocalTime.now();
+        // Update record with clock out time - Ensure military time format
+        LocalTime currentTime = LocalTime.now().truncatedTo(ChronoUnit.SECONDS);
+        // Validate time format
+        if (currentTime.getHour() < 0 || currentTime.getHour() > 23 || 
+            currentTime.getMinute() < 0 || currentTime.getMinute() > 59 ||
+            currentTime.getSecond() < 0 || currentTime.getSecond() > 59) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid time format");
+        }
         record.setClockOutTime(currentTime);
         
         // Calculate total hours
@@ -295,8 +307,14 @@ public class AttendanceService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "You have already clocked out today");
         }
 
-        // Update clock out time
+        // Update clock out time - Ensure military time format
         LocalTime currentTime = LocalTime.now().truncatedTo(ChronoUnit.SECONDS);
+        // Validate time format
+        if (currentTime.getHour() < 0 || currentTime.getHour() > 23 || 
+            currentTime.getMinute() < 0 || currentTime.getMinute() > 59 ||
+            currentTime.getSecond() < 0 || currentTime.getSecond() > 59) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid time format");
+        }
         record.setClockOutTime(currentTime);
         
         // Calculate total hours
@@ -306,7 +324,11 @@ public class AttendanceService {
         // Deduct 1 hour (60 minutes) for break time
         double hours = (totalMinutes - 60) / 60.0;
         BigDecimal totalHours = BigDecimal.valueOf(hours).setScale(2, RoundingMode.HALF_UP);
-        record.setTotalHours(totalHours);
+        if (totalHours.compareTo(BigDecimal.ZERO) > 0) {
+            record.setTotalHours(totalHours);
+        }else{
+            record.setTotalHours(BigDecimal.ZERO);
+        }
         
         // Set overtime to zero for now
         record.setOvertimeHours(BigDecimal.ZERO);

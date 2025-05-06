@@ -13,7 +13,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
-
+ 
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
@@ -83,16 +83,22 @@ public class EmployeeService {
         }
     }
 
-    @Transactional(readOnly = true)
-    public List<EmployeeDTO> getAllActiveEmployees() {
-        return employeeRepository.findByStatus(true).stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
-    }
 
     @Transactional(readOnly = true)
     public Page<EmployeeDTO> getAllActiveEmployeesPaged(Pageable pageable) {
-        return employeeRepository.findByStatus(true, pageable)
+        return employeeRepository.findByStatusAndUserAccountActive(pageable)
+                .map(this::convertToDTO);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<EmployeeDTO> getAllInactiveEmployeesPaged(Pageable pageable) {
+        return employeeRepository.findByStatusInactive(pageable)
+                .map(this::convertToDTO);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<EmployeeDTO> getAllDeactivatedEmployeesPaged(Pageable pageable) {
+        return employeeRepository.findByStatusDeactivated(pageable)
                 .map(this::convertToDTO);
     }
 
@@ -289,7 +295,7 @@ public class EmployeeService {
         employee.setMaritalStatus(employeeDTO.getMaritalStatus());
         employee.setStatus(employeeDTO.getStatus() != null ? employeeDTO.getStatus() : true);
         employee.setEmploymentStatus(
-                employeeDTO.getEmploymentStatus() != null ? employeeDTO.getEmploymentStatus() : "FULL_TIME");
+                employeeDTO.getEmploymentStatus() != null ? employeeDTO.getEmploymentStatus() : "PENDING");
         employee.setRole(role);
         employee.setDepartment(department);
         employee.setJobTitle(jobTitle);
@@ -338,8 +344,6 @@ public class EmployeeService {
         employee.setPhoneNumber(employeeDTO.getPhoneNumber());
         employee.setMaritalStatus(employeeDTO.getMaritalStatus());
         employee.setStatus(employeeDTO.getStatus() != null ? employeeDTO.getStatus() : true);
-        employee.setEmploymentStatus(
-                employeeDTO.getEmploymentStatus() != null ? employeeDTO.getEmploymentStatus() : "FULL_TIME");
         employee.setWorkTimeInSched(employeeDTO.getWorkTimeInSched());
         employee.setWorkTimeOutSched(employeeDTO.getWorkTimeOutSched());
 
@@ -434,11 +438,6 @@ public class EmployeeService {
             employee.setStatus(employeeDTO.getStatus() != null ? employeeDTO.getStatus() : true);
         }
 
-        if (employeeDTO.getEmploymentStatus() != null) {
-            employee.setEmploymentStatus(
-                    employeeDTO.getEmploymentStatus() != null ? employeeDTO.getEmploymentStatus() : "FULL_TIME");
-        }
-
         if (employeeDTO.getWorkTimeInSched() != null) {
             employee.setWorkTimeInSched(employeeDTO.getWorkTimeInSched());
         }
@@ -457,7 +456,7 @@ public class EmployeeService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee not found"));
 
         employee.setStatus(false);
-        employee.setEmploymentStatus("INACTIVE");
+        employee.setEmploymentStatus("PENDING");
 
         // Also deactivate the user account if it exists
         if (employee.getUserAccount() != null) {
@@ -476,7 +475,7 @@ public class EmployeeService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee not found"));
 
         employee.setStatus(true);
-        employee.setEmploymentStatus("ACTIVE");
+        employee.setEmploymentStatus("HIRED");
 
         // Also activate the user account if it exists
         if (employee.getUserAccount() != null) {
@@ -527,6 +526,7 @@ public class EmployeeService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Job title not found"));
 
         employee.setJobTitle(jobTitle);
+        employee.setEmploymentStatus("HIRED");
         EmployeeEntity updatedEmployee = employeeRepository.save(employee);
         return convertToDTO(updatedEmployee);
     }
@@ -594,6 +594,13 @@ public class EmployeeService {
 
         if (employee.getWorkTimeOutSched() != null) {
             dto.setWorkTimeOutSched(employee.getWorkTimeOutSched());
+        }
+
+        // Set user account fields
+        if (employee.getUserAccount() != null) {
+            dto.setUserId(employee.getUserAccount().getUserId());
+            dto.setLastLogin(employee.getUserAccount().getLastLogin());
+            dto.setIsActive(employee.getUserAccount().isActive());
         }
 
         return dto;

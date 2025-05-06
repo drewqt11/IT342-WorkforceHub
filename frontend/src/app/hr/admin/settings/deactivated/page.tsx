@@ -66,7 +66,10 @@ interface Employee {
   status: boolean
   employmentStatus: string
   createdAt: string
-  isActive: boolean
+  userId?: string
+  lastLogin?: string
+  workTimeIn?: string
+  workTimeOut?: string
 }
 
 interface Department {
@@ -96,24 +99,24 @@ interface EmployeeProfile {
   roleId: string
   roleName: string
   createdAt: string
+  workTimeIn: string
+  workTimeOut: string
+  userId: string
+  lastLogin: string
+  isActive: boolean
 }
 
 interface UserAccountInfo {
   userId: string
-  emailAddress: string
+  email: string
   createdAt: string
   lastLogin: string
-  isActive: boolean
 }
 
 export default function DeactivatedAccountsPage() {
   const router = useRouter()
   const [employees, setEmployees] = useState<Employee[]>([])
-  const [filteredEmployees, setFilteredEmployees] = useState<Employee[]>([])
   const [loading, setLoading] = useState(true)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [statusFilter, setStatusFilter] = useState<string>("all")
-  const [departmentFilter, setDepartmentFilter] = useState<string>("all")
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [processingEmployee, setProcessingEmployee] = useState<string | null>(null)
@@ -127,7 +130,7 @@ export default function DeactivatedAccountsPage() {
   const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false)
   const [selectedEmployeeProfile, setSelectedEmployeeProfile] = useState<Employee | null>(null)
   const [loadingProfile, setLoadingProfile] = useState(false)
-  const [profile, setProfile] = useState<EmployeeProfile | null>(null)
+  const [profile, setProfile] = useState<Employee | null>(null)
   const [userAccount, setUserAccount] = useState<UserAccountInfo | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [processingDepartment, setProcessingDepartment] = useState<string | null>(null)
@@ -136,10 +139,6 @@ export default function DeactivatedAccountsPage() {
     fetchEmployees()
     fetchDepartments()
   }, [])
-
-  useEffect(() => {
-    filterEmployees()
-  }, [employees, searchTerm, statusFilter, departmentFilter])
 
   const fetchEmployees = async () => {
     try {
@@ -152,7 +151,7 @@ export default function DeactivatedAccountsPage() {
         return
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hr/employees`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hr/employees/accounts/deactivated`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -165,45 +164,35 @@ export default function DeactivatedAccountsPage() {
       const data = await response.json()
       const employeesData = Array.isArray(data) ? data : data.employees || data.content || []
 
-      // Process employees and check their active status
-      const processedEmployees = await Promise.all(
-        employeesData.map(async (emp: any) => {
-          try {
-            const isActive = await authService.getActiveStatus(emp.email)
-            return {
-              employeeId: emp.employeeId || "",
-              idNumber: emp.idNumber || "Not provided",
-              firstName: emp.firstName || "",
-              lastName: emp.lastName || "",
-              email: emp.email || "",
-              phoneNumber: emp.phoneNumber || "Not provided",
-              gender: emp.gender || "Not specified",
-              dateOfBirth: emp.dateOfBirth ? new Date(emp.dateOfBirth).toLocaleDateString() : "Not provided",
-              address: emp.address || "Not provided",
-              maritalStatus: emp.maritalStatus || "Not specified",
-              hireDate: emp.hireDate ? new Date(emp.hireDate).toLocaleDateString() : "Not provided",
-              departmentId: emp.departmentId || "",
-              departmentName: emp.departmentName || "Unassigned",
-              jobId: emp.jobId || "",
-              jobName: emp.jobName || "",
-              role: emp.roleId || emp.role || "ROLE_EMPLOYEE",
-              status: emp.status || false,
-              employmentStatus: emp.employmentStatus || "INACTIVE",
-              createdAt: emp.createdAt ? new Date(emp.createdAt).toLocaleString() : "Not provided",
-              isActive: isActive
-            }
-          } catch (error) {
-            console.error(`Error checking active status for ${emp.email}:`, error)
-            return null
-          }
-        })
-      )
+      // Process employees
+      const processedEmployees = employeesData.map((emp: any) => ({
+        employeeId: emp.employeeId || "",
+        idNumber: emp.idNumber || "Not provided",
+        firstName: emp.firstName || "",
+        lastName: emp.lastName || "",
+        email: emp.email || "",
+        phoneNumber: emp.phoneNumber || "Not provided",
+        gender: emp.gender || "Not specified",
+        dateOfBirth: emp.dateOfBirth ? new Date(emp.dateOfBirth).toLocaleDateString() : "Not provided",
+        address: emp.address || "Not provided",
+        maritalStatus: emp.maritalStatus || "Not specified",
+        hireDate: emp.hireDate ? new Date(emp.hireDate).toLocaleDateString() : "Not provided",
+        departmentId: emp.departmentId || "",
+        departmentName: emp.departmentName || "Unassigned",
+        jobId: emp.jobId || "",
+        jobName: emp.jobName || "",
+        role: emp.roleId || emp.role || "ROLE_EMPLOYEE",
+        status: emp.status || false,
+        employmentStatus: emp.employmentStatus || "INACTIVE",
+        createdAt: emp.createdAt ? new Date(emp.createdAt).toLocaleString() : "Not provided",
+        userId: emp.userId || "",
+        lastLogin: emp.lastLogin || "",
+        workTimeIn: emp.workTimeIn || "",
+        workTimeOut: emp.workTimeOut || ""
+      }))
 
-      // Filter out null values and keep only inactive accounts
-      const validEmployees = processedEmployees.filter(emp => emp !== null && !emp.isActive)
-
-      setEmployees(validEmployees as Employee[])
-      setTotalPages(Math.ceil(validEmployees.length / itemsPerPage))
+      setEmployees(processedEmployees as Employee[])
+      setTotalPages(Math.ceil(processedEmployees.length / itemsPerPage))
     } catch (error) {
       console.error("Error fetching employees:", error)
       toast.error("Failed to load employees. Please try again.")
@@ -238,52 +227,6 @@ export default function DeactivatedAccountsPage() {
     }
   }
 
-  const filterEmployees = () => {
-    let filtered = [...employees]
-
-    if (searchTerm) {
-      const searchLower = searchTerm.toLowerCase()
-      filtered = filtered.filter(
-        (emp) =>
-          emp.firstName.toLowerCase().includes(searchLower) ||
-          emp.lastName.toLowerCase().includes(searchLower) ||
-          emp.email.toLowerCase().includes(searchLower) ||
-          emp.employeeId.toLowerCase().includes(searchLower),
-      )
-    }
-
-    if (statusFilter !== "all") {
-      filtered = filtered.filter((emp) => emp.status === (statusFilter === "active"))
-    }
-
-    if (departmentFilter !== "all") {
-      filtered = filtered.filter((emp) => emp.departmentId === departmentFilter)
-    }
-
-    setFilteredEmployees(filtered)
-    setTotalPages(Math.ceil(filtered.length / itemsPerPage))
-    setCurrentPage(1)
-  }
-
-  const getPaginatedEmployees = () => {
-    const startIndex = (currentPage - 1) * itemsPerPage
-    const endIndex = startIndex + itemsPerPage
-    return filteredEmployees.slice(startIndex, endIndex)
-  }
-
-  const getActiveCount = () => {
-    return employees.filter((emp) => emp.status).length
-  }
-
-  const getInactiveCount = () => {
-    return employees.filter((emp) => !emp.status).length
-  }
-
-  const getActivePercentage = () => {
-    if (employees.length === 0) return 0
-    return Math.round((getActiveCount() / employees.length) * 100)
-  }
-
   const handleDepartmentDialogOpen = (employee: Employee) => {
     setSelectedEmployeeForDepartment(employee)
     setSelectedDepartmentId(employee.departmentId)
@@ -300,19 +243,12 @@ export default function DeactivatedAccountsPage() {
       const profileData = await authService.getEmployeeProfile();
       setProfile(profileData);
 
-      // Fetch last login time and active status
-      const [lastLoginTime, isActive] = await Promise.all([
-        authService.getLastLogin(employee.email),
-        authService.getActiveStatus(employee.email)
-      ]);
-      
-      // Update user account with the last login time and active status
+      // Update user account with the last login time
       setUserAccount({
         userId: employee.employeeId,
-        emailAddress: employee.email,
+        email: employee.email,
         createdAt: employee.createdAt || new Date().toISOString(),
-        lastLogin: lastLoginTime,
-        isActive: isActive
+        lastLogin: employee.lastLogin || new Date().toISOString()
       });
     } catch (error) {
       console.error("Error fetching profile:", error);
@@ -338,7 +274,7 @@ export default function DeactivatedAccountsPage() {
       }
 
       const response = await fetch(
-        `/api/hr/user-accounts/${employee.email}/account/${action}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/hr/user-accounts/${employee.email}/account/${action}`,
         {
           method: "PUT",
           headers: {
@@ -359,12 +295,8 @@ export default function DeactivatedAccountsPage() {
       }
 
       const data = await response.json();
-      const newStatus = action === 'activate';
       
-      // Update user account state
-      setUserAccount(prev => prev ? { ...prev, isActive: newStatus } : null);
-      
-      // Only update employee status when deactivating
+      // Update employee status when deactivating
       if (action === 'deactivate') {
         setSelectedEmployeeProfile(prev => {
           if (!prev) return prev;
@@ -434,42 +366,12 @@ export default function DeactivatedAccountsPage() {
                   variant="outline"
                   className="bg-[#F0FDFA] text-[#14B8A6] border-[#99F6E4] dark:bg-[#134E4A]/30 dark:text-[#14B8A6] dark:border-[#134E4A] px-3 py-1.5"
                 >
-                  {filteredEmployees.length} accounts found
+                  {employees.length} accounts found
                 </Badge>
               </div>
             </div>
           </CardHeader>
           <CardContent className="p-6">
-            <div className="flex flex-col md:flex-row gap-4 mb-6">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#6B7280] dark:text-[#9CA3AF]" />
-                <Input
-                  placeholder="Search by name, ID, or email..."
-                  className="pl-10 border-[#E5E7EB] dark:border-[#374151] bg-white dark:bg-[#111827] focus-visible:ring-[#3B82F6] focus-visible:border-[#3B82F6]"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-              <div className="flex gap-2">
-                <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
-                  <SelectTrigger className="w-[180px] border-[#E5E7EB] dark:border-[#374151] bg-white dark:bg-[#111827] focus:ring-[#3B82F6]">
-                    <div className="flex items-center gap-2">
-                      <Building2 className="h-4 w-4 text-[#6B7280] dark:text-[#9CA3AF]" />
-                      <SelectValue placeholder="Filter by department" />
-                    </div>
-                  </SelectTrigger>
-                  <SelectContent className="border-[#E5E7EB] dark:border-[#374151] bg-white dark:bg-[#1F2937]">
-                    <SelectItem value="all">All Departments</SelectItem>
-                    {departments.map((dept) => (
-                      <SelectItem key={dept.departmentId} value={dept.departmentId}>
-                        {dept.departmentName}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
             {loading ? (
               <div className="space-y-4">
                 {Array.from({ length: 5 }).map((_, index) => (
@@ -478,7 +380,7 @@ export default function DeactivatedAccountsPage() {
                   </div>
                 ))}
               </div>
-            ) : filteredEmployees.length === 0 ? (
+            ) : employees.length === 0 ? (
               <div className="text-center py-12 border border-dashed border-[#E5E7EB] dark:border-[#374151] rounded-lg bg-[#F9FAFB] dark:bg-[#111827]/50">
                 <div className="relative w-16 h-16 mx-auto mb-4">
                   <div className="absolute inset-0 rounded-full bg-gradient-to-r from-[#3B82F6] to-[#14B8A6] opacity-20 animate-pulse"></div>
@@ -506,7 +408,7 @@ export default function DeactivatedAccountsPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {getPaginatedEmployees().map((employee, index) => (
+                    {employees.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((employee, index) => (
                       <TableRow
                         key={employee.employeeId}
                         className={cn(
@@ -739,13 +641,8 @@ export default function DeactivatedAccountsPage() {
                       <div>
                         <p className="text-xs text-[#6B7280] dark:text-[#9CA3AF]">Account Status</p>
                         <div className="flex items-center gap-2">
-                          <p className={cn(
-                            "text-sm font-medium",
-                            userAccount?.isActive 
-                              ? "text-green-600 dark:text-green-400" 
-                              : "text-red-600 dark:text-red-400"
-                          )}>
-                            {userAccount?.isActive ? "Active" : "Inactive"}
+                          <p className="text-sm font-medium text-[#1F2937] dark:text-white">
+                            {userAccount ? "Active" : "Inactive"}
                           </p>
                         </div>
                       </div>

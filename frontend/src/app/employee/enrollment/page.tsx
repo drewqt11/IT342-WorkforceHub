@@ -59,7 +59,7 @@ export default function EnrollmentForm() {
     dateOfBirth: "",
     address: "",
     maritalStatus: "",
-    employmentStatus: "FULL_TIME",
+    employmentStatus: "PENDING",
     status: true,
     buildingNo: "",
     street: "",
@@ -226,9 +226,25 @@ export default function EnrollmentForm() {
         formData.country
       ].filter(Boolean).join(', ')
 
+      // Create payload with capitalized values except address fields
       const payload = {
         ...formData,
+        firstName: formData.firstName.toUpperCase(),
+        lastName: formData.lastName.toUpperCase(),
+        email: formData.email.toUpperCase(),
+        phoneNumber: formData.phoneNumber.toUpperCase(),
+        gender: formData.gender.toUpperCase(),
+        maritalStatus: formData.maritalStatus.toUpperCase(),
+        employmentStatus: formData.employmentStatus.toUpperCase(),
+        // Keep address fields in original case
         address: fullAddress,
+        buildingNo: formData.buildingNo,
+        street: formData.street,
+        barangay: formData.barangay,
+        city: formData.city,
+        province: formData.province,
+        zipCode: formData.zipCode,
+        country: formData.country,
         dateOfBirth: date ? format(date, 'yyyy-MM-dd') : null,
         hireDate: startDate ? format(startDate, 'yyyy-MM-dd') : null,
         departmentId: profile.departmentId,
@@ -1231,8 +1247,8 @@ export default function EnrollmentForm() {
                       </div>
                     ) : (
                       <>
-                    <Save className="h-4 w-4 mr-2" />
-                    Save as Draft
+                        <Save className="h-4 w-4 mr-2" />
+                        Save as Draft
                       </>
                     )}
                   </Button>
@@ -1251,11 +1267,12 @@ export default function EnrollmentForm() {
                 <div>
                   {currentTabIndex < tabOrder.length - 1 ? (
                     <Button
-                      type="submit"
+                      type="button"
+                      onClick={handleNextTab}
                       className="bg-gradient-to-r from-[#3B82F6] via-[#0EA5E9] to-[#14B8A6] hover:from-[#2563EB] hover:via-[#0284C7] hover:to-[#0D9488] text-white shadow-md transition-all duration-300 hover:shadow-lg"
                     >
-                      Complete Enrollment
-                      <CheckCircle className="h-4 w-4 ml-2" />
+                      Next
+                      <ChevronRight className="h-4 w-4 ml-2" />
                     </Button>
                   ) : (
                     <Button

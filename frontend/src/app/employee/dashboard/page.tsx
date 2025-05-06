@@ -1,14 +1,14 @@
 "use client";
 
-import { useEffect, useState } from 'react';
-import { authService } from '@/lib/auth';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Clock, User, Calendar, FileText } from 'lucide-react';
-import { ProfileCompletion } from '@/components/cmp/employee/profile-completion';
-import { ClockInOut } from '@/components/cmp/clock-in-out';
-import { useUser } from '@/contexts/UserContext';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState } from "react";
+import { authService } from "@/lib/auth";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Clock, User, Calendar, FileText, LogOut } from "lucide-react";
+import { ProfileCompletion } from "@/components/cmp/employee/profile-completion";
+import { ClockInOut } from "@/components/cmp/clock-in-out";
+import { useUser } from "@/contexts/UserContext";
+import { useRouter } from "next/navigation";
 
 interface EmployeeProfile {
   id: number;
@@ -37,8 +37,8 @@ export default function EmployeeDashboard() {
         const data = await authService.getEmployeeProfile();
         setProfile(data);
       } catch (err) {
-        setError('Failed to load profile data');
-        console.error('Error fetching profile:', err);
+        router.push("/");
+        authService.logout();
         setLoading(false);
       } finally {
         setLoading(false);
@@ -49,11 +49,19 @@ export default function EmployeeDashboard() {
   }, [router]);
 
   if (loading) {
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        Loading...
+      </div>
+    );
   }
 
   if (error) {
-    return <div className="flex items-center justify-center min-h-screen text-red-500">{error}</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen text-red-500">
+        {error}
+      </div>
+    );
   }
 
   return (

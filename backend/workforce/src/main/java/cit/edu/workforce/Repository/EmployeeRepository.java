@@ -6,6 +6,7 @@ import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import cit.edu.workforce.Entity.EmployeeEntity;
@@ -30,4 +31,13 @@ public interface EmployeeRepository extends JpaRepository<EmployeeEntity, String
     Page<EmployeeEntity> findByEmployeeId(String employeeId, Pageable pageable);
 
     Page<EmployeeEntity> findByDepartmentDepartmentNameContainingIgnoreCase(String departmentName, Pageable pageable);
+
+    @Query("SELECT e FROM EmployeeEntity e WHERE e.status = true AND e.userAccount IS NOT NULL AND e.userAccount.isActive = true")
+    Page<EmployeeEntity> findByStatusAndUserAccountActive(Pageable pageable);
+
+    @Query("SELECT e FROM EmployeeEntity e WHERE e.status = false AND e.userAccount IS NOT NULL AND e.userAccount.isActive = true")
+    Page<EmployeeEntity> findByStatusInactive(Pageable pageable);
+
+    @Query("SELECT e FROM EmployeeEntity e WHERE e.status = false AND e.userAccount IS NOT NULL AND e.userAccount.isActive = false")
+    Page<EmployeeEntity> findByStatusDeactivated(Pageable pageable);
 }

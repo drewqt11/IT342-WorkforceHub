@@ -221,31 +221,58 @@ export function ClockInOut() {
     });
   }
 
+  // Add these helper functions after the imports
+  const getPSTDate = (): Date => {
+    return new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
+  };
+
+  const formatDateToPST = (date: Date): string => {
+    return date.toLocaleString('en-US', {
+      timeZone: 'America/Los_Angeles',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).split(',')[0].replace(/(\d+)\/(\d+)\/(\d+)/, '$3-$1-$2');
+  };
+
+  const formatTimeToPST = (date: Date): string => {
+    return date.toLocaleString('en-US', {
+      timeZone: 'America/Los_Angeles',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    });
+  };
+
+  // Update the useEffect for current time
   useEffect(() => {
     const updateTime = () => {
-      const now = new Date()
+      const now = getPSTDate();
       setCurrentTime(
         now.toLocaleTimeString([], {
           hour: "2-digit",
           minute: "2-digit",
           second: "2-digit",
+          timeZone: 'America/Los_Angeles'
         }),
-      )
+      );
       setCurrentDate(
         now.toLocaleDateString([], {
           weekday: "long",
           month: "long",
           day: "numeric",
+          timeZone: 'America/Los_Angeles'
         }),
-      )
-      setSeconds(now.getSeconds())
-    }
+      );
+      setSeconds(now.getSeconds());
+    };
 
-    updateTime()
-    const timer = setInterval(updateTime, 1000)
+    updateTime();
+    const timer = setInterval(updateTime, 1000);
 
-    return () => clearInterval(timer)
-  }, [])
+    return () => clearInterval(timer);
+  }, []);
 
   // Break timer effect
   useEffect(() => {
@@ -327,7 +354,7 @@ export function ClockInOut() {
           return;
         }
 
-        const response = await fetch('/api/employee/attendance/today', {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/employee/attendance/today`, {
           headers: {
             'Authorization':  `Bearer ${authService.getToken()}`,
           }
@@ -421,11 +448,12 @@ export function ClockInOut() {
     if (status === "in" && breakStatus === "inactive") {
       workTimerRef.current = setInterval(() => {
         if (attendanceInfo?.clockInTime) {
-          // Calculate time from clock-in time to now
-          const clockInDate = new Date(attendanceInfo.date + 'T' + attendanceInfo.clockInTime);
-          const now = new Date();
-          const elapsedMs = now.getTime() - clockInDate.getTime();
-          setElapsedWorkTime(formatWorkTime(elapsedMs));
+          const workTime = calculateWorkTime(
+            attendanceInfo.clockInTime,
+            attendanceInfo.date,
+            totalBreakTime
+          );
+          setElapsedWorkTime(formatWorkTime(workTime));
         } else if (workStartTime) {
           // Fallback to local timer if no attendance info
           const elapsed = Date.now() - workStartTime + totalWorkTime;
@@ -441,7 +469,7 @@ export function ClockInOut() {
         clearInterval(workTimerRef.current);
       }
     };
-  }, [status, breakStatus, workStartTime, totalWorkTime, attendanceInfo]);
+  }, [status, breakStatus, workStartTime, totalWorkTime, attendanceInfo, totalBreakTime]);
 
   // Clear error after 5 seconds
   useEffect(() => {
@@ -466,6 +494,15 @@ export function ClockInOut() {
     fetchEmployeeProfile();
   }, []);
 
+  // Update the calculateWorkTime function
+  const calculateWorkTime = (clockInTime: string, date: string, totalBreakTime: number): number => {
+    const clockInDate = new Date(`${date}T${clockInTime}`);
+    const now = getPSTDate();
+    const elapsedMs = now.getTime() - clockInDate.getTime();
+    return Math.max(0, elapsedMs - totalBreakTime);
+  };
+
+  // Update the handleClockIn function
   const handleClockIn = async () => {
     if (todayClockIn) {
       toast.error("You have already clocked in today", {
@@ -484,7 +521,11 @@ export function ClockInOut() {
     }
 
     try {
-      const response = await fetch('/api/employee/attendance/clock-in', {
+      const currentPSTDate = getPSTDate();
+      const currentDate = formatDateToPST(currentPSTDate);
+      const currentTime = formatTimeToPST(currentPSTDate);
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/employee/attendance/clock-in`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -492,13 +533,18 @@ export function ClockInOut() {
         },
         body: JSON.stringify({
           employeeId: employeeProfile.employeeId,
-          remarks: null
+          remarks: null,
+          clockInTime: currentTime,
+          date: currentDate
         })
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to clock in');
+      if (response.status === 400) {
+        toast.error("Failed to clock in", {
+          description: "You have already clocked in today",
+          duration: 5000,
+        });
+        return;
       }
 
       const data = await response.json();
@@ -521,8 +567,8 @@ export function ClockInOut() {
       
       setStatus("in");
       setTodayClockIn(true);
-      const now = Date.now();
-      setWorkStartTime(now);
+      const nowMs = currentPSTDate.getTime();
+      setWorkStartTime(nowMs);
       setTotalWorkTime(0);
       setElapsedWorkTime("00:00:00");
       setTotalBreakTime(0);
@@ -542,6 +588,7 @@ export function ClockInOut() {
     }
   };
 
+  // Update the handleClockOut function
   const handleClockOut = async () => {
     if (status !== "in") {
       toast.error("Cannot clock out", {
@@ -560,7 +607,11 @@ export function ClockInOut() {
     }
 
     try {
-      const todayResponse = await fetch('/api/employee/attendance/today', {
+      const now = getPSTDate();
+      const currentDate = formatDateToPST(now);
+      const currentTime = formatTimeToPST(now);
+
+      const todayResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/employee/attendance/today`, {
         headers: {
           'Authorization': `Bearer ${authService.getToken()}`,
         }
@@ -577,7 +628,7 @@ export function ClockInOut() {
         throw new Error('No attendance record found for today');
       }
 
-      const response = await fetch(`/api/employee/attendance/${todayData.attendanceId}/clock-out`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/employee/attendance/${todayData.attendanceId}/clock-out`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -585,7 +636,9 @@ export function ClockInOut() {
         },
         body: JSON.stringify({
           employeeId: employeeProfile?.employeeId,
-          remarks: null
+          remarks: null,
+          clockOutTime: currentTime,
+          date: currentDate
         })
       });
 
@@ -613,7 +666,6 @@ export function ClockInOut() {
       localStorage.setItem('attendanceRecord', JSON.stringify(displayData));
       localStorage.setItem('clockStatus', 'out');
 
-
       // Reset all states and clear localStorage
       setStatus("out");
       setTodayClockIn(false);
@@ -635,9 +687,9 @@ export function ClockInOut() {
       localStorage.removeItem('afternoonBreakUsed');
 
       if (data.clockInTime && data.clockOutTime) {
-        const clockInDate = new Date(data.date + 'T' + data.clockInTime);
-        const clockOutDate = new Date(data.date + 'T' + data.clockOutTime);
-        const finalWorkTime = clockOutDate.getTime() - clockInDate.getTime();
+        const clockInDate = new Date(`${data.date}T${data.clockInTime}`);
+        const clockOutDate = new Date(`${data.date}T${data.clockOutTime}`);
+        const finalWorkTime = Math.max(0, clockOutDate.getTime() - clockInDate.getTime() - totalBreakTime);
         setElapsedWorkTime(formatWorkTime(finalWorkTime));
       }
 
@@ -836,7 +888,7 @@ export function ClockInOut() {
 
   const handleStartOvertime = async () => {
     try {
-      const todayResponse = await fetch('/api/employee/attendance/today', {
+      const todayResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/employee/attendance/today`, {
         headers: {
           'Authorization': `Bearer ${authService.getToken()}`,
         }
@@ -871,7 +923,7 @@ export function ClockInOut() {
 
   const handleEndOvertime = async () => {
     try {
-      const todayResponse = await fetch('/api/employee/attendance/today', {
+      const todayResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/employee/attendance/today`, {
         headers: {
           'Authorization': `Bearer ${authService.getToken()}`,
         }
