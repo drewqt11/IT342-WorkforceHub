@@ -58,4 +58,12 @@ object AppColors {
             AppColors.teal500
         )
     )
+    
+    // Horizontal gradient from blue100 to teal100
+    val blueTealGradient = Brush.horizontalGradient(
+        colors = listOf(
+            AppColors.blue100,
+            AppColors.teal100
+        )
+    )
 } 
