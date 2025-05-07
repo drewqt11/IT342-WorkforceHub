@@ -233,7 +233,8 @@ fun ProfileScreen(
                     providedFirstName = profileData?.firstName ?: "",
                     providedLastName = profileData?.lastName ?: "",
                     providedRole = profileData?.jobName ?: "Employee",
-                    onProfileClick = {}  // Already on profile
+                    onProfileClick = {},  // Already on profile
+                    onLogoutClick = onLogout
                 )
                 
                 // Main content

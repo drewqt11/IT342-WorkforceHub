@@ -158,7 +158,8 @@ fun TimeAttendanceScreen(
                     },
                     modifier = Modifier.zIndex(1f),
                     onProfileClick = onNavigateToProfile,
-                    forceAutoFetch = true // Let AppHeader handle profile data fetching
+                    forceAutoFetch = true, // Let AppHeader handle profile data fetching
+                    onLogoutClick = onLogout
                 )
 
                 // Scrollable content below header
