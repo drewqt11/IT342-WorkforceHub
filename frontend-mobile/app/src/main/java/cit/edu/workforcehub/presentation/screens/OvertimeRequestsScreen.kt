@@ -19,8 +19,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Info
@@ -58,7 +58,7 @@ import kotlinx.coroutines.launch
 import cit.edu.workforcehub.R
 import cit.edu.workforcehub.api.ApiHelper
 import cit.edu.workforcehub.api.models.EmployeeProfile
-import cit.edu.workforcehub.api.models.LeaveRequest
+import cit.edu.workforcehub.api.models.OvertimeRequest
 import cit.edu.workforcehub.presentation.components.AppHeader
 import cit.edu.workforcehub.presentation.components.AppScreen
 import cit.edu.workforcehub.presentation.components.LoadingComponent
@@ -85,7 +85,7 @@ private fun formatDate(dateString: String): String {
 }
 
 /**
- * Returns a color based on the status of a leave request
+ * Returns a color based on the status of a request
  */
 private fun getStatusColor(status: String): Color {
     return when (status.uppercase()) {
@@ -97,7 +97,7 @@ private fun getStatusColor(status: String): Color {
 }
 
 /**
- * Returns a background color based on the status of a leave request
+ * Returns a background color based on the status of a request
  */
 private fun getStatusBackgroundColor(status: String): Color {
     return when (status.uppercase()) {
@@ -109,7 +109,7 @@ private fun getStatusBackgroundColor(status: String): Color {
 }
 
 @Composable
-fun LeaveRequestScreen(
+fun OvertimeRequestsScreen(
     onLogout: () -> Unit = {},
     onNavigateToDashboard: () -> Unit = {},
     onNavigateToAttendance: () -> Unit = {},
@@ -132,24 +132,24 @@ fun LeaveRequestScreen(
     var isLoading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
     
-    // State for leave requests
-    var leaveRequests by remember { mutableStateOf<List<LeaveRequest>>(emptyList()) }
-    var isLoadingLeaveRequests by remember { mutableStateOf(true) }
-    var leaveRequestsError by remember { mutableStateOf<String?>(null) }
+    // State for overtime requests
+    var overtimeRequests by remember { mutableStateOf<List<OvertimeRequest>>(emptyList()) }
+    var isLoadingOvertimeRequests by remember { mutableStateOf(true) }
+    var overtimeRequestsError by remember { mutableStateOf<String?>(null) }
     
     // State for navigation
-    var shouldNavigateToSubmitLeaveRequest by remember { mutableStateOf(false) }
+    var shouldNavigateToSubmitOvertimeRequest by remember { mutableStateOf(false) }
     
     // Snackbar host state
     val snackbarHostState = remember { SnackbarHostState() }
     
     // Handle navigation
-    LaunchedEffect(shouldNavigateToSubmitLeaveRequest) {
-        if (shouldNavigateToSubmitLeaveRequest) {
-            // In a real app, this would navigate to a leave request submission screen
+    LaunchedEffect(shouldNavigateToSubmitOvertimeRequest) {
+        if (shouldNavigateToSubmitOvertimeRequest) {
+            // In a real app, this would navigate to a overtime request submission screen
             // For now, just show a message
-            snackbarHostState.showSnackbar("Navigating to Submit Leave Request form")
-            shouldNavigateToSubmitLeaveRequest = false
+            snackbarHostState.showSnackbar("Navigating to Submit Overtime Request form")
+            shouldNavigateToSubmitOvertimeRequest = false
         }
     }
 
@@ -172,22 +172,22 @@ fun LeaveRequestScreen(
         }
     }
     
-    // Fetch leave requests
+    // Fetch overtime requests
     LaunchedEffect(key1 = true) {
         try {
             val employeeService = ApiHelper.getEmployeeService()
-            val response = employeeService.getLeaveRequests()
+            val response = employeeService.getOvertimeRequests()
             
             if (response.isSuccessful && response.body() != null) {
-                leaveRequests = response.body()!!
-                isLoadingLeaveRequests = false
+                overtimeRequests = response.body()!!
+                isLoadingOvertimeRequests = false
             } else {
-                leaveRequestsError = "Failed to load leave requests: ${response.message()}"
-                isLoadingLeaveRequests = false
+                overtimeRequestsError = "Failed to load overtime requests: ${response.message()}"
+                isLoadingOvertimeRequests = false
             }
         } catch (e: Exception) {
-            leaveRequestsError = "Error loading leave requests: ${e.message}"
-            isLoadingLeaveRequests = false
+            overtimeRequestsError = "Error loading overtime requests: ${e.message}"
+            isLoadingOvertimeRequests = false
         }
     }
 
@@ -198,12 +198,12 @@ fun LeaveRequestScreen(
         // Using the UniversalDrawer
         UniversalDrawer(
             drawerState = drawerState,
-            currentScreen = AppScreen.LEAVE_REQUESTS,
+            currentScreen = AppScreen.OVERTIME_REQUESTS,
             onLogout = onLogout,
             onNavigateToDashboard = onNavigateToDashboard,
             onNavigateToAttendance = onNavigateToAttendance,
-            onNavigateToLeaveRequests = {}, // Already on leave requests, no need to navigate
-            onNavigateToOvertimeRequests = onNavigateToOvertimeRequests,
+            onNavigateToLeaveRequests = onNavigateToLeaveRequests,
+            onNavigateToOvertimeRequests = {}, // Already on overtime requests, no need to navigate
             onNavigateToReimbursementRequests = onNavigateToReimbursementRequests,
             onNavigateToPerformance = onNavigateToPerformance,
             onNavigateToTraining = onNavigateToTraining,
@@ -229,13 +229,13 @@ fun LeaveRequestScreen(
                         .fillMaxSize()
                         .padding(top = 70.dp) // Adjusted for smaller header
                 ) {
-                // Show loading component if data is still loading
-                if (isLoading) {
-                    LoadingComponent()
-                } else {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
+                    // Show loading component if data is still loading
+                    if (isLoading) {
+                        LoadingComponent()
+                    } else {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
                                 .verticalScroll(
                                     state = scrollState,
                                     enabled = true
@@ -244,7 +244,7 @@ fun LeaveRequestScreen(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            // Add Leave Requests header at the top of the scrollable content
+                            // Add Overtime Requests header at the top of the scrollable content
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -271,8 +271,8 @@ fun LeaveRequestScreen(
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Default.CalendarToday,
-                                        contentDescription = "Leave Icon",
+                                        imageVector = Icons.Default.AccessTime,
+                                        contentDescription = "Overtime Icon",
                                         tint = Color.White,
                                         modifier = Modifier.size(24.dp)
                                     )
@@ -280,16 +280,16 @@ fun LeaveRequestScreen(
                                 
                                 Spacer(modifier = Modifier.width(12.dp))
                                 
-                                // Leave Requests text
+                                // Overtime Requests text
                                 Text(
-                                    text = "Leave Requests",
+                                    text = "Overtime Requests",
                                     fontSize = 28.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = AppColors.gray800
                                 )
                             }
                             
-                            // Main Leave Requests Card
+                            // Main Overtime Requests Card
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -330,7 +330,7 @@ fun LeaveRequestScreen(
                                                     color = Color.White.copy(alpha = 0.6f),
                                                     shape = RoundedCornerShape(12.dp)
                                                 )
-                                                .clickable { shouldNavigateToSubmitLeaveRequest = true },
+                                                .clickable { shouldNavigateToSubmitOvertimeRequest = true },
                                             shape = RoundedCornerShape(12.dp),
                                             color = Color.Transparent
                                         ) {
@@ -367,39 +367,39 @@ fun LeaveRequestScreen(
                                         }
                                     }
                                     
-                                    // Leave Requests Directory header moved below the button
+                                    // Overtime Requests Directory header moved below the button
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
                                         Icon(
-                                            imageVector = Icons.Default.CalendarToday,
-                                            contentDescription = "Leave Requests Directory",
+                                            imageVector = Icons.Default.AccessTime,
+                                            contentDescription = "Overtime Requests Directory",
                                             tint = AppColors.blue500
                                         )
                                         Column {
                                             Text(
-                                                text = "Leave Requests Directory",
+                                                text = "Overtime Requests Directory",
                                                 fontSize = 18.sp,
                                                 fontWeight = FontWeight.Bold,
                                                 color = AppColors.gray800
                                             )
                                             Text(
-                                                text = "Track request status, dates, and outcomes",
+                                                text = "Track hours, status, and approvals for overtime",
                                                 fontSize = 14.sp,
                                                 color = AppColors.gray500
                                             )
+                                        }
                                     }
-                                }
-                                
-                                Spacer(modifier = Modifier.height(16.dp))
-                                
-                                    // Display leave requests
-                                    if (isLoadingLeaveRequests) {
+
+                                    Spacer(modifier = Modifier.height(16.dp))
+
+                                    // Display overtime requests
+                                    if (isLoadingOvertimeRequests) {
                                         Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
+                                            modifier = Modifier
+                                                .fillMaxWidth()
                                                 .padding(vertical = 32.dp),
                                             contentAlignment = Alignment.Center
                                         ) {
@@ -408,10 +408,10 @@ fun LeaveRequestScreen(
                                                 modifier = Modifier.size(32.dp)
                                             )
                                         }
-                                    } else if (leaveRequestsError != null) {
+                                    } else if (overtimeRequestsError != null) {
                                         Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
+                                            modifier = Modifier
+                                                .fillMaxWidth()
                                                 .clip(RoundedCornerShape(8.dp))
                                                 .background(AppColors.redLight)
                                                 .padding(16.dp)
@@ -423,31 +423,31 @@ fun LeaveRequestScreen(
                                                     imageVector = Icons.Default.Error,
                                                     contentDescription = "Error",
                                                     tint = AppColors.red,
-                                            modifier = Modifier.size(24.dp)
-                                        )
+                                                    modifier = Modifier.size(24.dp)
+                                                )
                                                 Spacer(modifier = Modifier.height(8.dp))
-                                        Text(
+                                                Text(
                                                     text = "Error Loading Requests",
-                                            fontSize = 16.sp,
+                                                    fontSize = 16.sp,
                                                     fontWeight = FontWeight.Bold,
                                                     color = AppColors.red
                                                 )
                                                 Text(
-                                                    text = leaveRequestsError ?: "Unknown error occurred",
+                                                    text = overtimeRequestsError ?: "Unknown error occurred",
                                                     fontSize = 14.sp,
                                                     color = AppColors.red.copy(alpha = 0.8f),
                                                     textAlign = TextAlign.Center
                                                 )
                                             }
                                         }
-                                    } else if (leaveRequests.isEmpty()) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
+                                    } else if (overtimeRequests.isEmpty()) {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
                                                 .padding(vertical = 32.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Column(
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Column(
                                                 horizontalAlignment = Alignment.CenterHorizontally
                                             ) {
                                                 Icon(
@@ -457,35 +457,34 @@ fun LeaveRequestScreen(
                                                     modifier = Modifier.size(48.dp)
                                                 )
                                                 Spacer(modifier = Modifier.height(16.dp))
-                                    Text(
+                                                Text(
                                                     text = "No Records Found",
                                                     fontSize = 18.sp,
-                                        fontWeight = FontWeight.Bold,
+                                                    fontWeight = FontWeight.Bold,
                                                     color = AppColors.gray800
-                                    )
-                                    Text(
-                                                    text = "You haven't submitted any leave requests yet",
+                                                )
+                                                Text(
+                                                    text = "You haven't submitted any overtime requests yet",
                                                     fontSize = 14.sp,
                                                     color = AppColors.gray500,
-                                        textAlign = TextAlign.Center
-                                    )
+                                                    textAlign = TextAlign.Center
+                                                )
                                             }
                                         }
                                     } else {
-                                        // Display leave requests
+                                        // Display overtime requests
                                         Column(
                                             verticalArrangement = Arrangement.spacedBy(8.dp)
                                         ) {
-                                            leaveRequests.forEachIndexed { index, request ->
-                                                LeaveRequestItem(
-                                                    startDate = request.startDate,
-                                                    endDate = request.endDate,
-                                                    leaveType = request.leaveType,
-                                                    status = request.status ?: "PENDING",
-                                                    reason = request.reason
+                                            overtimeRequests.forEachIndexed { index, request ->
+                                                OvertimeRequestItem(
+                                                    requestDate = request.requestDate,
+                                                    hours = request.hours,
+                                                    reason = request.reason,
+                                                    status = request.status ?: "PENDING"
                                                 )
                                                 
-                                                if (index < leaveRequests.size - 1) {
+                                                if (index < overtimeRequests.size - 1) {
                                                     HorizontalDivider(
                                                         modifier = Modifier.padding(vertical = 8.dp),
                                                         color = AppColors.gray200
@@ -509,10 +508,10 @@ fun LeaveRequestScreen(
                         .align(Alignment.BottomCenter)
                         .padding(bottom = 16.dp)
                 ) {
-                        Snackbar(
+                    Snackbar(
                         modifier = Modifier.padding(horizontal = 16.dp),
-                            action = {
-                                        Text(
+                        action = {
+                            Text(
                                 text = "OK",
                                 color = AppColors.blue100,
                                 modifier = Modifier.clickable { snackbarHostState.currentSnackbarData?.dismiss() }
@@ -528,12 +527,11 @@ fun LeaveRequestScreen(
 }
 
 @Composable
-fun LeaveRequestItem(
-    startDate: String,
-    endDate: String,
-    leaveType: String,
-    status: String,
-    reason: String
+fun OvertimeRequestItem(
+    requestDate: String,
+    hours: Double,
+    reason: String,
+    status: String
 ) {
     Column(
         modifier = Modifier
@@ -546,13 +544,13 @@ fun LeaveRequestItem(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column {
-                // Leave Type and Status
+                // Overtime Hours and Status
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = leaveType,
+                        text = "${hours.toString()} Hours",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = AppColors.blue700
@@ -587,9 +585,9 @@ fun LeaveRequestItem(
                 
                 Spacer(modifier = Modifier.height(8.dp))
                 
-                // Date Range
+                // Date
                 Text(
-                    text = "${formatDate(startDate)} to ${formatDate(endDate)}",
+                    text = "Date: ${formatDate(requestDate)}",
                     fontSize = 14.sp,
                     color = AppColors.gray600
                 )
@@ -610,11 +608,12 @@ fun LeaveRequestItem(
 
 @Preview(showBackground = true)
 @Composable
-fun LeaveRequestScreenPreview() {
+fun OvertimeRequestsScreenPreview() {
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = AppColors.gray50
     ) {
-        LeaveRequestScreen()
+        OvertimeRequestsScreen()
     }
 }
+

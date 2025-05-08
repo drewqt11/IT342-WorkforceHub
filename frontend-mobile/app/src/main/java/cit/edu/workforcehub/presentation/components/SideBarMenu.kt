@@ -25,7 +25,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -62,6 +62,8 @@ enum class AppScreen {
     DASHBOARD,
     TIME_ATTENDANCE,
     LEAVE_REQUESTS,
+    OVERTIME_REQUESTS,
+    REIMBURSEMENT_REQUESTS,
     PERFORMANCE,
     TRAINING,
     PROFILE,
@@ -78,6 +80,8 @@ enum class AppScreen {
  * @param onNavigateToDashboard function to navigate to dashboard
  * @param onNavigateToAttendance function to navigate to time & attendance
  * @param onNavigateToLeaveRequests function to navigate to leave requests
+ * @param onNavigateToOvertimeRequests function to navigate to overtime requests
+ * @param onNavigateToReimbursementRequests function to navigate to reimbursement requests
  * @param onNavigateToPerformance function to navigate to performance
  * @param onNavigateToTraining function to navigate to training
  * @param onNavigateToProfile function to navigate to profile
@@ -91,6 +95,8 @@ fun UniversalDrawer(
     onNavigateToDashboard: () -> Unit,
     onNavigateToAttendance: () -> Unit,
     onNavigateToLeaveRequests: () -> Unit,
+    onNavigateToOvertimeRequests: () -> Unit,
+    onNavigateToReimbursementRequests: () -> Unit,
     onNavigateToPerformance: () -> Unit,
     onNavigateToTraining: () -> Unit,
     onNavigateToProfile: () -> Unit,
@@ -108,6 +114,8 @@ fun UniversalDrawer(
                 onNavigateToDashboard = onNavigateToDashboard,
                 onNavigateToAttendance = onNavigateToAttendance,
                 onNavigateToLeaveRequests = onNavigateToLeaveRequests,
+                onNavigateToOvertimeRequests = onNavigateToOvertimeRequests,
+                onNavigateToReimbursementRequests = onNavigateToReimbursementRequests,
                 onNavigateToPerformance = onNavigateToPerformance,
                 onNavigateToTraining = onNavigateToTraining,
                 onNavigateToProfile = onNavigateToProfile
@@ -152,11 +160,12 @@ fun SideBarMenu(
     onNavigateToDashboard: () -> Unit,
     onNavigateToAttendance: () -> Unit,
     onNavigateToLeaveRequests: () -> Unit,
+    onNavigateToOvertimeRequests: () -> Unit,
+    onNavigateToReimbursementRequests: () -> Unit,
     onNavigateToPerformance: () -> Unit,
     onNavigateToTraining: () -> Unit,
     onNavigateToProfile: () -> Unit
 ) {
-    val scope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
     
     // State to track which menu item is expanded
@@ -169,10 +178,7 @@ fun SideBarMenu(
             icon = R.drawable.dashboard2,
             screen = AppScreen.DASHBOARD,
             onClick = {
-                scope.launch {
-                    drawerState.close()
-                    onNavigateToDashboard()
-                }
+                onNavigateToDashboard()
             }
         )
     )
@@ -182,10 +188,7 @@ fun SideBarMenu(
         icon = R.drawable.user,
         screen = AppScreen.PROFILE,
         onClick = {
-            scope.launch {
-                drawerState.close()
-                onNavigateToProfile()
-            }
+            onNavigateToProfile()
         }
     )
     
@@ -229,10 +232,7 @@ fun SideBarMenu(
             icon = R.drawable.clock,
             screen = AppScreen.TIME_ATTENDANCE,
             onClick = {
-                scope.launch {
-                    drawerState.close()
-                    onNavigateToAttendance()
-                }
+                onNavigateToAttendance()
             }
         ),
         MenuItem(
@@ -253,23 +253,24 @@ fun SideBarMenu(
                     icon = R.drawable.time,
                     screen = AppScreen.LEAVE_REQUESTS,
                     onClick = {
-                        scope.launch {
-                            drawerState.close()
-                            onNavigateToLeaveRequests()
-                        }
+                        onNavigateToLeaveRequests()
                     }
                 ),
                 MenuItem(
                     title = "Overtime",
                     icon = R.drawable.time,
-                    screen = null,
-                    onClick = { /* Navigate to Overtime Requests */ }
+                    screen = AppScreen.OVERTIME_REQUESTS,
+                    onClick = {
+                        onNavigateToOvertimeRequests()
+                    }
                 ),
                 MenuItem(
                     title = "Reimbursement",
                     icon = R.drawable.time,
-                    screen = null,
-                    onClick = { /* Navigate to Reimbursement Requests */ }
+                    screen = AppScreen.REIMBURSEMENT_REQUESTS,
+                    onClick = {
+                        onNavigateToReimbursementRequests()
+                    }
                 )
             )
         )
@@ -281,10 +282,7 @@ fun SideBarMenu(
             icon = R.drawable.graduation,
             screen = AppScreen.TRAINING,
             onClick = {
-                scope.launch {
-                    drawerState.close()
-                    onNavigateToTraining()
-                }
+                onNavigateToTraining()
             }
         ),
         MenuItem(
@@ -328,10 +326,7 @@ fun SideBarMenu(
             icon = R.drawable.performance,
             screen = AppScreen.PERFORMANCE,
             onClick = {
-                scope.launch {
-                    drawerState.close()
-                    onNavigateToPerformance()
-                }
+                onNavigateToPerformance()
             }
         ),
         MenuItem(
@@ -359,10 +354,7 @@ fun SideBarMenu(
         icon = R.drawable.logout_icon,
         screen = null,
         onClick = {
-            scope.launch {
-                drawerState.close()
-                onLogout()
-            }
+            onLogout()
         }
     )
     
@@ -429,7 +421,7 @@ fun SideBarMenu(
             }
             
             // Divider between fixed header and scrollable content
-            Divider(
+            HorizontalDivider(
                 color = AppColors.gray200,
                 thickness = 2.dp,
             )
@@ -544,7 +536,7 @@ fun SideBarMenu(
                 Spacer(modifier = Modifier.height(16.dp))
                 
                 // Add divider before logout
-                Divider(
+                HorizontalDivider(
                     color = AppColors.gray200,
                     thickness = 2.dp,
                 )

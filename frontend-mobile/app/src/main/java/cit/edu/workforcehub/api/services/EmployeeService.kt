@@ -5,6 +5,8 @@ import cit.edu.workforcehub.api.models.AttendanceRecord
 import cit.edu.workforcehub.api.models.ClockInRequest
 import cit.edu.workforcehub.api.models.EmployeeProfile
 import cit.edu.workforcehub.api.models.LeaveRequest
+import cit.edu.workforcehub.api.models.OvertimeRequest
+import cit.edu.workforcehub.api.models.ReimbursementRequest
 import retrofit2.Response
 import retrofit2.http.*
 
@@ -77,4 +79,30 @@ interface EmployeeService {
      */
     @GET("/api/employee/leave-requests")
     suspend fun getLeaveRequests(): Response<List<LeaveRequest>>
+
+    /**
+     * Submit an overtime request.
+     */
+    @POST("/api/employee/overtime-requests")
+    @Headers("Content-Type: application/json")
+    suspend fun submitOvertimeRequest(@Body request: OvertimeRequest): Response<OvertimeRequest>
+    
+    /**
+     * Get all overtime requests for the authenticated employee.
+     */
+    @GET("/api/overtime/my-requests")
+    suspend fun getOvertimeRequests(): Response<List<OvertimeRequest>>
+
+    /**
+     * Submit a reimbursement request.
+     */
+    @POST("/api/employee/reimbursement-requests")
+    @Headers("Content-Type: application/json")
+    suspend fun submitReimbursementRequest(@Body request: ReimbursementRequest): Response<ReimbursementRequest>
+    
+    /**
+     * Get all reimbursement requests for the authenticated employee.
+     */
+    @GET("/api/employee/reimbursement-requests")
+    suspend fun getReimbursementRequests(): Response<List<ReimbursementRequest>>
 } 

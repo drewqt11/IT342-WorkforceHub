@@ -121,6 +121,8 @@ fun DashboardScreen(
     onLogout: () -> Unit = {},
     onNavigateToAttendance: () -> Unit = {},
     onNavigateToLeaveRequests: () -> Unit = {},
+    onNavigateToOvertimeRequests: () -> Unit = {},
+    onNavigateToReimbursementRequests: () -> Unit = {},
     onNavigateToPerformance: () -> Unit = {},
     onNavigateToTraining: () -> Unit = {},
     onNavigateToProfile: () -> Unit = {}
@@ -268,6 +270,8 @@ fun DashboardScreen(
             onNavigateToDashboard = {}, // Already on dashboard, no need to navigate
             onNavigateToAttendance = onNavigateToAttendance,
             onNavigateToLeaveRequests = onNavigateToLeaveRequests,
+            onNavigateToOvertimeRequests = onNavigateToOvertimeRequests,
+            onNavigateToReimbursementRequests = onNavigateToReimbursementRequests,
             onNavigateToPerformance = onNavigateToPerformance,
             onNavigateToTraining = onNavigateToTraining,
             onNavigateToProfile = onNavigateToProfile

@@ -57,7 +57,7 @@ import androidx.compose.material.icons.filled.Language
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -152,8 +152,11 @@ fun ProfileScreen(
     onNavigateToDashboard: () -> Unit = {},
     onNavigateToAttendance: () -> Unit = {},
     onNavigateToLeaveRequests: () -> Unit = {},
+    onNavigateToOvertimeRequests: () -> Unit = {},
+    onNavigateToReimbursementRequests: () -> Unit = {},
     onNavigateToPerformance: () -> Unit = {},
-    onNavigateToTraining: () -> Unit = {}
+    onNavigateToTraining: () -> Unit = {},
+    onNavigateToProfile: () -> Unit = {}
 ) {
     // State for drawer
     val drawerState = rememberDrawerState(DrawerValue.Closed)
@@ -217,6 +220,8 @@ fun ProfileScreen(
             onNavigateToDashboard = onNavigateToDashboard,
             onNavigateToAttendance = onNavigateToAttendance,
             onNavigateToLeaveRequests = onNavigateToLeaveRequests,
+            onNavigateToOvertimeRequests = onNavigateToOvertimeRequests,
+            onNavigateToReimbursementRequests = onNavigateToReimbursementRequests,
             onNavigateToPerformance = onNavigateToPerformance,
             onNavigateToTraining = onNavigateToTraining,
             onNavigateToProfile = {} // Already on profile
@@ -461,7 +466,7 @@ fun ProfileCard(profile: EmployeeProfile) {
             }
             
             // Divider
-            Divider(
+            HorizontalDivider(
                 modifier = Modifier.padding(vertical = 16.dp),
                 color = AppColors.gray200,
                 thickness = 1.dp
@@ -858,7 +863,7 @@ fun InfoItem(
         }
         
         if (!isLast) {
-            Divider(
+            HorizontalDivider(
                 color = AppColors.gray200,
                 thickness = 1.dp
             )

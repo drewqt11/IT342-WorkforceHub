@@ -77,6 +77,8 @@ fun TimeAttendanceScreen(
     onNavigateToDashboard: () -> Unit = {},
     onNavigateToAttendance: () -> Unit = {},
     onNavigateToLeaveRequests: () -> Unit = {},
+    onNavigateToOvertimeRequests: () -> Unit = {},
+    onNavigateToReimbursementRequests: () -> Unit = {},
     onNavigateToPerformance: () -> Unit = {},
     onNavigateToTraining: () -> Unit = {},
     onNavigateToProfile: () -> Unit = {}
@@ -144,6 +146,8 @@ fun TimeAttendanceScreen(
             onNavigateToDashboard = onNavigateToDashboard,
             onNavigateToAttendance = {},
             onNavigateToLeaveRequests = onNavigateToLeaveRequests,
+            onNavigateToOvertimeRequests = onNavigateToOvertimeRequests,
+            onNavigateToReimbursementRequests = onNavigateToReimbursementRequests,
             onNavigateToPerformance = onNavigateToPerformance,
             onNavigateToTraining = onNavigateToTraining,
             onNavigateToProfile = onNavigateToProfile
@@ -409,7 +413,7 @@ fun TimeAttendanceScreen(
                                                 )
                                                 
                                                     if (record != completedRecords.last()) {
-                                                    Divider(
+                                                    HorizontalDivider(
                                                         modifier = Modifier.padding(vertical = 8.dp),
                                                         color = AppColors.gray200
                                                     )
@@ -547,7 +551,7 @@ fun AttendanceRecord(
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // Vertical Divider
-                Divider(
+                VerticalDivider(
                     modifier = Modifier
                         .height(40.dp)
                         .width(2.dp)

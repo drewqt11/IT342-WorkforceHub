@@ -46,6 +46,8 @@ fun PerformanceScreen(
     onNavigateToDashboard: () -> Unit = {},
     onNavigateToAttendance: () -> Unit = {},
     onNavigateToLeaveRequests: () -> Unit = {},
+    onNavigateToOvertimeRequests: () -> Unit = {},
+    onNavigateToReimbursementRequests: () -> Unit = {},
     onNavigateToPerformance: () -> Unit = {},
     onNavigateToTraining: () -> Unit = {},
     onNavigateToProfile: () -> Unit = {}
@@ -93,6 +95,8 @@ fun PerformanceScreen(
             onNavigateToDashboard = onNavigateToDashboard,
             onNavigateToAttendance = onNavigateToAttendance,
             onNavigateToLeaveRequests = onNavigateToLeaveRequests,
+            onNavigateToOvertimeRequests = onNavigateToOvertimeRequests,
+            onNavigateToReimbursementRequests = onNavigateToReimbursementRequests,
             onNavigateToPerformance = {}, // Already on performance, no need to navigate
             onNavigateToTraining = onNavigateToTraining,
             onNavigateToProfile = onNavigateToProfile

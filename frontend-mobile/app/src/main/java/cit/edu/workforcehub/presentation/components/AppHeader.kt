@@ -318,9 +318,9 @@ fun AppHeader(
                             
                             // Status with colored indicator
                             Row(
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
                                     text = "Status: ",
                                     style = TextStyle(
                                         fontWeight = FontWeight.Normal,
@@ -402,4 +402,4 @@ fun AppHeaderWithDropdownPreview() {
             onLogoutClick = {}
         )
     }
-}
+} 

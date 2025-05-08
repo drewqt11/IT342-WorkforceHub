@@ -46,6 +46,8 @@ fun TrainingScreen(
     onNavigateToDashboard: () -> Unit = {},
     onNavigateToAttendance: () -> Unit = {},
     onNavigateToLeaveRequests: () -> Unit = {},
+    onNavigateToOvertimeRequests: () -> Unit = {},
+    onNavigateToReimbursementRequests: () -> Unit = {},
     onNavigateToPerformance: () -> Unit = {},
     onNavigateToTraining: () -> Unit = {},
     onNavigateToProfile: () -> Unit = {}
@@ -93,6 +95,8 @@ fun TrainingScreen(
             onNavigateToDashboard = onNavigateToDashboard,
             onNavigateToAttendance = onNavigateToAttendance,
             onNavigateToLeaveRequests = onNavigateToLeaveRequests,
+            onNavigateToOvertimeRequests = onNavigateToOvertimeRequests,
+            onNavigateToReimbursementRequests = onNavigateToReimbursementRequests,
             onNavigateToPerformance = onNavigateToPerformance,
             onNavigateToTraining = {}, // Already on training, no need to navigate
             onNavigateToProfile = onNavigateToProfile
