@@ -15,12 +15,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.lifecycleScope
 import cit.edu.workforcehub.api.ApiHelper
-import cit.edu.workforcehub.api.models.EmployeeProfile
 import cit.edu.workforcehub.auth.AuthManager
 import cit.edu.workforcehub.auth.OAuthWebViewActivity
 import cit.edu.workforcehub.presentation.components.AppScreen
 import cit.edu.workforcehub.presentation.screens.DashboardScreen
-import cit.edu.workforcehub.presentation.screens.EnrollmentScreen
+import cit.edu.workforcehub.presentation.screens.forms.EnrollmentScreen
 import cit.edu.workforcehub.presentation.screens.MainScreen
 import cit.edu.workforcehub.presentation.screens.ProfileScreen
 import cit.edu.workforcehub.presentation.screens.TimeAttendanceScreen
@@ -29,6 +28,7 @@ import cit.edu.workforcehub.presentation.screens.OvertimeRequestsScreen
 import cit.edu.workforcehub.presentation.screens.ReimbursementRequestsScreen
 import cit.edu.workforcehub.presentation.screens.PerformanceScreen
 import cit.edu.workforcehub.presentation.screens.TrainingScreen
+import cit.edu.workforcehub.presentation.screens.forms.ReimbursementRequestFormScreen
 import cit.edu.workforcehub.presentation.theme.AppTheme
 import kotlinx.coroutines.launch
 
@@ -324,6 +324,16 @@ fun WorkforceHubApp(
                     },
                     onNavigateToProfile = {
                         onScreenChange(AppScreen.PROFILE)
+                    },
+                    onNavigateToSubmitRequest = {
+                        onScreenChange(AppScreen.REIMBURSEMENT_REQUEST_FORM)
+                    }
+                )
+            }
+            AppScreen.REIMBURSEMENT_REQUEST_FORM -> {
+                ReimbursementRequestFormScreen(
+                    onNavigateBack = {
+                        onScreenChange(AppScreen.REIMBURSEMENT_REQUESTS)
                     }
                 )
             }

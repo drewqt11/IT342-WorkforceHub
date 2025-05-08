@@ -104,16 +104,17 @@ data class LeaveRequest(
  */
 @JsonClass(generateAdapter = true)
 data class OvertimeRequest(
-    @Json(name = "overtimeRequestId") val overtimeRequestId: String? = null,
-    @Json(name = "employeeId") val employeeId: String,
-    @Json(name = "requestDate") val requestDate: String,
-    @Json(name = "hours") val hours: Double,
+    @Json(name = "otRequestId") val overtimeRequestId: String? = null,
+    @Json(name = "employeeId") val employeeId: String? = null,
+    @Json(name = "employeeName") val employeeName: String? = null,
+    @Json(name = "date") val date: String,
+    @Json(name = "startTime") val startTime: String,
+    @Json(name = "endTime") val endTime: String,
+    @Json(name = "totalHours") val totalHours: Double,
     @Json(name = "reason") val reason: String,
     @Json(name = "status") val status: String? = "PENDING",
-    @Json(name = "approvedByManagerId") val approvedByManagerId: String? = null,
-    @Json(name = "approvedDate") val approvedDate: String? = null,
-    @Json(name = "submissionDate") val submissionDate: String? = null,
-    @Json(name = "remarks") val remarks: String? = null
+    @Json(name = "reviewedBy") val reviewedBy: String? = null,
+    @Json(name = "reviewedAt") val reviewedAt: String? = null
 )
 
 /**

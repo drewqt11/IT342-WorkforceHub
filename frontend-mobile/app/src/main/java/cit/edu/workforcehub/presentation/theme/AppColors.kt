@@ -11,8 +11,10 @@ object AppColors {
     val blue50 = Color(0xFFEFF6FF)
     val blue100 = Color(0xFFDCEAFF)
     val blue300 = Color(0xFF93C5FD)
+    val blue400 = Color(0xFF60A5FA)
     val blue500 = Color(0xFF3B82F6)
-    val blue700 = Color(0xFF2563EB)
+    val blue600 = Color(0xFF2563EB)
+    val blue700 = Color(0xFF1D4ED8)
     val blue900 = Color(0xFF1E3A8A)
     
     // Header background

@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -31,7 +32,12 @@ import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.material3.TabRowDefaults
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -49,6 +55,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -126,7 +133,8 @@ fun ReimbursementRequestsScreen(
     onNavigateToReimbursementRequests: () -> Unit = {},
     onNavigateToPerformance: () -> Unit = {},
     onNavigateToTraining: () -> Unit = {},
-    onNavigateToProfile: () -> Unit = {}
+    onNavigateToProfile: () -> Unit = {},
+    onNavigateToSubmitRequest: () -> Unit = {}
 ) {
     // State for drawer
     val drawerState = rememberDrawerState(DrawerValue.Closed)
@@ -145,18 +153,32 @@ fun ReimbursementRequestsScreen(
     var isLoadingReimbursementRequests by remember { mutableStateOf(true) }
     var reimbursementRequestsError by remember { mutableStateOf<String?>(null) }
     
-    // State for navigation
+    // State for navigation and dialogs
+    var showConfirmationDialog by remember { mutableStateOf(false) }
     var shouldNavigateToSubmitReimbursementRequest by remember { mutableStateOf(false) }
     
     // Snackbar host state
     val snackbarHostState = remember { SnackbarHostState() }
+
+    // Add state for the selected tab
+    var selectedTabIndex by remember { mutableStateOf(0) }
+    val tabTitles = listOf("Pending", "Approved", "Rejected")
+
+    // Filter requests based on the selected tab
+    val filteredRequests = remember(reimbursementRequests, selectedTabIndex) {
+        when (selectedTabIndex) {
+            0 -> reimbursementRequests.filter { (it.status ?: "").uppercase() == "PENDING" }
+            1 -> reimbursementRequests.filter { (it.status ?: "").uppercase() == "APPROVED" }
+            2 -> reimbursementRequests.filter { (it.status ?: "").uppercase() == "REJECTED" }
+            else -> reimbursementRequests
+        }
+    }
     
     // Handle navigation
     LaunchedEffect(shouldNavigateToSubmitReimbursementRequest) {
         if (shouldNavigateToSubmitReimbursementRequest) {
-            // In a real app, this would navigate to a reimbursement request submission screen
-            // For now, just show a message
-            snackbarHostState.showSnackbar("Navigating to Submit Reimbursement Request form")
+            // Navigate to the ReimbursementRequestFormScreen
+            onNavigateToSubmitRequest()
             shouldNavigateToSubmitReimbursementRequest = false
         }
     }
@@ -244,15 +266,11 @@ fun ReimbursementRequestsScreen(
                         Column(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .verticalScroll(
-                                    state = scrollState,
-                                    enabled = true
-                                )
                                 .padding(horizontal = 16.dp, vertical = 16.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            // Add Reimbursement Requests header at the top of the scrollable content
+                            // Header section - Add Reimbursement Requests header
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -301,7 +319,7 @@ fun ReimbursementRequestsScreen(
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .shadow(4.dp, RoundedCornerShape(16.dp)),
+                                    .weight(1f),  // Make the card take remaining space
                                 colors = CardDefaults.cardColors(containerColor = AppColors.white),
                                 shape = RoundedCornerShape(16.dp),
                                 border = BorderStroke(1.dp, AppColors.gray200)
@@ -316,6 +334,11 @@ fun ReimbursementRequestsScreen(
                                             )
                                         )
                                 )
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                ) {
+                                    // Fixed content (Submit button, Directory header, Tabs)
                                 Column(
                                     modifier = Modifier.padding(16.dp)
                                 ) {
@@ -338,7 +361,7 @@ fun ReimbursementRequestsScreen(
                                                     color = Color.White.copy(alpha = 0.6f),
                                                     shape = RoundedCornerShape(12.dp)
                                                 )
-                                                .clickable { shouldNavigateToSubmitReimbursementRequest = true },
+                                                    .clickable { showConfirmationDialog = true },
                                             shape = RoundedCornerShape(12.dp),
                                             color = Color.Transparent
                                         ) {
@@ -375,7 +398,8 @@ fun ReimbursementRequestsScreen(
                                         }
                                     }
                                     
-                                    // Reimbursement Requests Directory header moved below the button
+                                        // Reimbursement Requests Directory header
+                                        Column {
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
                                         verticalAlignment = Alignment.CenterVertically,
@@ -403,11 +427,61 @@ fun ReimbursementRequestsScreen(
 
                                     Spacer(modifier = Modifier.height(16.dp))
 
-                                    // Display reimbursement requests
+                                            // Status filter tabs
+                                            TabRow(
+                                                selectedTabIndex = selectedTabIndex,
+                                                containerColor = Color.Transparent,
+                                                contentColor = AppColors.blue500,
+                                                indicator = { tabPositions ->
+                                                    if (selectedTabIndex < tabPositions.size) {
+                                                        Box(
+                                                            Modifier
+                                                                .tabIndicatorOffset(tabPositions[selectedTabIndex])
+                                                                .height(3.dp)
+                                                                .background(
+                                                                    brush = Brush.linearGradient(
+                                                                        colors = listOf(AppColors.blue500, AppColors.teal500),
+                                                                        start = Offset(0f, 0f),
+                                                                        end = Offset(100f, 0f)
+                                                                    ),
+                                                                    shape = RoundedCornerShape(topStart = 2.dp, topEnd = 2.dp)
+                                                                )
+                                                        )
+                                                    }
+                                                },
+                                                divider = {
+                                                    HorizontalDivider(
+                                                        thickness = 1.dp,
+                                                        color = AppColors.gray200
+                                                    )
+                                                }
+                                            ) {
+                                                tabTitles.forEachIndexed { index, title ->
+                                                    Tab(
+                                                        selected = selectedTabIndex == index,
+                                                        onClick = { selectedTabIndex = index },
+                                                        text = {
+                                                            Text(
+                                                                text = title,
+                                                                maxLines = 1,
+                                                                overflow = TextOverflow.Ellipsis,
+                                                                fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Normal,
+                                                                fontSize = 14.sp,
+                                                                color = if (selectedTabIndex == index) AppColors.teal500 else AppColors.gray600
+                                                            )
+                                                        }
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                    
+                                    // THIS IS THE SCROLLABLE PART - Reimbursement requests list
                                     if (isLoadingReimbursementRequests) {
                                         Box(
                                             modifier = Modifier
                                                 .fillMaxWidth()
+                                                .weight(1f)
                                                 .padding(vertical = 32.dp),
                                             contentAlignment = Alignment.Center
                                         ) {
@@ -420,9 +494,11 @@ fun ReimbursementRequestsScreen(
                                         Box(
                                             modifier = Modifier
                                                 .fillMaxWidth()
-                                                .clip(RoundedCornerShape(8.dp))
-                                                .background(AppColors.redLight)
+                                                .weight(1f)
                                                 .padding(16.dp)
+                                                .clip(RoundedCornerShape(8.dp))
+                                                .background(AppColors.redLight),
+                                            contentAlignment = Alignment.Center
                                         ) {
                                             Column(
                                                 horizontalAlignment = Alignment.CenterHorizontally
@@ -448,10 +524,11 @@ fun ReimbursementRequestsScreen(
                                                 )
                                             }
                                         }
-                                    } else if (reimbursementRequests.isEmpty()) {
+                                    } else if (filteredRequests.isEmpty()) {
                                         Box(
                                             modifier = Modifier
                                                 .fillMaxWidth()
+                                                .weight(1f)
                                                 .padding(vertical = 32.dp),
                                             contentAlignment = Alignment.Center
                                         ) {
@@ -472,7 +549,12 @@ fun ReimbursementRequestsScreen(
                                                     color = AppColors.gray800
                                                 )
                                                 Text(
-                                                    text = "You haven't submitted any reimbursement requests yet",
+                                                    text = when (selectedTabIndex) {
+                                                        0 -> "You don't have any pending reimbursement requests"
+                                                        1 -> "You don't have any approved reimbursement requests"
+                                                        2 -> "You don't have any rejected reimbursement requests"
+                                                        else -> "You haven't submitted any reimbursement requests yet"
+                                                    },
                                                     fontSize = 14.sp,
                                                     color = AppColors.gray500,
                                                     textAlign = TextAlign.Center
@@ -480,32 +562,188 @@ fun ReimbursementRequestsScreen(
                                             }
                                         }
                                     } else {
-                                        // Display reimbursement requests
+                                        // SCROLLABLE CONTENT - Reimbursement requests list
                                         Column(
-                                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .weight(1f)
+                                                .verticalScroll(scrollState)
+                                                .padding(16.dp),
+                                            verticalArrangement = Arrangement.spacedBy(12.dp)
                                         ) {
-                                            reimbursementRequests.forEachIndexed { index, request ->
-                                                ReimbursementRequestItem(
-                                                    expenseDate = request.expenseDate,
-                                                    amount = request.amount,
-                                                    category = request.category,
-                                                    description = request.description,
-                                                    status = request.status ?: "PENDING"
-                                                )
-                                                
-                                                if (index < reimbursementRequests.size - 1) {
-                                                    HorizontalDivider(
-                                                        modifier = Modifier.padding(vertical = 8.dp),
-                                                        color = AppColors.gray200
-                                                    )
+                                            filteredRequests.forEachIndexed { index, request ->
+                                                Card(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .shadow(
+                                                            elevation = 3.dp,
+                                                            shape = RoundedCornerShape(16.dp),
+                                                            spotColor = AppColors.blue700.copy(alpha = 0.15f)
+                                                        )
+                                                        .clip(RoundedCornerShape(16.dp)),
+                                                    colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+                                                    shape = RoundedCornerShape(16.dp),
+                                                ) {
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .background(
+                                                                brush = Brush.linearGradient(
+                                                                    colors = listOf(
+                                                                        AppColors.white,
+                                                                        AppColors.blue50.copy(alpha = 0.5f)
+                                                                    ),
+                                                                    start = Offset(0f, 0f),
+                                                                    end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
+                                                                )
+                                                            )
+                                                            .border(
+                                                                width = 1.dp,
+                                                                color = AppColors.gray200,
+                                                                shape = RoundedCornerShape(16.dp)
+                                                            )
+                                                    ) {
+                                                        Column(
+                                                            modifier = Modifier.padding(16.dp)
+                                                        ) {
+                                                            // Top row with category/amount and status
+                                                            Row(
+                                                                modifier = Modifier.fillMaxWidth(),
+                                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                                verticalAlignment = Alignment.CenterVertically
+                                                            ) {
+                                                                // Category and amount with icon
+                                                                Row(
+                                                                    verticalAlignment = Alignment.CenterVertically,
+                                                                ) {
+                                                                    Box(
+                                                                        modifier = Modifier
+                                                                            .size(32.dp)
+                                                                            .clip(RoundedCornerShape(8.dp))
+                                                                            .background(
+                                                                                brush = Brush.linearGradient(
+                                                                                    colors = listOf(
+                                                                                        AppColors.blue500, 
+                                                                                        AppColors.blue300
+                                                                                    ),
+                                                                                    start = Offset(0f, 0f),
+                                                                                    end = Offset(32f, 32f)
+                                                                                )
+                                                                            ),
+                                                                        contentAlignment = Alignment.Center
+                                                                    ) {
+                                                                        Icon(
+                                                                            imageVector = Icons.Default.AttachMoney,
+                                                                            contentDescription = "Amount",
+                                                                            tint = Color.White,
+                                                                            modifier = Modifier.size(18.dp)
+                                                                        )
+                                                                    }
+                                                                    
+                                                                    Spacer(modifier = Modifier.width(8.dp))
+                                                                    
+                                                                    Text(
+                                                                        text = "${request.category}: ${formatCurrency(request.amount)}",
+                                                                        fontSize = 16.sp,
+                                                                        fontWeight = FontWeight.Bold,
+                                                                        color = AppColors.blue700
+                                                                    )
+                                                                }
+                                                                
+                                                                // Status badge
+                                                                Surface(
+                                                                    shape = RoundedCornerShape(20.dp),
+                                                                    color = getStatusBackgroundColor(request.status ?: "PENDING"),
+                                                                    border = BorderStroke(1.dp, getStatusColor(request.status ?: "PENDING").copy(alpha = 0.3f)),
+                                                                    modifier = Modifier.shadow(
+                                                                        elevation = 2.dp,
+                                                                        spotColor = getStatusColor(request.status ?: "PENDING").copy(alpha = 0.2f),
+                                                                        shape = RoundedCornerShape(20.dp)
+                                                                    )
+                                                                ) {
+                                                                    Row(
+                                                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                                                        verticalAlignment = Alignment.CenterVertically,
+                                                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                                                    ) {
+                                                                        Icon(
+                                                                            imageVector = Icons.Default.CheckCircle,
+                                                                            contentDescription = request.status,
+                                                                            tint = getStatusColor(request.status ?: "PENDING"),
+                                                                            modifier = Modifier.size(14.dp)
+                                                                        )
+                                                                        Text(
+                                                                            text = (request.status ?: "PENDING").uppercase(),
+                                                                            fontSize = 13.sp,
+                                                                            color = getStatusColor(request.status ?: "PENDING"),
+                                                                            fontWeight = FontWeight.SemiBold
+                                                                        )
+                                                                    }
+                                                                }
+                                                            }
+                                                            
+                                                            Spacer(modifier = Modifier.height(16.dp))
+                                                            
+                                                            HorizontalDivider(
+                                                                color = AppColors.gray200.copy(alpha = 0.6f),
+                                                                thickness = 1.dp
+                                                            )
+                                                            
+                                                            Spacer(modifier = Modifier.height(12.dp))
+                                                            
+                                                            // Date row
+                                                            Row(
+                                                                verticalAlignment = Alignment.CenterVertically,
+                                                                modifier = Modifier.padding(vertical = 2.dp)
+                                                            ) {
+                                                                Icon(
+                                                                    imageVector = Icons.Default.Info,
+                                                                    contentDescription = "Date",
+                                                                    tint = AppColors.gray500,
+                                                                    modifier = Modifier.size(16.dp)
+                                                                )
+                                                                Spacer(modifier = Modifier.width(8.dp))
+                                                                Text(
+                                                                    text = "Date: ${formatDate(request.expenseDate)}",
+                                                                    fontSize = 14.sp,
+                                                                    color = AppColors.gray700,
+                                                                    fontWeight = FontWeight.Medium
+                                                                )
+                                                            }
+                                                            
+                                                            Spacer(modifier = Modifier.height(8.dp))
+                                                            
+                                                            // Description row
+                                                            Row(
+                                                                verticalAlignment = Alignment.Top,
+                                                                modifier = Modifier.padding(vertical = 2.dp)
+                                                            ) {
+                                                                Icon(
+                                                                    imageVector = Icons.Default.Info,
+                                                                    contentDescription = "Description",
+                                                                    tint = AppColors.gray500,
+                                                                    modifier = Modifier.size(16.dp)
+                                                                )
+                                                                Spacer(modifier = Modifier.width(8.dp))
+                                                                Text(
+                                                                    text = "Description: ${request.description}",
+                                                                    fontSize = 14.sp,
+                                                                    color = AppColors.gray700,
+                                                                    fontWeight = FontWeight.Medium
+                                                                )
+                                                            }
+                                                        }
+                                                    }
                                                 }
+                                                
+                                                Spacer(modifier = Modifier.height(4.dp))
                                             }
+                                            
+                                            // Add some bottom padding
+                                            Spacer(modifier = Modifier.height(16.dp))
                                         }
                                     }
                                 }
                             }
-                            // Spacer to ensure content doesn't get cut off at the bottom
-                            Spacer(modifier = Modifier.height(30.dp))
                         }
                     }
                 }
@@ -530,87 +768,51 @@ fun ReimbursementRequestsScreen(
                         Text(it.visuals.message)
                     }
                 }
-            }
-        }
-    }
-}
-
-@Composable
-fun ReimbursementRequestItem(
-    expenseDate: String,
-    amount: Double,
-    category: String,
-    description: String,
-    status: String
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column {
-                // Category and Amount with Status
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
+                
+                // Confirmation Dialog
+                if (showConfirmationDialog) {
+                    AlertDialog(
+                        onDismissRequest = { showConfirmationDialog = false },
+                        title = { 
                     Text(
-                        text = "$category: ${formatCurrency(amount)}",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = AppColors.blue700
-                    )
-                    
-                    // Status badge
-                    Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = getStatusBackgroundColor(status),
-                        border = BorderStroke(1.dp, getStatusColor(status).copy(alpha = 0.2f))
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.CheckCircle,
-                                contentDescription = status,
-                                tint = getStatusColor(status),
-                                modifier = Modifier.size(12.dp)
-                            )
+                                text = "Submit Reimbursement Request",
+                                fontWeight = FontWeight.Bold
+                            ) 
+                        },
+                        text = { 
                             Text(
-                                text = status.uppercase(),
-                                fontSize = 12.sp,
-                                color = getStatusColor(status),
-                                fontWeight = FontWeight.Medium
+                                text = "Do you want to proceed with submitting a new reimbursement request?",
+                                fontSize = 16.sp
+                            ) 
+                        },
+                        confirmButton = {
+                            TextButton(
+                                onClick = {
+                                    showConfirmationDialog = false
+                                    shouldNavigateToSubmitReimbursementRequest = true
+                                }
+                            ) {
+                                Text(
+                                    text = "Proceed",
+                                    color = AppColors.blue500,
+                                    fontWeight = FontWeight.Bold
                             )
                         }
-                    }
-                }
-                
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                // Date
+                        },
+                        dismissButton = {
+                            TextButton(
+                                onClick = { showConfirmationDialog = false }
+                            ) {
                 Text(
-                    text = "Date: ${formatDate(expenseDate)}",
-                    fontSize = 14.sp,
+                                    text = "Cancel",
                     color = AppColors.gray600
                 )
-                
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                // Description
-                Text(
-                    text = "Description: $description",
-                    fontSize = 14.sp,
-                    color = AppColors.gray700,
-                    modifier = Modifier.padding(bottom = 4.dp)
+                            }
+                        },
+                        containerColor = AppColors.white,
+                        shape = RoundedCornerShape(16.dp)
                 )
+                }
             }
         }
     }
