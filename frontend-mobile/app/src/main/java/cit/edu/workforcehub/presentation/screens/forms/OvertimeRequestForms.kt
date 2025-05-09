@@ -505,78 +505,100 @@ fun OvertimeRequestForm(
                                         modifier = Modifier.fillMaxWidth(),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        OutlinedTextField(
-                                            value = formatTime(startHour, startMinute, startAmPm),
-                                            onValueChange = {},
+                                        Card(
                                             modifier = Modifier
-                                                .weight(1f)
+                                                .fillMaxWidth()
                                                 .shadow(
                                                     elevation = 2.dp,
                                                     shape = RoundedCornerShape(12.dp),
-                                                    ambientColor = AppColors.gray300.copy(alpha = 0.3f)
+                                                    ambientColor = AppColors.gray300.copy(alpha = 0.2f)
                                                 ),
-                                            readOnly = true,
-                                            trailingIcon = {
-                                                Box(
-                                                    modifier = Modifier
-                                                        .size(36.dp)
-                                                        .padding(4.dp)
-                                                        .clip(RoundedCornerShape(8.dp))
-                                                        .background(AppColors.blue50)
-                                                        .padding(4.dp),
-                                                    contentAlignment = Alignment.Center
-                                                ) {
-                                                    IconButton(
-                                                        onClick = { showStartTimePicker = true },
-                                                        modifier = Modifier.size(24.dp)
-                                                    ) {
-                                                        Icon(
-                                                            imageVector = Icons.Default.Timer,
-                                                            contentDescription = "Select Time",
-                                                            tint = AppColors.blue600,
-                                                            modifier = Modifier.size(16.dp)
-                                                        )
-                                                    }
-                                                }
-                                            },
-                                            colors = OutlinedTextFieldDefaults.colors(
-                                                focusedBorderColor = AppColors.blue400,
-                                                unfocusedBorderColor = AppColors.gray200,
-                                                focusedContainerColor = AppColors.white,
-                                                unfocusedContainerColor = AppColors.white,
-                                                cursorColor = AppColors.blue500
+                                            colors = CardDefaults.cardColors(
+                                                containerColor = Color.White
                                             ),
                                             shape = RoundedCornerShape(12.dp),
-                                            textStyle = LocalTextStyle.current.copy(
-                                                color = AppColors.gray900,
-                                                fontSize = 15.sp,
-                                                fontWeight = FontWeight.Medium,
-                                                letterSpacing = 0.1.sp
+                                            border = BorderStroke(
+                                                width = 1.dp,
+                                                color = AppColors.gray200
                                             )
-                                        )
-                                        
-                                        Spacer(modifier = Modifier.width(16.dp))
-                                        
-                                        // AM/PM Switch
-                                        Column(
-                                            horizontalAlignment = Alignment.CenterHorizontally
                                         ) {
-                                            Text(
-                                                text = if (startAmPm) "AM" else "PM",
-                                                fontSize = 14.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = AppColors.blue500
-                                            )
-                                            Switch(
-                                                checked = startAmPm,
-                                                onCheckedChange = { startAmPm = it },
-                                                colors = SwitchDefaults.colors(
-                                                    checkedThumbColor = AppColors.blue700,
-                                                    checkedTrackColor = AppColors.blue300,
-                                                    uncheckedThumbColor = AppColors.blue700,
-                                                    uncheckedTrackColor = AppColors.gray300
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(4.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                // Icon with gradient background
+                                                Box(
+                                                    modifier = Modifier
+                                                        .size(40.dp)
+                                                        .padding(6.dp)
+                                                        .clip(RoundedCornerShape(10.dp))
+                                                        .background(
+                                                            brush = Brush.linearGradient(
+                                                                colors = listOf(AppColors.blue50, AppColors.blue100),
+                                                                start = Offset(0f, 0f),
+                                                                end = Offset(0f, Float.POSITIVE_INFINITY)
+                                                            )
+                                                        ),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Default.Timer,
+                                                        contentDescription = "Start Time",
+                                                        tint = AppColors.blue600,
+                                                        modifier = Modifier.size(20.dp)
+                                                    )
+                                                }
+                                                
+                                                // Text field
+                                                OutlinedTextField(
+                                                    value = formatTime(startHour, startMinute, startAmPm),
+                                                    onValueChange = { /* Read only */ },
+                                                    modifier = Modifier
+                                                        .weight(1f)
+                                                        .height(56.dp),
+                                                    readOnly = true,
+                                                    colors = OutlinedTextFieldDefaults.colors(
+                                                        focusedBorderColor = Color.Transparent,
+                                                        unfocusedBorderColor = Color.Transparent,
+                                                        focusedContainerColor = Color.Transparent,
+                                                        unfocusedContainerColor = Color.Transparent,
+                                                        cursorColor = AppColors.blue500
+                                                    ),
+                                                    textStyle = LocalTextStyle.current.copy(
+                                                        color = AppColors.gray900,
+                                                        fontSize = 15.sp,
+                                                        fontWeight = FontWeight.Medium
+                                                    ),
+                                                    singleLine = true,
+                                                    trailingIcon = {
+                                                        // Time picker icon
+                                                        Box(
+                                                            modifier = Modifier
+                                                                .size(40.dp)
+                                                                .padding(6.dp)
+                                                                .clip(RoundedCornerShape(10.dp))
+                                                                .background(
+                                                                    brush = Brush.linearGradient(
+                                                                        colors = listOf(AppColors.blue100, AppColors.blue300),
+                                                                        start = Offset(0f, 0f),
+                                                                        end = Offset(0f, Float.POSITIVE_INFINITY)
+                                                                    )
+                                                                )
+                                                                .clickable { showStartTimePicker = true },
+                                                            contentAlignment = Alignment.Center
+                                                        ) {
+                                                            Icon(
+                                                                imageVector = Icons.Default.Timer,
+                                                                contentDescription = "Select Time",
+                                                                tint = Color.White,
+                                                                modifier = Modifier.size(20.dp)
+                                                            )
+                                                        }
+                                                    }
                                                 )
-                                            )
+                                            }
                                         }
                                     }
                                 }
@@ -602,78 +624,100 @@ fun OvertimeRequestForm(
                                         modifier = Modifier.fillMaxWidth(),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        OutlinedTextField(
-                                            value = formatTime(endHour, endMinute, endAmPm),
-                                            onValueChange = {},
+                                        Card(
                                             modifier = Modifier
-                                                .weight(1f)
+                                                .fillMaxWidth()
                                                 .shadow(
                                                     elevation = 2.dp,
                                                     shape = RoundedCornerShape(12.dp),
-                                                    ambientColor = AppColors.gray300.copy(alpha = 0.3f)
+                                                    ambientColor = AppColors.gray300.copy(alpha = 0.2f)
                                                 ),
-                                            readOnly = true,
-                                            trailingIcon = {
-                                                Box(
-                                                    modifier = Modifier
-                                                        .size(36.dp)
-                                                        .padding(4.dp)
-                                                        .clip(RoundedCornerShape(8.dp))
-                                                        .background(AppColors.blue50)
-                                                        .padding(4.dp),
-                                                    contentAlignment = Alignment.Center
-                                                ) {
-                                                    IconButton(
-                                                        onClick = { showEndTimePicker = true },
-                                                        modifier = Modifier.size(24.dp)
-                                                    ) {
-                                                        Icon(
-                                                            imageVector = Icons.Default.Timer,
-                                                            contentDescription = "Select Time",
-                                                            tint = AppColors.blue600,
-                                                            modifier = Modifier.size(16.dp)
-                                                        )
-                                                    }
-                                                }
-                                            },
-                                            colors = OutlinedTextFieldDefaults.colors(
-                                                focusedBorderColor = AppColors.blue400,
-                                                unfocusedBorderColor = AppColors.gray200,
-                                                focusedContainerColor = AppColors.white,
-                                                unfocusedContainerColor = AppColors.white,
-                                                cursorColor = AppColors.blue500
+                                            colors = CardDefaults.cardColors(
+                                                containerColor = Color.White
                                             ),
                                             shape = RoundedCornerShape(12.dp),
-                                            textStyle = LocalTextStyle.current.copy(
-                                                color = AppColors.gray900,
-                                                fontSize = 15.sp,
-                                                fontWeight = FontWeight.Medium,
-                                                letterSpacing = 0.1.sp
+                                            border = BorderStroke(
+                                                width = 1.dp,
+                                                color = AppColors.gray200
                                             )
-                                        )
-                                        
-                                        Spacer(modifier = Modifier.width(16.dp))
-                                        
-                                        // AM/PM Switch
-                                        Column(
-                                            horizontalAlignment = Alignment.CenterHorizontally
                                         ) {
-                                            Text(
-                                                text = if (endAmPm) "AM" else "PM",
-                                                fontSize = 14.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = AppColors.blue500
-                                            )
-                                            Switch(
-                                                checked = endAmPm,
-                                                onCheckedChange = { endAmPm = it },
-                                                colors = SwitchDefaults.colors(
-                                                    checkedThumbColor = AppColors.blue700,
-                                                    checkedTrackColor = AppColors.blue300,
-                                                    uncheckedThumbColor = AppColors.blue700,
-                                                    uncheckedTrackColor = AppColors.gray300
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(4.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                // Icon with gradient background
+                                                Box(
+                                                    modifier = Modifier
+                                                        .size(40.dp)
+                                                        .padding(6.dp)
+                                                        .clip(RoundedCornerShape(10.dp))
+                                                        .background(
+                                                            brush = Brush.linearGradient(
+                                                                colors = listOf(AppColors.blue50, AppColors.blue100),
+                                                                start = Offset(0f, 0f),
+                                                                end = Offset(0f, Float.POSITIVE_INFINITY)
+                                                            )
+                                                        ),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Default.Timer,
+                                                        contentDescription = "End Time",
+                                                        tint = AppColors.blue600,
+                                                        modifier = Modifier.size(20.dp)
+                                                    )
+                                                }
+                                                
+                                                // Text field
+                                                OutlinedTextField(
+                                                    value = formatTime(endHour, endMinute, endAmPm),
+                                                    onValueChange = { /* Read only */ },
+                                                    modifier = Modifier
+                                                        .weight(1f)
+                                                        .height(56.dp),
+                                                    readOnly = true,
+                                                    colors = OutlinedTextFieldDefaults.colors(
+                                                        focusedBorderColor = Color.Transparent,
+                                                        unfocusedBorderColor = Color.Transparent,
+                                                        focusedContainerColor = Color.Transparent,
+                                                        unfocusedContainerColor = Color.Transparent,
+                                                        cursorColor = AppColors.blue500
+                                                    ),
+                                                    textStyle = LocalTextStyle.current.copy(
+                                                        color = AppColors.gray900,
+                                                        fontSize = 15.sp,
+                                                        fontWeight = FontWeight.Medium
+                                                    ),
+                                                    singleLine = true,
+                                                    trailingIcon = {
+                                                        // Time picker icon
+                                                        Box(
+                                                            modifier = Modifier
+                                                                .size(40.dp)
+                                                                .padding(6.dp)
+                                                                .clip(RoundedCornerShape(10.dp))
+                                                                .background(
+                                                                    brush = Brush.linearGradient(
+                                                                        colors = listOf(AppColors.blue100, AppColors.blue300),
+                                                                        start = Offset(0f, 0f),
+                                                                        end = Offset(0f, Float.POSITIVE_INFINITY)
+                                                                    )
+                                                                )
+                                                                .clickable { showEndTimePicker = true },
+                                                            contentAlignment = Alignment.Center
+                                                        ) {
+                                                            Icon(
+                                                                imageVector = Icons.Default.Timer,
+                                                                contentDescription = "Select Time",
+                                                                tint = Color.White,
+                                                                modifier = Modifier.size(20.dp)
+                                                            )
+                                                        }
+                                                    }
                                                 )
-                                            )
+                                            }
                                         }
                                     }
                                 }

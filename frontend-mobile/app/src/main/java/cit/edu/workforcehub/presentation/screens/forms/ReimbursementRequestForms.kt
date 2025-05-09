@@ -1,5 +1,36 @@
 package cit.edu.workforcehub.presentation.screens.forms
 
+/**
+ * Reimbursement Request Form Screen
+ * 
+ * API Endpoint: POST /api/employee/reimbursement-requests
+ * 
+ * API Payload Structure:
+ * {
+ *   "reimbursementId": "string",           // Auto-generated
+ *   "employeeId": "string",                // From authentication
+ *   "employeeName": "string",              // From authentication
+ *   "planId": "string",                    // Optional
+ *   "planName": "string",                  // Optional
+ *   "planType": "string",                  // Optional
+ *   "requestDate": "2025-05-09",           // Server-generated
+ *   "expenseDate": "2025-05-09",           // User input
+ *   "amountRequested": 0,                  // User input (as "amount" in UI)
+ *   "documentPath": "string",              // Optional
+ *   "reason": "string",                    // User input (as "description" in UI)
+ *   "status": "string",                    // Default: "PENDING"
+ *   "reviewedById": "string",              // Filled during review
+ *   "reviewedByName": "string",            // Filled during review
+ *   "reviewedAt": "2025-05-09T22:04:08.252Z", // Filled during review
+ *   "remarks": "string"                    // Filled during review
+ * }
+ * 
+ * Required User Inputs:
+ * - Amount Requested (mapped from "amount" field)
+ * - Expense Date
+ * - Reason (mapped from "description" field)
+ */
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -32,7 +63,6 @@ import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Send
-import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -56,8 +86,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TimePickerState
-import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -120,25 +148,6 @@ fun ReimbursementRequestFormScreen(
     var expenseDate by remember { mutableStateOf("") }
     var isDatePickerVisible by remember { mutableStateOf(false) }
     
-    // Time state variables
-    var startTime by remember { mutableStateOf("0:00 PM") }
-    var endTime by remember { mutableStateOf("5:00 PM") }
-    var isStartTimePickerVisible by remember { mutableStateOf(false) }
-    var isEndTimePickerVisible by remember { mutableStateOf(false) }
-    
-    // Time picker states
-    val startTimePickerState = rememberTimePickerState(
-        initialHour = 12,
-        initialMinute = 0,
-        is24Hour = false
-    )
-    
-    val endTimePickerState = rememberTimePickerState(
-        initialHour = 17,
-        initialMinute = 0,
-        is24Hour = false
-    )
-    
     // Category dropdown state
     var isCategoryDropdownExpanded by remember { mutableStateOf(false) }
     
@@ -196,14 +205,6 @@ fun ReimbursementRequestFormScreen(
         val instant = Instant.ofEpochMilli(milliseconds)
         val date = LocalDate.ofInstant(instant, ZoneId.systemDefault())
         return DateTimeFormatter.ofPattern("yyyy-MM-dd").format(date)
-    }
-    
-    // Format time function
-    fun formatTime(hour: Int, minute: Int): String {
-        val h = if (hour == 0) 12 else if (hour > 12) hour - 12 else hour
-        val amPm = if (hour >= 12) "PM" else "AM"
-        val m = if (minute < 10) "0$minute" else minute.toString()
-        return "$h:$m $amPm"
     }
     
     // Success dialog content
@@ -271,33 +272,6 @@ fun ReimbursementRequestFormScreen(
         ) {
             DatePicker(state = datePickerState)
         }
-    }
-
-    // Custom Time Picker Dialog
-    if (isStartTimePickerVisible) {
-        TimePickerDialog(
-            onDismissRequest = { isStartTimePickerVisible = false },
-            onConfirm = {
-                val hour = startTimePickerState.hour
-                val minute = startTimePickerState.minute
-                startTime = formatTime(hour, minute)
-                isStartTimePickerVisible = false
-            },
-            timePickerState = startTimePickerState
-        )
-    }
-    
-    if (isEndTimePickerVisible) {
-        TimePickerDialog(
-            onDismissRequest = { isEndTimePickerVisible = false },
-            onConfirm = {
-                val hour = endTimePickerState.hour
-                val minute = endTimePickerState.minute
-                endTime = formatTime(hour, minute)
-                isEndTimePickerVisible = false
-            },
-            timePickerState = endTimePickerState
-        )
     }
 
     Scaffold(
@@ -923,225 +897,6 @@ fun ReimbursementRequestFormScreen(
                                 }
                             }
                             
-                            // Add time fields after the date field and before description
-                            // Start Time Field
-                            Column {
-                                Text(
-                                    text = "Start Time",
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = AppColors.gray800,
-                                    letterSpacing = 0.1.sp
-                                )
-                                
-                                Spacer(modifier = Modifier.height(8.dp))
-                                
-                                Card(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .shadow(
-                                            elevation = 2.dp,
-                                            shape = RoundedCornerShape(12.dp),
-                                            ambientColor = AppColors.gray300.copy(alpha = 0.2f)
-                                        ),
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = Color.White
-                                    ),
-                                    shape = RoundedCornerShape(12.dp),
-                                    border = BorderStroke(
-                                        width = 1.dp,
-                                        color = AppColors.gray200
-                                    )
-                                ) {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(4.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        // Icon with gradient background
-                                        Box(
-                                            modifier = Modifier
-                                                .size(40.dp)
-                                                .padding(6.dp)
-                                                .clip(RoundedCornerShape(10.dp))
-                                                .background(
-                                                    brush = Brush.linearGradient(
-                                                        colors = listOf(AppColors.blue50, AppColors.blue100),
-                                                        start = Offset(0f, 0f),
-                                                        end = Offset(0f, Float.POSITIVE_INFINITY)
-                                                    )
-                                                ),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Timer,
-                                                contentDescription = "Start Time",
-                                                tint = AppColors.blue600,
-                                                modifier = Modifier.size(20.dp)
-                                            )
-                                        }
-                                        
-                                        // Text field
-                                        OutlinedTextField(
-                                            value = startTime,
-                                            onValueChange = { /* Read only */ },
-                                            modifier = Modifier
-                                                .weight(1f)
-                                                .height(56.dp),
-                                            readOnly = true,
-                                            colors = OutlinedTextFieldDefaults.colors(
-                                                focusedBorderColor = Color.Transparent,
-                                                unfocusedBorderColor = Color.Transparent,
-                                                focusedContainerColor = Color.Transparent,
-                                                unfocusedContainerColor = Color.Transparent,
-                                                cursorColor = AppColors.blue500
-                                            ),
-                                            textStyle = LocalTextStyle.current.copy(
-                                                color = AppColors.gray900,
-                                                fontSize = 15.sp,
-                                                fontWeight = FontWeight.Medium
-                                            ),
-                                            singleLine = true,
-                                            trailingIcon = {
-                                                // Time picker icon
-                                                Box(
-                                                    modifier = Modifier
-                                                        .size(40.dp)
-                                                        .padding(6.dp)
-                                                        .clip(RoundedCornerShape(10.dp))
-                                                        .background(
-                                                            brush = Brush.linearGradient(
-                                                                colors = listOf(AppColors.blue100, AppColors.blue300),
-                                                                start = Offset(0f, 0f),
-                                                                end = Offset(0f, Float.POSITIVE_INFINITY)
-                                                            )
-                                                        )
-                                                        .clickable { isStartTimePickerVisible = true },
-                                                    contentAlignment = Alignment.Center
-                                                ) {
-                                                    Icon(
-                                                        imageVector = Icons.Default.Timer,
-                                                        contentDescription = "Select Time",
-                                                        tint = Color.White,
-                                                        modifier = Modifier.size(20.dp)
-                                                    )
-                                                }
-                                            }
-                                        )
-                                    }
-                                }
-                            }
-                            
-                            // End Time Field
-                            Column {
-                                Text(
-                                    text = "End Time",
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = AppColors.gray800,
-                                    letterSpacing = 0.1.sp
-                                )
-                                
-                                Spacer(modifier = Modifier.height(8.dp))
-                                
-                                Card(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .shadow(
-                                            elevation = 2.dp,
-                                            shape = RoundedCornerShape(12.dp),
-                                            ambientColor = AppColors.gray300.copy(alpha = 0.2f)
-                                        ),
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = Color.White
-                                    ),
-                                    shape = RoundedCornerShape(12.dp),
-                                    border = BorderStroke(
-                                        width = 1.dp,
-                                        color = AppColors.gray200
-                                    )
-                                ) {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(4.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        // Icon with gradient background
-                                        Box(
-                                            modifier = Modifier
-                                                .size(40.dp)
-                                                .padding(6.dp)
-                                                .clip(RoundedCornerShape(10.dp))
-                                                .background(
-                                                    brush = Brush.linearGradient(
-                                                        colors = listOf(AppColors.blue50, AppColors.blue100),
-                                                        start = Offset(0f, 0f),
-                                                        end = Offset(0f, Float.POSITIVE_INFINITY)
-                                                    )
-                                                ),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Timer,
-                                                contentDescription = "End Time",
-                                                tint = AppColors.blue600,
-                                                modifier = Modifier.size(20.dp)
-                                            )
-                                        }
-                                        
-                                        // Text field
-                                        OutlinedTextField(
-                                            value = endTime,
-                                            onValueChange = { /* Read only */ },
-                                            modifier = Modifier
-                                                .weight(1f)
-                                                .height(56.dp),
-                                            readOnly = true,
-                                            colors = OutlinedTextFieldDefaults.colors(
-                                                focusedBorderColor = Color.Transparent,
-                                                unfocusedBorderColor = Color.Transparent,
-                                                focusedContainerColor = Color.Transparent,
-                                                unfocusedContainerColor = Color.Transparent,
-                                                cursorColor = AppColors.blue500
-                                            ),
-                                            textStyle = LocalTextStyle.current.copy(
-                                                color = AppColors.gray900,
-                                                fontSize = 15.sp,
-                                                fontWeight = FontWeight.Medium
-                                            ),
-                                            singleLine = true,
-                                            trailingIcon = {
-                                                // Time picker icon
-                                                Box(
-                                                    modifier = Modifier
-                                                        .size(40.dp)
-                                                        .padding(6.dp)
-                                                        .clip(RoundedCornerShape(10.dp))
-                                                        .background(
-                                                            brush = Brush.linearGradient(
-                                                                colors = listOf(AppColors.blue100, AppColors.blue300),
-                                                                start = Offset(0f, 0f),
-                                                                end = Offset(0f, Float.POSITIVE_INFINITY)
-                                                            )
-                                                        )
-                                                        .clickable { isEndTimePickerVisible = true },
-                                                    contentAlignment = Alignment.Center
-                                                ) {
-                                                    Icon(
-                                                        imageVector = Icons.Default.Timer,
-                                                        contentDescription = "Select Time",
-                                                        tint = Color.White,
-                                                        modifier = Modifier.size(20.dp)
-                                                    )
-                                                }
-                                            }
-                                        )
-                                    }
-                                }
-                            }
-                            
                             // Description field
                             Column {
                                 Text(
@@ -1332,7 +1087,6 @@ fun ReimbursementRequestFormScreen(
                                         employeeId = "",  // Will be filled by backend based on token
                                         expenseDate = expenseDate,
                                         amount = amount.toDoubleOrNull() ?: 0.0,
-                                        category = category,
                                         description = description,
                                         // Other fields will be defaulted or filled by backend
                                         status = "PENDING"
@@ -1429,7 +1183,7 @@ private fun validateForm(
 ): Boolean {
     var isValid = true
     
-    // Validate amount
+    // Validate amount (maps to amountRequested in API)
     if (amount.isBlank()) {
         onAmountError("Amount is required")
         isValid = false
@@ -1443,7 +1197,7 @@ private fun validateForm(
         onAmountError(null)
     }
     
-    // Validate category
+    // Validate category (UI only, not sent to API)
     if (category.isBlank()) {
         onCategoryError("Category is required")
         isValid = false
@@ -1451,7 +1205,7 @@ private fun validateForm(
         onCategoryError(null)
     }
     
-    // Validate description
+    // Validate description (maps to reason in API)
     if (description.isBlank()) {
         onDescriptionError("Description is required")
         isValid = false
@@ -1481,63 +1235,6 @@ fun ReimbursementRequestFormPreview() {
         color = AppColors.gray100
     ) {
         ReimbursementRequestFormScreen(onNavigateBack = {})
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun TimePickerDialog(
-    onDismissRequest: () -> Unit,
-    onConfirm: () -> Unit,
-    timePickerState: TimePickerState
-) {
-    androidx.compose.ui.window.Dialog(
-        onDismissRequest = onDismissRequest
-    ) {
-        Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = AppColors.white,
-            modifier = Modifier.shadow(8.dp, RoundedCornerShape(16.dp))
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = "Select Time",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 16.dp),
-                    color = AppColors.gray800
-                )
-                
-                androidx.compose.material3.TimeInput(
-                    state = timePickerState,
-                    modifier = Modifier
-                        .padding(16.dp)
-                        .align(Alignment.CenterHorizontally)
-                )
-                
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 16.dp),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    TextButton(
-                        onClick = onDismissRequest
-                    ) {
-                        Text("Cancel", color = AppColors.gray600)
-                    }
-                    
-                    TextButton(
-                        onClick = onConfirm
-                    ) {
-                        Text("OK", color = AppColors.blue500)
-                    }
-                }
-            }
-        }
     }
 }
 

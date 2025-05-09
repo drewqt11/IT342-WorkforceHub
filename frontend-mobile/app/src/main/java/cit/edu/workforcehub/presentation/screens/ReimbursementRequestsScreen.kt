@@ -642,7 +642,7 @@ fun ReimbursementRequestsScreen(
                                                                     Spacer(modifier = Modifier.width(8.dp))
                                                                     
                                                                     Text(
-                                                                        text = "${request.category}: ${formatCurrency(request.amount)}",
+                                                                        text = request.planName?.let { "$it: ${formatCurrency(request.amount)}" } ?: formatCurrency(request.amount),
                                                                         fontSize = 16.sp,
                                                                         fontWeight = FontWeight.Bold,
                                                                         color = AppColors.blue700

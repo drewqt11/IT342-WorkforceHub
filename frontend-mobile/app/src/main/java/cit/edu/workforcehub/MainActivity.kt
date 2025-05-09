@@ -26,8 +26,6 @@ import cit.edu.workforcehub.presentation.screens.TimeAttendanceScreen
 import cit.edu.workforcehub.presentation.screens.LeaveRequestScreen
 import cit.edu.workforcehub.presentation.screens.OvertimeRequestsScreen
 import cit.edu.workforcehub.presentation.screens.ReimbursementRequestsScreen
-import cit.edu.workforcehub.presentation.screens.PerformanceScreen
-import cit.edu.workforcehub.presentation.screens.TrainingScreen
 import cit.edu.workforcehub.presentation.screens.forms.ReimbursementRequestFormScreen
 import cit.edu.workforcehub.presentation.screens.DocumentsViewScreen
 import cit.edu.workforcehub.presentation.theme.AppTheme
@@ -213,12 +211,6 @@ fun WorkforceHubApp(
                     onNavigateToReimbursementRequests = {
                         onScreenChange(AppScreen.REIMBURSEMENT_REQUESTS)
                     },
-                    onNavigateToPerformance = {
-                        onScreenChange(AppScreen.PERFORMANCE)
-                    },
-                    onNavigateToTraining = {
-                        onScreenChange(AppScreen.TRAINING)
-                    },
                     onNavigateToProfile = {
                         onScreenChange(AppScreen.PROFILE)
                     }
@@ -238,12 +230,6 @@ fun WorkforceHubApp(
                     },
                     onNavigateToReimbursementRequests = {
                         onScreenChange(AppScreen.REIMBURSEMENT_REQUESTS)
-                    },
-                    onNavigateToPerformance = {
-                        onScreenChange(AppScreen.PERFORMANCE)
-                    },
-                    onNavigateToTraining = {
-                        onScreenChange(AppScreen.TRAINING)
                     },
                     onNavigateToProfile = {
                         onScreenChange(AppScreen.PROFILE)
@@ -265,12 +251,6 @@ fun WorkforceHubApp(
                     onNavigateToReimbursementRequests = {
                         onScreenChange(AppScreen.REIMBURSEMENT_REQUESTS)
                     },
-                    onNavigateToPerformance = {
-                        onScreenChange(AppScreen.PERFORMANCE)
-                    },
-                    onNavigateToTraining = {
-                        onScreenChange(AppScreen.TRAINING)
-                    },
                     onNavigateToProfile = {
                         onScreenChange(AppScreen.PROFILE)
                     }
@@ -291,12 +271,6 @@ fun WorkforceHubApp(
                     onNavigateToReimbursementRequests = {
                         onScreenChange(AppScreen.REIMBURSEMENT_REQUESTS)
                     },
-                    onNavigateToPerformance = {
-                        onScreenChange(AppScreen.PERFORMANCE)
-                    },
-                    onNavigateToTraining = {
-                        onScreenChange(AppScreen.TRAINING)
-                    },
                     onNavigateToProfile = {
                         onScreenChange(AppScreen.PROFILE)
                     }
@@ -316,12 +290,6 @@ fun WorkforceHubApp(
                     },
                     onNavigateToOvertimeRequests = {
                         onScreenChange(AppScreen.OVERTIME_REQUESTS)
-                    },
-                    onNavigateToPerformance = {
-                        onScreenChange(AppScreen.PERFORMANCE)
-                    },
-                    onNavigateToTraining = {
-                        onScreenChange(AppScreen.TRAINING)
                     },
                     onNavigateToProfile = {
                         onScreenChange(AppScreen.PROFILE)
@@ -345,58 +313,6 @@ fun WorkforceHubApp(
                     }
                 )
             }
-            AppScreen.PERFORMANCE -> {
-                PerformanceScreen(
-                    onLogout = onLogout,
-                    onNavigateToDashboard = {
-                        onScreenChange(AppScreen.DASHBOARD)
-                    },
-                    onNavigateToAttendance = {
-                        onScreenChange(AppScreen.TIME_ATTENDANCE)
-                    },
-                    onNavigateToLeaveRequests = {
-                        onScreenChange(AppScreen.LEAVE_REQUESTS)
-                    },
-                    onNavigateToOvertimeRequests = {
-                        onScreenChange(AppScreen.OVERTIME_REQUESTS)
-                    },
-                    onNavigateToReimbursementRequests = {
-                        onScreenChange(AppScreen.REIMBURSEMENT_REQUESTS)
-                    },
-                    onNavigateToTraining = {
-                        onScreenChange(AppScreen.TRAINING)
-                    },
-                    onNavigateToProfile = {
-                        onScreenChange(AppScreen.PROFILE)
-                    }
-                )
-            }
-            AppScreen.TRAINING -> {
-                TrainingScreen(
-                    onLogout = onLogout,
-                    onNavigateToDashboard = {
-                        onScreenChange(AppScreen.DASHBOARD)
-                    },
-                    onNavigateToAttendance = {
-                        onScreenChange(AppScreen.TIME_ATTENDANCE)
-                    },
-                    onNavigateToLeaveRequests = {
-                        onScreenChange(AppScreen.LEAVE_REQUESTS)
-                    },
-                    onNavigateToOvertimeRequests = {
-                        onScreenChange(AppScreen.OVERTIME_REQUESTS)
-                    },
-                    onNavigateToReimbursementRequests = {
-                        onScreenChange(AppScreen.REIMBURSEMENT_REQUESTS)
-                    },
-                    onNavigateToPerformance = {
-                        onScreenChange(AppScreen.PERFORMANCE)
-                    },
-                    onNavigateToProfile = {
-                        onScreenChange(AppScreen.PROFILE)
-                    }
-                )
-            }
             AppScreen.PROFILE -> {
                 ProfileScreen(
                     onLogout = onLogout,
@@ -414,12 +330,6 @@ fun WorkforceHubApp(
                     },
                     onNavigateToReimbursementRequests = {
                         onScreenChange(AppScreen.REIMBURSEMENT_REQUESTS)
-                    },
-                    onNavigateToPerformance = {
-                        onScreenChange(AppScreen.PERFORMANCE)
-                    },
-                    onNavigateToTraining = {
-                        onScreenChange(AppScreen.TRAINING)
                     },
                     onNavigateToProfile = {},
                     onNavigateToDocuments = {
@@ -443,12 +353,6 @@ fun WorkforceHubApp(
                     },
                     onNavigateToReimbursementRequests = {
                         onScreenChange(AppScreen.REIMBURSEMENT_REQUESTS)
-                    },
-                    onNavigateToPerformance = {
-                        onScreenChange(AppScreen.PERFORMANCE)
-                    },
-                    onNavigateToTraining = {
-                        onScreenChange(AppScreen.TRAINING)
                     },
                     onNavigateToProfile = {
                         onScreenChange(AppScreen.PROFILE)
