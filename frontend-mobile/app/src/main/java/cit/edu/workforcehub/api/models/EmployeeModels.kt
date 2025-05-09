@@ -97,4 +97,40 @@ data class LeaveRequest(
     @Json(name = "submissionDate") val submissionDate: String? = null,
     @Json(name = "remarks") val remarks: String? = null,
     @Json(name = "attachmentUrl") val attachmentUrl: String? = null
+)
+
+/**
+ * Model for overtime request.
+ */
+@JsonClass(generateAdapter = true)
+data class OvertimeRequest(
+    @Json(name = "otRequestId") val overtimeRequestId: String? = null,
+    @Json(name = "employeeId") val employeeId: String? = null,
+    @Json(name = "employeeName") val employeeName: String? = null,
+    @Json(name = "date") val date: String,
+    @Json(name = "startTime") val startTime: String,
+    @Json(name = "endTime") val endTime: String,
+    @Json(name = "totalHours") val totalHours: Double,
+    @Json(name = "reason") val reason: String,
+    @Json(name = "status") val status: String? = "PENDING",
+    @Json(name = "reviewedBy") val reviewedBy: String? = null,
+    @Json(name = "reviewedAt") val reviewedAt: String? = null
+)
+
+/**
+ * Model for reimbursement request.
+ */
+@JsonClass(generateAdapter = true)
+data class ReimbursementRequest(
+    @Json(name = "reimbursementRequestId") val reimbursementRequestId: String? = null,
+    @Json(name = "employeeId") val employeeId: String,
+    @Json(name = "expenseDate") val expenseDate: String,
+    @Json(name = "amount") val amount: Double,
+    @Json(name = "category") val category: String,
+    @Json(name = "description") val description: String,
+    @Json(name = "status") val status: String? = "PENDING",
+    @Json(name = "approvedByManagerId") val approvedByManagerId: String? = null,
+    @Json(name = "approvedDate") val approvedDate: String? = null,
+    @Json(name = "submissionDate") val submissionDate: String? = null,
+    @Json(name = "receiptUrl") val receiptUrl: String? = null
 ) 

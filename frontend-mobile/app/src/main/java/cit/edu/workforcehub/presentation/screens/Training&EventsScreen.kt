@@ -39,14 +39,15 @@ import cit.edu.workforcehub.presentation.components.AppHeader
 import cit.edu.workforcehub.presentation.components.AppScreen
 import cit.edu.workforcehub.presentation.components.LoadingComponent
 import cit.edu.workforcehub.presentation.components.UniversalDrawer
-import cit.edu.workforcehub.presentation.theme.AppColors
 
 @Composable
-fun PerformanceScreen(
+fun TrainingScreen(
     onLogout: () -> Unit = {},
     onNavigateToDashboard: () -> Unit = {},
     onNavigateToAttendance: () -> Unit = {},
     onNavigateToLeaveRequests: () -> Unit = {},
+    onNavigateToOvertimeRequests: () -> Unit = {},
+    onNavigateToReimbursementRequests: () -> Unit = {},
     onNavigateToPerformance: () -> Unit = {},
     onNavigateToTraining: () -> Unit = {},
     onNavigateToProfile: () -> Unit = {}
@@ -84,18 +85,20 @@ fun PerformanceScreen(
 
     Surface(
         modifier = Modifier.fillMaxSize(),
-        color = cit.edu.workforcehub.presentation.theme.AppColors.gray50
+        color = cit.edu.workforcehub.presentation.theme.AppColors.gray100
     ) {
         // Using the UniversalDrawer
         UniversalDrawer(
             drawerState = drawerState,
-            currentScreen = AppScreen.PERFORMANCE,
+            currentScreen = AppScreen.TRAINING,
             onLogout = onLogout,
             onNavigateToDashboard = onNavigateToDashboard,
             onNavigateToAttendance = onNavigateToAttendance,
             onNavigateToLeaveRequests = onNavigateToLeaveRequests,
-            onNavigateToPerformance = {}, // Already on performance, no need to navigate
-            onNavigateToTraining = onNavigateToTraining,
+            onNavigateToOvertimeRequests = onNavigateToOvertimeRequests,
+            onNavigateToReimbursementRequests = onNavigateToReimbursementRequests,
+            onNavigateToPerformance = onNavigateToPerformance,
+            onNavigateToTraining = {}, // Already on training, no need to navigate
             onNavigateToProfile = onNavigateToProfile
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
@@ -137,7 +140,7 @@ fun PerformanceScreen(
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                     verticalArrangement = Arrangement.Center
                                 ) {
-                                    
+
                                     Text(
                                         text = "Under Development",
                                         color = cit.edu.workforcehub.presentation.theme.AppColors.gray800,
@@ -145,7 +148,7 @@ fun PerformanceScreen(
                                         fontWeight = FontWeight.Bold,
                                         modifier = Modifier.padding(bottom = 8.dp)
                                     )
-                                    
+
                                     Text(
                                         text = "We're working hard to bring you the best experience.",
                                         color = cit.edu.workforcehub.presentation.theme.AppColors.gray700,
@@ -153,7 +156,7 @@ fun PerformanceScreen(
                                         modifier = Modifier.padding(bottom = 16.dp),
                                         textAlign = androidx.compose.ui.text.style.TextAlign.Center
                                     )
-                                    
+
                                     Box(
                                         modifier = Modifier
                                             .background(
@@ -176,17 +179,17 @@ fun PerformanceScreen(
 
                 // Fixed header on top (doesn't scroll)
                 AppHeader(
-                    title = "Performance Review",
-                    profileData = profileData,
-                    isLoading = isLoading,
                     onMenuClick = {
                         scope.launch {
                             drawerState.open()
                         }
                     },
-                    modifier = Modifier.zIndex(1f) // Ensure header stays on top
+                    modifier = Modifier.zIndex(1f), // Ensure header stays on top
+                    onProfileClick = onNavigateToProfile,
+                    forceAutoFetch = true, // Let AppHeader handle profile data fetching
+                    onLogoutClick = onLogout
                 )
             }
         }
     }
-}
+} 

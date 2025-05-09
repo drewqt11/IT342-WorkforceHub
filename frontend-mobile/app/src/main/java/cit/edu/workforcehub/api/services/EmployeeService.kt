@@ -5,8 +5,13 @@ import cit.edu.workforcehub.api.models.AttendanceRecord
 import cit.edu.workforcehub.api.models.ClockInRequest
 import cit.edu.workforcehub.api.models.EmployeeProfile
 import cit.edu.workforcehub.api.models.LeaveRequest
+import cit.edu.workforcehub.api.models.OvertimeRequest
+import cit.edu.workforcehub.api.models.ReimbursementRequest
+import cit.edu.workforcehub.presentation.screens.forms.LeaveRequestData
+import cit.edu.workforcehub.presentation.screens.forms.OvertimeRequestData
 import retrofit2.Response
 import retrofit2.http.*
+import java.net.URLEncoder
 
 /**
  * Retrofit service interface for employee-related API endpoints.
@@ -73,8 +78,61 @@ interface EmployeeService {
     suspend fun submitLeaveRequest(@Body request: LeaveRequest): Response<LeaveRequest>
     
     /**
+     * Create a leave request with simplified data
+     */
+    @POST("/api/employee/leave-requests")
+    @Headers("Content-Type: application/json")
+    suspend fun createLeaveRequest(@Body request: LeaveRequestData): Response<LeaveRequest>
+    
+    /**
      * Get all leave requests for the authenticated employee.
      */
     @GET("/api/employee/leave-requests")
     suspend fun getLeaveRequests(): Response<List<LeaveRequest>>
+
+    /**
+     * Submit an overtime request.
+     */
+    @POST("/api/employee/overtime-requests")
+    @Headers("Content-Type: application/json")
+    suspend fun submitOvertimeRequest(@Body request: OvertimeRequest): Response<OvertimeRequest>
+    
+    /**
+     * Create an overtime request with simplified data.
+     */
+    @POST("/api/overtime/request")
+    @Headers("Content-Type: application/json")
+    suspend fun createOvertimeRequest(@Body request: OvertimeRequestData): Response<OvertimeRequest>
+    
+    /**
+     * Get all overtime requests for the authenticated employee.
+     */
+    @GET("/api/overtime/my-requests")
+    suspend fun getOvertimeRequests(): Response<List<OvertimeRequest>>
+
+    /**
+     * Submit a reimbursement request.
+     */
+    @POST("/api/employee/reimbursement-requests")
+    @Headers("Content-Type: application/json")
+    suspend fun submitReimbursementRequest(@Body request: ReimbursementRequest): Response<ReimbursementRequest>
+    
+    /**
+     * Get all reimbursement requests for the authenticated employee.
+     */
+    @GET("/api/employee/reimbursement-requests")
+    suspend fun getReimbursementRequests(): Response<List<ReimbursementRequest>>
+    
+    /**
+     * Cancel an overtime request.
+     */
+    @PATCH("/api/overtime/request/{otRequestId}/cancel")
+    suspend fun cancelOvertimeRequest(@Path("otRequestId") requestId: String): Response<Void>
+    
+    /**
+     * Cancel a leave request.
+     * The ID parameter is the unique identifier for the leave request.
+     */
+    @PATCH("/api/employee/leave-requests/{id}/cancel")
+    suspend fun cancelLeaveRequest(@Path("id") id: String): Response<Void>
 } 

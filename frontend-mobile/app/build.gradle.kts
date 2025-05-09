@@ -73,6 +73,9 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.5.0")
     implementation(libs.androidx.animation.core.android)
     
+    // ConstraintLayout Compose
+    implementation("androidx.constraintlayout:constraintlayout-compose:1.0.1")
+    
     // State management dependencies
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.7.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
@@ -91,6 +94,7 @@ dependencies {
     
     // Browser and Authentication
     implementation("androidx.browser:browser:1.6.0")
+    implementation(libs.androidx.navigation.compose.jvmstubs)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
