@@ -52,7 +52,7 @@ object ApiClient {
      */
     private fun createMoshi(): Moshi {
         return Moshi.Builder()
-            .add(Date::class.java, Rfc3339DateJsonAdapter())
+            .add(Date::class.java, Rfc3339DateJsonAdapter().lenient())
             .addLast(KotlinJsonAdapterFactory())
             .build()
     }
@@ -68,7 +68,7 @@ object ApiClient {
         return Retrofit.Builder()
             .baseUrl(baseUrl)
             .client(okHttpClient)
-            .addConverterFactory(MoshiConverterFactory.create(moshi))
+            .addConverterFactory(MoshiConverterFactory.create(moshi).asLenient())
             .build()
     }
 

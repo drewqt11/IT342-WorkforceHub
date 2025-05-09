@@ -57,4 +57,14 @@ interface DocumentService {
     suspend fun downloadDocument(
         @Path("documentId") documentId: String
     ): Response<ResponseBody>
+
+    /**
+     * View a document directly.
+     * This endpoint returns a URL as plain text, not JSON.
+     */
+    @Headers("Accept: text/plain")
+    @GET("/api/documents/{documentId}/view")
+    suspend fun viewDocument(
+        @Path("documentId") documentId: String
+    ): Response<ResponseBody>
 } 
