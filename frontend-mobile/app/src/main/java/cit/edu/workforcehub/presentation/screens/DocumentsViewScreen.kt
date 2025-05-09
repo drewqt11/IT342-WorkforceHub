@@ -17,6 +17,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -40,6 +41,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Delete
@@ -90,8 +92,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
@@ -102,6 +106,11 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.zIndex
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.material3.TabRowDefaults
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
+import androidx.compose.ui.geometry.Offset
 import cit.edu.workforcehub.R
 import cit.edu.workforcehub.api.ApiHelper
 import cit.edu.workforcehub.api.models.Document
@@ -250,24 +259,424 @@ fun GradientButton(
     }
 }
 
+@Composable
+fun SectionHeader(
+    icon: ImageVector,
+    title: String
+) {
+    ConstraintLayout(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
+    ) {
+        val (iconRef, titleRef) = createRefs()
+        
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = Color(0xFF3B82F6),
+            modifier = Modifier
+                .size(24.dp)
+                .constrainAs(iconRef) {
+                    start.linkTo(parent.start)
+                    top.linkTo(parent.top)
+                    bottom.linkTo(parent.bottom)
+                }
+        )
+        
+        Text(
+            text = title,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Medium,
+            color = Color(0xFF1F2937),
+            modifier = Modifier
+                .constrainAs(titleRef) {
+                    start.linkTo(iconRef.end, margin = 8.dp)
+                    top.linkTo(parent.top)
+                    bottom.linkTo(parent.bottom)
+                }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DocumentCard(
+    icon: ImageVector,
+    title: String,
+    status: String,
+    isUploaded: Boolean,
+    actions: List<String>,
+    iconTint: Color = Color.Gray,
+    document: Document? = null,
+    onViewClick: (Document) -> Unit = {},
+    onReplaceClick: (Document) -> Unit = {},
+    onDownloadClick: (Document) -> Unit = {},
+    onUploadClick: () -> Unit = {},
+    isDownloading: Boolean = false,
+    downloadingDocumentId: String? = null
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 2.dp
+        )
+    ) {
+        ConstraintLayout(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            val (iconRef, contentRef, actionsRef) = createRefs()
+            
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = iconTint,
+                modifier = Modifier
+                    .size(24.dp)
+                    .constrainAs(iconRef) {
+                        start.linkTo(parent.start)
+                        top.linkTo(parent.top)
+                        bottom.linkTo(parent.bottom)
+                    }
+            )
+            
+            Column(
+                modifier = Modifier
+                    .constrainAs(contentRef) {
+                        start.linkTo(iconRef.end, margin = 16.dp)
+                        top.linkTo(parent.top)
+                        bottom.linkTo(parent.bottom)
+                        width = Dimension.fillToConstraints
+                    }
+            ) {
+                Text(
+                    text = title,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color(0xFF1F2937)
+                )
+                
+                Text(
+                    text = status,
+                    fontSize = 14.sp,
+                    color = if (isUploaded) AppColors.green else AppColors.gray500,
+                    letterSpacing = 0.1.sp
+                )
+            }
+            
+            Row(
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .constrainAs(actionsRef) {
+                        end.linkTo(parent.end)
+                        top.linkTo(parent.top)
+                        bottom.linkTo(parent.bottom)
+                    }
+            ) {
+                if (actions.contains("replace") && document != null) {
+                    OutlinedButton(
+                        onClick = { onReplaceClick(document) },
+                        modifier = Modifier.padding(end = 8.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = AppColors.blue500,
+                            disabledContentColor = AppColors.gray400
+                        ),
+                        border = BorderStroke(1.dp, if (!isDownloading || downloadingDocumentId != document.documentId) AppColors.blue300 else AppColors.gray300),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = "Replace",
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Replace", fontSize = 12.sp)
+                    }
+                }
+                
+                if (actions.contains("download") && document != null) {
+                    Button(
+                        onClick = { onDownloadClick(document) },
+                        modifier = Modifier
+                            .size(40.dp)
+                            .padding(end = 8.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(0.dp),
+                        enabled = !isDownloading || downloadingDocumentId != document.documentId,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.Transparent,
+                            disabledContainerColor = Color(0xFFE5E7EB)
+                        )
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(
+                                    brush = Brush.linearGradient(
+                                        colors = listOf(Color(0xFF3B82F6), Color(0xFF14B8A6)),
+                                        start = Offset(0f, 0f),
+                                        end = Offset(Float.POSITIVE_INFINITY, 0f)
+                                    )
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (isDownloading && downloadingDocumentId == document.documentId) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(16.dp),
+                                    color = Color.White,
+                                    strokeWidth = 2.dp
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Default.Download,
+                                    contentDescription = "Download",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(1.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+                
+                if (actions.contains("upload")) {
+                    Button(
+                        onClick = { onUploadClick() },
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF3B82F6)
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Upload,
+                            contentDescription = "Upload",
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Upload", fontSize = 12.sp)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EnhancedDocumentCard(
+    icon: ImageVector,
+    title: String,
+    status: String,
+    isUploaded: Boolean,
+    iconTint: Color = AppColors.gray400,
+    document: Document? = null,
+    onViewClick: (Document) -> Unit = {},
+    onReplaceClick: (Document) -> Unit = {},
+    onDownloadClick: (Document) -> Unit = {},
+    onUploadClick: () -> Unit = {},
+    isDownloading: Boolean = false,
+    downloadingDocumentId: String? = null
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp)
+            .shadow(
+                elevation = 2.dp,
+                shape = RoundedCornerShape(12.dp),
+                spotColor = AppColors.gray400.copy(alpha = 0.2f)
+            ),
+        colors = CardDefaults.cardColors(
+            containerColor = AppColors.white
+        ),
+        shape = RoundedCornerShape(12.dp),
+        border = BorderStroke(1.dp, AppColors.gray200)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            // Title and status row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Document icon with background
+                Box(
+                    modifier = Modifier
+                        .size(42.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(if (isUploaded) AppColors.teal100 else AppColors.gray100)
+                        .padding(8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = if (isUploaded) AppColors.teal500 else iconTint,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+                
+                Spacer(modifier = Modifier.width(12.dp))
+                
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(
+                        text = title,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = AppColors.gray800,
+                        letterSpacing = 0.1.sp
+                    )
+                    
+                    Spacer(modifier = Modifier.height(2.dp))
+                    
+                    Text(
+                        text = status,
+                        fontSize = 14.sp,
+                        color = AppColors.gray500,
+                        letterSpacing = 0.1.sp
+                    )
+                }
+            }
+            
+            // Actions row
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 12.dp),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (isUploaded && document != null) {
+                    // Replace button
+                    OutlinedButton(
+                        onClick = { onReplaceClick(document) },
+                        modifier = Modifier.padding(end = 8.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = AppColors.blue500,
+                            disabledContentColor = AppColors.gray400
+                        ),
+                        border = BorderStroke(1.dp, if (!isDownloading || downloadingDocumentId != document.documentId) AppColors.blue300 else AppColors.gray300),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = "Replace",
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Replace", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    }
+                    
+                    // Download button
+                    Button(
+                        onClick = { onDownloadClick(document) },
+                        modifier = Modifier
+                            .size(40.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(0.dp),
+                        enabled = !isDownloading || downloadingDocumentId != document.documentId,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.Transparent,
+                            disabledContainerColor = AppColors.gray200
+                        )
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(
+                                    brush = Brush.linearGradient(
+                                        colors = listOf(AppColors.blue500, AppColors.teal500),
+                                        start = Offset(0f, 0f),
+                                        end = Offset(Float.POSITIVE_INFINITY, 0f)
+                                    )
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (isDownloading && downloadingDocumentId == document.documentId) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(16.dp),
+                                    color = Color.White,
+                                    strokeWidth = 2.dp
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Default.Download,
+                                    contentDescription = "Download",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    // Upload button
+                    Button(
+                        onClick = onUploadClick,
+                        modifier = Modifier
+                            .width(120.dp)
+                            .height(36.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(0.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.Transparent
+                        )
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(
+                                    brush = Brush.linearGradient(
+                                        colors = listOf(AppColors.blue500, AppColors.teal500),
+                                        start = Offset(0f, 0f),
+                                        end = Offset(Float.POSITIVE_INFINITY, 0f)
+                                    )
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Row(
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Upload,
+                                    contentDescription = "Upload",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    "Upload",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color.White
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Preview(showBackground = true)
 @Composable
 fun DocumentsViewScreen(
-    onLogout: () -> Unit = {},
-    onNavigateToDashboard: () -> Unit = {},
-    onNavigateToAttendance: () -> Unit = {},
-    onNavigateToLeaveRequests: () -> Unit = {},
-    onNavigateToOvertimeRequests: () -> Unit = {},
-    onNavigateToReimbursementRequests: () -> Unit = {},
-    onNavigateToPerformance: () -> Unit = {},
-    onNavigateToTraining: () -> Unit = {},
-    onNavigateToProfile: () -> Unit = {}
+    onBackToProfile: () -> Unit = {}
 ) {
-    // State for drawer
-    val drawerState = rememberDrawerState(DrawerValue.Closed)
-    val scope = rememberCoroutineScope()
-    
     // State for profile data
     var profileData by remember { mutableStateOf<EmployeeProfile?>(null) }
     var isLoading by remember { mutableStateOf(true) }
@@ -296,42 +705,133 @@ fun DocumentsViewScreen(
         modifier = Modifier.fillMaxSize(),
         color = AppColors.gray100
     ) {
-        // Using the Universal Drawer
-        UniversalDrawer(
-            drawerState = drawerState,
-            currentScreen = AppScreen.DOCUMENTS,
-            onLogout = onLogout,
-            onNavigateToDashboard = onNavigateToDashboard,
-            onNavigateToAttendance = onNavigateToAttendance,
-            onNavigateToLeaveRequests = onNavigateToLeaveRequests,
-            onNavigateToOvertimeRequests = onNavigateToOvertimeRequests,
-            onNavigateToReimbursementRequests = onNavigateToReimbursementRequests,
-            onNavigateToPerformance = onNavigateToPerformance,
-            onNavigateToTraining = onNavigateToTraining,
-            onNavigateToProfile = onNavigateToProfile
+        Column(
+            modifier = Modifier.fillMaxSize()
         ) {
-            Column(modifier = Modifier.fillMaxSize()) {
-                // Header
-                AppHeader(
-                    onMenuClick = { 
-                        scope.launch {
-                            drawerState.open()
-                        }
-                    },
-                    modifier = Modifier.zIndex(1f),
-                    providedFirstName = profileData?.firstName ?: "",
-                    providedLastName = profileData?.lastName ?: "",
-                    providedRole = profileData?.jobName ?: "Employee",
-                    onProfileClick = onNavigateToProfile,
-                    onLogoutClick = onLogout
-                )
+            // Back button row with logo and title text (copied design from LeaveRequestForms)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 16.dp)
+                    .padding(top = 35.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(
+                    onClick = { onBackToProfile() },
+                    modifier = Modifier
+                        .size(48.dp)
+                        .shadow(2.dp, RoundedCornerShape(24.dp))
+                        .background(AppColors.white, RoundedCornerShape(24.dp))
+                        .padding(4.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ArrowBack,
+                        contentDescription = "Back",
+                        tint = AppColors.blue500,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
                 
-                // Main content
-                if (isLoading) {
+                Spacer(modifier = Modifier.width(12.dp))
+                
+                // Logo and title text
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(
+                            brush = Brush.horizontalGradient(
+                                colors = listOf(AppColors.blue500, AppColors.teal500),
+                                startX = 0f,
+                                endX = 800f
+                            )
+                        )
+                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                ) {
+                    // Logo with shadow and glow effects
+                    Box(
+                        modifier = Modifier
+                            .size(42.dp)
+                            .shadow(
+                                elevation = 4.dp,
+                                shape = RoundedCornerShape(8.dp),
+                                spotColor = Color.Black.copy(alpha = 0.3f)
+                            )
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color.White)
+                            .border(
+                                width = 1.dp,
+                                brush = Brush.linearGradient(
+                                    colors = listOf(
+                                        Color(0xFFCCCCCC),
+                                        Color(0xFFEEEEEE),
+                                        Color(0xFFDDDDDD)
+                                    )
+                                ),
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                            .padding(3.dp)
+                    ) {
+                        // Multi-layer effect for depth
+                        Box(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .background(
+                                    brush = Brush.radialGradient(
+                                        colors = listOf(
+                                            AppColors.blue100.copy(alpha = 0.3f),
+                                            Color.White.copy(alpha = 0.9f)
+                                        ),
+                                        radius = 25f
+                                    )
+                                )
+                                .padding(1.dp)
+                                .border(
+                                    width = 0.5.dp,
+                                    color = AppColors.blue100.copy(alpha = 0.3f),
+                                    shape = RoundedCornerShape(6.dp)
+                                )
+                                .padding(1.dp)
+                        ) {
+                            Image(
+                                painter = painterResource(id = R.drawable.logo_with_no_text),
+                                contentDescription = "Company Logo",
+                                modifier = Modifier.matchParentSize()
+                            )
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.width(12.dp))
+                    
+                    // Title text
+                    Column {
+                        Text(
+                            text = "WORKFORCE HUB",
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color.White,
+                            fontSize = 16.sp,
+                            letterSpacing = 0.5.sp
+                        )
+                        Text(
+                            text = "Enterprise Portal",
+                            color = Color.White.copy(alpha = 0.9f),
+                            fontSize = 12.sp,
+                            letterSpacing = 0.25.sp
+                        )
+                    }
+                }
+            }
+            
+            // Content area
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .weight(1f),
+                    .weight(1f)
+            ) {
+                if (isLoading) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
                         LoadingComponent()
@@ -340,10 +840,24 @@ fun DocumentsViewScreen(
                     DocumentsErrorView(error = error!!)
                 } else if (profileData != null) {
                     // Document content with the new design
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        // My Documents title
+                        Text(
+                            text = "My Documents",
+                            fontWeight = FontWeight.Bold,
+                            color = AppColors.gray800,
+                            fontSize = 20.sp,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = 24.dp, end = 16.dp, bottom = 15.dp, top = 4.dp)
+                        )
+                        
+                    // Document content with the new design
                     DocumentContent(
                         employeeId = profileData!!.employeeId,
                         employeeName = "${profileData!!.firstName} ${profileData!!.lastName}"
                     )
+                    }
                 }
             }
         }
@@ -396,7 +910,6 @@ fun DocumentContent(
     var isUploading by remember { mutableStateOf(false) }
     var uploadError by remember { mutableStateOf<String?>(null) }
     var showUploadDialog by remember { mutableStateOf(false) }
-    var showDocumentTypeDialog by remember { mutableStateOf(false) }
     var selectedDocumentType by remember { mutableStateOf<DocumentType?>(null) }
     var selectedFile by remember { mutableStateOf<Uri?>(null) }
     var fileName by remember { mutableStateOf("") }
@@ -409,6 +922,10 @@ fun DocumentContent(
     
     // State for document replace
     var documentToReplace by remember { mutableStateOf<String?>(null) }
+    
+    // State for tabs
+    var selectedTabIndex by remember { mutableStateOf(0) }
+    val tabTitles = listOf("Personal", "Government", "Company")
     
     // Function to fetch documents
     fun fetchDocuments() {
@@ -429,6 +946,89 @@ fun DocumentContent(
             } catch (e: Exception) {
                 documentsError = "Error loading documents: ${e.message}"
                 isLoadingDocuments = false
+            }
+        }
+    }
+    
+    // Function to upload a document - moved here before use
+    fun uploadDocument() {
+        val file = selectedFile ?: return
+        val documentType = selectedDocumentType ?: return
+        
+        isUploading = true
+        uploadError = null
+        
+        scope.launch {
+            try {
+                val documentService = ApiHelper.getDocumentService()
+                
+                // Get the actual file from the URI
+                val contentResolver = context.contentResolver
+                val inputStream = contentResolver.openInputStream(file)
+                val tempFile = File.createTempFile("upload", null, context.cacheDir)
+                
+                inputStream?.use { input ->
+                    FileOutputStream(tempFile).use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                
+                // Create multipart request
+                val requestFile = tempFile.asRequestBody(
+                    contentResolver.getType(file)?.toMediaTypeOrNull() ?: "application/octet-stream".toMediaTypeOrNull()
+                )
+                
+                val filePart = MultipartBody.Part.createFormData(
+                    "file",
+                    fileName,
+                    requestFile
+                )
+                
+                // Make the API call with appropriate document name
+                val documentName = when (documentType) {
+                    DocumentType.RESUME -> "Resume/Curriculum Vitae"
+                    DocumentType.BIRTH_CERTIFICATE -> "Birth Certificate"
+                    DocumentType.GOVERNMENT_ID -> "Government Issue ID"
+                    DocumentType.SSS_ID -> "SSS ID"
+                    DocumentType.TIN_ID -> "BIR TAX Identification Number"
+                    DocumentType.PHILHEALTH_ID -> "Philhealth ID"
+                    DocumentType.PAG_IBIG_ID -> "PAG-IBIG Membership ID"
+                    DocumentType.HMO_ID -> "HMO ID"
+                    DocumentType.BIR_FORM_1902 -> "BIR Form 1902"
+                    DocumentType.BIR_FORM_2316 -> "BIR Form 2316"
+                    DocumentType.CONFIDENTIALITY_AGREEMENT -> "Confidentiality Agreement"
+                    DocumentType.EMPLOYMENT_CONTRACT -> "Employment Contract"
+                }
+                
+                val response = documentService.uploadDocument(
+                    employeeId = employeeId,
+                    file = filePart,
+                    documentType = documentType.value, // Use the value from the enum
+                    documentName = documentName // Use the appropriate name based on document type
+                )
+                
+                if (response.isSuccessful) {
+                    // Refresh document list
+                    fetchDocuments()
+                    showUploadDialog = false
+                    selectedFile = null
+                    selectedDocumentType = null
+                    fileName = ""
+                    
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(context, "${documentName} uploaded successfully", Toast.LENGTH_SHORT).show()
+                    }
+                } else {
+                    uploadError = "Failed to upload document: ${response.message()}"
+                }
+                
+                isUploading = false
+                // Clean up temp file
+                tempFile.delete()
+                
+            } catch (e: Exception) {
+                uploadError = "Error uploading document: ${e.message}"
+                isUploading = false
             }
         }
     }
@@ -517,7 +1117,22 @@ fun DocumentContent(
                             // Make the API call
                             val response = documentService.replaceDocument(
                                 documentId = docId,
-                                file = filePart
+                                file = filePart,
+                                documentName = when (selectedDocumentType) {
+                                    DocumentType.RESUME -> "Resume/Curriculum Vitae"
+                                    DocumentType.BIRTH_CERTIFICATE -> "Birth Certificate"
+                                    DocumentType.GOVERNMENT_ID -> "Government Issue ID"
+                                    DocumentType.SSS_ID -> "SSS ID"
+                                    DocumentType.TIN_ID -> "BIR TAX Identification Number"
+                                    DocumentType.PHILHEALTH_ID -> "Philhealth ID"
+                                    DocumentType.PAG_IBIG_ID -> "PAG-IBIG Membership ID"
+                                    DocumentType.HMO_ID -> "HMO ID"
+                                    DocumentType.BIR_FORM_1902 -> "BIR Form 1902"
+                                    DocumentType.BIR_FORM_2316 -> "BIR Form 2316"
+                                    DocumentType.CONFIDENTIALITY_AGREEMENT -> "Confidentiality Agreement"
+                                    DocumentType.EMPLOYMENT_CONTRACT -> "Employment Contract"
+                                    null -> "Document" // Fallback
+                                }
                             )
                             
                             if (response.isSuccessful) {
@@ -528,7 +1143,7 @@ fun DocumentContent(
                                 fileName = ""
                                 
                                 withContext(Dispatchers.Main) {
-                                    Toast.makeText(context, "Document replaced successfully", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, "Document updated successfully", Toast.LENGTH_SHORT).show()
                                 }
                             } else {
                                 uploadError = "Failed to replace document: ${response.message()}"
@@ -546,75 +1161,9 @@ fun DocumentContent(
                 }
                 documentToReplace = null
             } else {
-                // If uploading a new document, show document type selection dialog
-                showDocumentTypeDialog = true
-            }
-        }
-    }
-    
-    // Function to upload a document
-    fun uploadDocument() {
-        val file = selectedFile ?: return
-        val documentType = selectedDocumentType ?: return
-        
-        isUploading = true
-        uploadError = null
-        
-        scope.launch {
-            try {
-                val documentService = ApiHelper.getDocumentService()
-                
-                // Get the actual file from the URI
-                val contentResolver = context.contentResolver
-                val inputStream = contentResolver.openInputStream(file)
-                val tempFile = File.createTempFile("upload", null, context.cacheDir)
-                
-                inputStream?.use { input ->
-                    FileOutputStream(tempFile).use { output ->
-                        input.copyTo(output)
-                    }
-                }
-                
-                // Create multipart request
-                val requestFile = tempFile.asRequestBody(
-                    contentResolver.getType(file)?.toMediaTypeOrNull() ?: "application/octet-stream".toMediaTypeOrNull()
-                )
-                
-                val filePart = MultipartBody.Part.createFormData(
-                    "file",
-                    fileName,
-                    requestFile
-                )
-                
-                // Make the API call
-                val response = documentService.uploadDocument(
-                    employeeId = employeeId,
-                    file = filePart,
-                    documentType = documentType.value
-                )
-                
-                if (response.isSuccessful) {
-                    // Refresh document list
-                    fetchDocuments()
-                    showUploadDialog = false
-                    selectedFile = null
-                    selectedDocumentType = null
-                    fileName = ""
-                    
-                    withContext(Dispatchers.Main) {
-                        Toast.makeText(context, "Document uploaded successfully", Toast.LENGTH_SHORT).show()
-                    }
-                } else {
-                    uploadError = "Failed to upload document: ${response.message()}"
-                }
-                
-                isUploading = false
-                // Clean up temp file
-                tempFile.delete()
-                
-            } catch (e: Exception) {
-                uploadError = "Error uploading document: ${e.message}"
-                isUploading = false
+                // For new uploads, proceed directly with the selected document type
+                // No need to show document type selection dialog
+                uploadDocument()
             }
         }
     }
@@ -713,24 +1262,89 @@ fun DocumentContent(
         }
     }
     
-    // Organize documents by category
-    val personalDocuments = documents.filter { 
-        it.documentType.equals(DocumentType.RESUME.value, ignoreCase = true) ||
-        it.documentType.equals(DocumentType.ID.value, ignoreCase = true) ||
-        it.documentType.equals(DocumentType.CERTIFICATE.value, ignoreCase = true)
-    }
-    
-    val governmentDocuments = documents.filter {
-        it.documentType.startsWith("BIR", ignoreCase = true) ||
-        it.documentType.contains("SSS", ignoreCase = true) ||
-        it.documentType.contains("PHILHEALTH", ignoreCase = true) ||
-        it.documentType.contains("PAG-IBIG", ignoreCase = true)
-    }
-    
-    val companyDocuments = documents.filter {
-        it.documentType.equals(DocumentType.CONTRACT.value, ignoreCase = true) ||
-        it.documentType.contains("AGREEMENT", ignoreCase = true) ||
-        !personalDocuments.contains(it) && !governmentDocuments.contains(it)
+    // Function to view a document directly
+    suspend fun viewDocument(document: Document) {
+        try {
+            isDownloading = true
+            downloadingDocumentId = document.documentId
+            
+            val documentService = ApiHelper.getDocumentService()
+            val response = documentService.viewDocument(document.documentId)
+            
+            if (response.isSuccessful && response.body() != null) {
+                try {
+                    // Directly read the URL string from the response body
+                    val responseBody = response.body()!!
+                    val viewUrl = responseBody.string().trim()
+                    
+                    Log.d("DocumentsViewScreen", "Received URL: $viewUrl")
+                    
+                    if (viewUrl.isNotEmpty()) {
+                        withContext(Dispatchers.Main) {
+                            // Open the URL in a browser
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(viewUrl))
+                            
+                            try {
+                                context.startActivity(intent)
+                                Toast.makeText(
+                                    context,
+                                    "Opening document for viewing",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            } catch (e: Exception) {
+                                Log.e("DocumentsViewScreen", "Failed to open document viewer", e)
+                                Toast.makeText(
+                                    context,
+                                    "No app available to view this document",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            }
+                        }
+                    } else {
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(
+                                context,
+                                "Empty view URL returned from server",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e("DocumentsViewScreen", "Error processing response body", e)
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(
+                            context,
+                            "Error processing document: ${e.localizedMessage}",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            } else {
+                val errorMessage = "Failed to view document: ${response.code()} ${response.message()}"
+                Log.e("DocumentsViewScreen", errorMessage)
+                
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(
+                        context,
+                        errorMessage,
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("DocumentsViewScreen", "Error viewing document", e)
+            
+            withContext(Dispatchers.Main) {
+                Toast.makeText(
+                    context,
+                    "Error viewing document: ${e.localizedMessage}",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        } finally {
+            isDownloading = false
+            downloadingDocumentId = null
+        }
     }
     
     // Fetch documents when the screen is first shown
@@ -738,63 +1352,159 @@ fun DocumentContent(
         fetchDocuments()
     }
     
-    @OptIn(ExperimentalMaterial3Api::class)
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { 
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.Description,
-                            contentDescription = null,
-                            tint = Color(0xFF3B82F6),
-                            modifier = Modifier.size(24.dp)
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        // Main document card container
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .shadow(
+                    elevation = 4.dp,
+                    shape = RoundedCornerShape(16.dp),
+                    spotColor = AppColors.blue700.copy(alpha = 0.2f)
+                ),
+            colors = CardDefaults.cardColors(
+                containerColor = AppColors.white
+            ),
+            shape = RoundedCornerShape(16.dp),
+            border = BorderStroke(1.dp, AppColors.gray200)
+        ) {
+            // Gradient top bar
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(4.dp)
+                    .background(
+                        brush = Brush.horizontalGradient(
+                            colors = listOf(AppColors.blue500, AppColors.teal500)
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
+                    )
+            )
+            
+            // Form header with blue indicator - moved before tabs for better layout
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp)
+            ) {
+                // Blue vertical indicator
+                Box(
+                    modifier = Modifier
+                        .width(4.dp)
+                        .height(36.dp)
+                        .background(AppColors.blue500, RoundedCornerShape(2.dp))
+                )
+                
+                // Section title and subtitle
+                Column(
+                    modifier = Modifier.padding(start = 12.dp)
+                ) {
                         Text(
-                            "Documents",
-                            color = Color(0xFF1F2937),
-                            fontWeight = FontWeight.SemiBold
+                        text = "Document Management",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = AppColors.gray800
+                    )
+                    Text(
+                        text = "View, upload, and manage your important documents",
+                        fontSize = 14.sp,
+                        color = AppColors.gray500,
+                        modifier = Modifier.padding(top = 2.dp)
+                    )
+                }
+            }
+            
+            // Add tabs with updated styling to match LeaveRequestForm
+            TabRow(
+                selectedTabIndex = selectedTabIndex,
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp),
+                containerColor = Color.Transparent,
+                contentColor = AppColors.blue500,
+                indicator = { tabPositions ->
+                    if (selectedTabIndex < tabPositions.size) {
+                        Box(
+                            Modifier
+                                .tabIndicatorOffset(tabPositions[selectedTabIndex])
+                                .height(3.dp)
+                                .background(
+                                    brush = Brush.linearGradient(
+                                        colors = listOf(AppColors.blue500, AppColors.teal500),
+                                        start = Offset(0f, 0f),
+                                        end = Offset(100f, 0f)
+                                    ),
+                                    shape = RoundedCornerShape(topStart = 2.dp, topEnd = 2.dp)
+                                )
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White,
-                    titleContentColor = Color(0xFF1F2937)
-                )
-            )
-        },
-        floatingActionButton = {
-            // Floating Action Button for uploading documents
-            FloatingActionButton(
-                onClick = { showUploadDialog = true },
-                containerColor = Color(0xFF3B82F6),
-                contentColor = Color.White
+                divider = {
+                    HorizontalDivider(
+                        thickness = 1.dp,
+                        color = AppColors.gray200
+                    )
+                }
             ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Upload Document"
-                )
+                tabTitles.forEachIndexed { index, title ->
+                    Tab(
+                        selected = selectedTabIndex == index,
+                        onClick = { selectedTabIndex = index },
+                        text = {
+                            Text(
+                                text = title,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Medium,
+                                fontSize = 14.sp,
+                                color = if (selectedTabIndex == index) AppColors.blue500 else AppColors.gray600,
+                                letterSpacing = 0.1.sp
+                            )
+                        },
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                }
             }
-        },
-        containerColor = Color(0xFFF9FAFB)
-    ) { paddingValues ->
-        Surface(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
-            color = Color(0xFFF9FAFB)
-        ) {
+            
+            // Document content
             if (isLoadingDocuments) {
                 Box(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .padding(16.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    CircularProgressIndicator(color = Color(0xFF3B82F6))
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        CircularProgressIndicator(
+                            color = AppColors.blue500,
+                            strokeWidth = 3.dp,
+                            modifier = Modifier.size(48.dp)
+                        )
+                        
+                        Spacer(modifier = Modifier.height(16.dp))
+                        
+                        Text(
+                            text = "Loading documents...",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = AppColors.gray700
+                        )
+                    }
                 }
             } else if (documentsError != null && documents.isEmpty()) {
                 Box(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .padding(16.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Column(
@@ -804,7 +1514,7 @@ fun DocumentContent(
                         Icon(
                             imageVector = Icons.Outlined.Info,
                             contentDescription = "Info",
-                            tint = Color(0xFF9CA3AF),
+                            tint = AppColors.gray400,
                             modifier = Modifier.size(64.dp)
                         )
                         
@@ -814,7 +1524,7 @@ fun DocumentContent(
                             text = "No documents found",
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Medium,
-                            color = Color(0xFF4B5563)
+                            color = AppColors.gray700
                         )
                         
                         Spacer(modifier = Modifier.height(8.dp))
@@ -822,461 +1532,544 @@ fun DocumentContent(
                         Text(
                             text = "Upload a document to get started",
                             fontSize = 14.sp,
-                            color = Color(0xFF6B7280)
+                            color = AppColors.gray500,
+                            textAlign = TextAlign.Center
                         )
                         
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(24.dp))
                         
-                        Button(
-                            onClick = { showUploadDialog = true },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-                            contentPadding = PaddingValues(0.dp),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .background(
-                                        brush = Brush.horizontalGradient(
-                                            colors = listOf(
-                                                Color(0xFF3B82F6), // Blue
-                                                Color(0xFF0EA5E9), // Light blue
-                                                Color(0xFF14B8A6)  // Teal
-                                            )
-                                        ),
-                                        shape = RoundedCornerShape(12.dp)
-                                    )
-                                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Row(
-                                    horizontalArrangement = Arrangement.Center,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Upload,
-                                        contentDescription = null,
-                                        tint = Color.White,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                    
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    
-                                    Text(
-                                        text = "Upload Document",
-                                        color = Color.White,
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                }
+                        GradientButton(
+                            text = "Upload Document",
+                            icon = Icons.Default.Upload,
+                            onClick = { 
+                                selectedDocumentType = DocumentType.RESUME
+                                showUploadDialog = true 
                             }
-                        }
+                        )
                     }
                 }
             } else {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(16.dp)
-                        .verticalScroll(scrollState),
+                        .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // Personal Documents Section
-                    SectionHeader(
-                        icon = Icons.Default.Person,
-                        title = "Personal"
-                    )
-                    
-                    if (personalDocuments.isEmpty()) {
-                        // Display some default document cards for personal docs
-                        DocumentCard(
+                    // Content container
+                    Column(
+                                modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        // Conditionally display the document sections based on selected tab
+                        when (selectedTabIndex) {
+                            0 -> {
+                                // Personal section header (fixed, not scrollable)
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(32.dp)
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(AppColors.blue50)
+                                            .padding(4.dp),
+                                        contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                            imageVector = Icons.Default.Person,
+                                        contentDescription = null,
+                                            tint = AppColors.blue500,
+                                            modifier = Modifier.size(20.dp)
+                                    )
+                                    }
+                                    
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    
+                                    Text(
+                                        text = "Personal",
+                                        fontSize = 16.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = AppColors.gray800,
+                                        letterSpacing = 0.1.sp
+                                    )
+                                }
+                                
+                                // Scrollable content with just the document cards
+                Column(
+                    modifier = Modifier
+                                        .fillMaxWidth()
+                        .verticalScroll(scrollState),
+                                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    // Find documents for each type
+                                    val resumeDocument = documents.find { 
+                                        it.name == "Resume/Curriculum Vitae" || it.documentType == "RESUME" || it.documentType == "Resume/Curriculum Vitae"
+                                    }
+                                    val birthCertDocument = documents.find { 
+                                        it.name == "Birth Certificate" || it.documentType == "BIRTH_CERTIFICATE" || it.documentType == "Birth Certificate"
+                                    }
+                                    val govIdDocument = documents.find { 
+                                        it.name == "Government Issue ID" || it.documentType == "GOVERNMENT_ID" || it.documentType == "Government Issue ID"
+                                    }
+                                    
+                                    // Resume document card
+                                    EnhancedDocumentCard(
                             icon = Icons.Default.Description,
+                                        iconTint = if (resumeDocument != null) AppColors.green else AppColors.gray400,
                             title = "Resume/Curriculum Vitae",
-                            status = "Not uploaded yet",
-                            isUploaded = false,
-                            actions = listOf("upload"),
-                            onUpload = { 
+                                        status = if (resumeDocument != null) "Uploaded" else "Not uploaded yet",
+                                        isUploaded = resumeDocument != null,
+                                        document = resumeDocument,
+                                        onViewClick = { doc -> scope.launch { viewDocument(doc) } },
+                                        onReplaceClick = { doc -> 
+                                            documentToReplace = doc.documentId
                                 selectedDocumentType = DocumentType.RESUME
                                 filePicker.launch("*/*") 
-                            }
-                        )
-                        
-                        DocumentCard(
+                                        },
+                                        onDownloadClick = { doc -> scope.launch { downloadDocument(doc) } },
+                                        onUploadClick = { 
+                                            selectedDocumentType = DocumentType.RESUME 
+                                            showUploadDialog = true
+                                        },
+                                        isDownloading = isDownloading,
+                                        downloadingDocumentId = downloadingDocumentId
+                                    )
+                                    
+                                    // Birth Certificate document card
+                                    EnhancedDocumentCard(
                             icon = Icons.Default.Description,
+                                        iconTint = if (birthCertDocument != null) AppColors.green else AppColors.gray400,
                             title = "Birth Certificate",
-                            status = "Not uploaded yet",
-                            isUploaded = false,
-                            actions = listOf("upload"),
-                            onUpload = { 
-                                selectedDocumentType = DocumentType.CERTIFICATE
+                                        status = if (birthCertDocument != null) "Uploaded" else "Not uploaded yet",
+                                        isUploaded = birthCertDocument != null,
+                                        document = birthCertDocument,
+                                        onViewClick = { doc -> scope.launch { viewDocument(doc) } },
+                                        onReplaceClick = { doc -> 
+                                            documentToReplace = doc.documentId
+                                            selectedDocumentType = DocumentType.BIRTH_CERTIFICATE
                                 filePicker.launch("*/*") 
-                            }
-                        )
-                        
-                        DocumentCard(
+                                        },
+                                        onDownloadClick = { doc -> scope.launch { downloadDocument(doc) } },
+                                        onUploadClick = { 
+                                            selectedDocumentType = DocumentType.BIRTH_CERTIFICATE
+                                            showUploadDialog = true
+                                        },
+                                        isDownloading = isDownloading,
+                                        downloadingDocumentId = downloadingDocumentId
+                                    )
+                                    
+                                    // Government Issue ID document card
+                                    EnhancedDocumentCard(
                             icon = Icons.Default.Description,
+                                        iconTint = if (govIdDocument != null) AppColors.green else AppColors.gray400,
                             title = "Government Issue ID",
-                            status = "Not uploaded yet",
-                            isUploaded = false,
-                            actions = listOf("upload"),
-                            onUpload = { 
-                                selectedDocumentType = DocumentType.ID
-                                filePicker.launch("*/*") 
-                            }
-                        )
-                    } else {
-                        // Display actual personal documents
-                        personalDocuments.forEach { document ->
-                            DocumentCard(
-                                icon = Icons.Default.Description,
-                                iconTint = Color(0xFF22C55E),
-                                title = document.name,
-                                status = "Uploaded",
-                                isUploaded = true,
-                                actions = listOf("view", "replace", "download"),
-                                onView = { /* Open document view */ },
-                                onReplace = { 
-                                    documentToReplace = document.documentId
+                                        status = if (govIdDocument != null) "Uploaded" else "Not uploaded yet",
+                                        isUploaded = govIdDocument != null,
+                                        document = govIdDocument,
+                                        onViewClick = { doc -> scope.launch { viewDocument(doc) } },
+                                        onReplaceClick = { doc -> 
+                                            documentToReplace = doc.documentId
+                                            selectedDocumentType = DocumentType.GOVERNMENT_ID
                                     filePicker.launch("*/*") 
                                 },
-                                onDownload = { 
-                                    scope.launch { 
-                                        downloadDocument(document) 
+                                        onDownloadClick = { doc -> scope.launch { downloadDocument(doc) } },
+                                        onUploadClick = { 
+                                            selectedDocumentType = DocumentType.GOVERNMENT_ID
+                                            showUploadDialog = true
+                                        },
+                                        isDownloading = isDownloading,
+                                        downloadingDocumentId = downloadingDocumentId
+                                    )
+                                    
+                                    // Bottom spacer for better scrolling experience
+                                    Spacer(modifier = Modifier.height(80.dp))
+                                }
+                            }
+                            1 -> {
+                                // Government Related section header (fixed, not scrollable)
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(32.dp)
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(AppColors.blue50)
+                                            .padding(4.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Business,
+                                            contentDescription = null,
+                                            tint = AppColors.blue500,
+                                            modifier = Modifier.size(20.dp)
+                                        )
                                     }
-                                },
-                                isDownloading = isDownloading && downloadingDocumentId == document.documentId
-                            )
-                        }
-                    }
-                    
-                    Spacer(modifier = Modifier.height(12.dp))
-                    
-                    // Government Related Section
-                    SectionHeader(
-                        icon = Icons.Default.Business,
-                        title = "Government Related"
-                    )
-                    
+                                    
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    
+                                    Text(
+                                        text = "Government Related",
+                                        fontSize = 16.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = AppColors.gray800,
+                                        letterSpacing = 0.1.sp
+                                    )
+                                }
+                                
+                                // Sub-tabs for Government section
+                                var govSelectedTabIndex by remember { mutableStateOf(0) }
+                                val govTabTitles = listOf("BIR", "Social Security")
+                                
+                                // Government section tabs
+                                TabRow(
+                                    selectedTabIndex = govSelectedTabIndex,
+                                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp),
+                                    containerColor = Color.Transparent,
+                                    contentColor = AppColors.blue500,
+                                    indicator = { tabPositions ->
+                                        if (govSelectedTabIndex < tabPositions.size) {
+                                            Box(
+                                                Modifier
+                                                    .tabIndicatorOffset(tabPositions[govSelectedTabIndex])
+                                                    .height(3.dp)
+                                                    .background(
+                                                        brush = Brush.linearGradient(
+                                                            colors = listOf(AppColors.blue500, AppColors.teal500),
+                                                            start = Offset(0f, 0f),
+                                                            end = Offset(100f, 0f)
+                                                        ),
+                                                        shape = RoundedCornerShape(topStart = 2.dp, topEnd = 2.dp)
+                                                    )
+                                            )
+                                        }
+                                    },
+                                    divider = {
+                                        HorizontalDivider(
+                                            thickness = 1.dp,
+                                            color = AppColors.gray200
+                                        )
+                                    }
+                                ) {
+                                    govTabTitles.forEachIndexed { index, title ->
+                                        Tab(
+                                            selected = govSelectedTabIndex == index,
+                                            onClick = { govSelectedTabIndex = index },
+                                            text = {
                     Text(
-                        text = "BIR",
+                                                    text = title,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis,
+                                                    fontWeight = if (govSelectedTabIndex == index) FontWeight.Bold else FontWeight.Medium,
                         fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = Color(0xFF6B7280),
-                        modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
-                    )
-                    
-                    if (governmentDocuments.isEmpty()) {
-                        // Display default government document cards
-                        DocumentCard(
+                                                    color = if (govSelectedTabIndex == index) AppColors.blue500 else AppColors.gray600,
+                                                    letterSpacing = 0.1.sp
+                                                )
+                                            },
+                                            modifier = Modifier.padding(vertical = 8.dp)
+                                        )
+                                    }
+                                }
+                                
+                                // Scrollable content with just the document cards
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .verticalScroll(scrollState),
+                                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    // Find documents for each type
+                                    val birForm1902 = documents.find { 
+                                        it.name == "BIR Form 1902" || it.documentType == "BIR_FORM_1902" || it.documentType == "BIR Form 1902"
+                                    }
+                                    val tinIdDocument = documents.find { 
+                                        it.name == "BIR TAX Identification Number" || it.documentType == "TIN_ID" || it.documentType == "BIR TAX Identification Number"
+                                    }
+                                    val birForm2316 = documents.find { 
+                                        it.name == "BIR Form 2316" || it.documentType == "BIR_FORM_2316" || it.documentType == "BIR Form 2316"
+                                    }
+                                    val sssIdDocument = documents.find { 
+                                        it.name == "SSS ID" || it.documentType == "SSS_ID" || it.documentType == "SSS ID"
+                                    }
+                                    val philhealthDocument = documents.find { 
+                                        it.name == "Philhealth ID" || it.documentType == "PHILHEALTH_ID" || it.documentType == "Philhealth ID"
+                                    }
+                                    val pagibigDocument = documents.find { 
+                                        it.name == "PAG-IBIG Membership ID" || it.documentType == "PAG_IBIG_ID" || it.documentType == "PAG-IBIG Membership ID"
+                                    }
+                                    
+                                    // Show appropriate documents based on selected government tab
+                                    if (govSelectedTabIndex == 0) {
+                                        // BIR Documents
+                                        // BIR Form 1902
+                                        EnhancedDocumentCard(
                             icon = Icons.Default.Description,
+                                            iconTint = if (birForm1902 != null) AppColors.green else AppColors.gray400,
                             title = "BIR Form 1902",
-                            status = "Not uploaded yet",
-                            isUploaded = false,
-                            actions = listOf("upload"),
-                            onUpload = { 
-                                selectedDocumentType = DocumentType.OTHER
+                                            status = if (birForm1902 != null) "Uploaded" else "Not uploaded yet",
+                                            isUploaded = birForm1902 != null,
+                                            document = birForm1902,
+                                            onViewClick = { doc -> scope.launch { viewDocument(doc) } },
+                                            onReplaceClick = { doc -> 
+                                                documentToReplace = doc.documentId
+                                                selectedDocumentType = DocumentType.BIR_FORM_1902
                                 filePicker.launch("*/*") 
-                            }
-                        )
-                        
-                        DocumentCard(
+                                            },
+                                            onDownloadClick = { doc -> scope.launch { downloadDocument(doc) } },
+                                            onUploadClick = { 
+                                                selectedDocumentType = DocumentType.BIR_FORM_1902
+                                                showUploadDialog = true
+                                            },
+                                            isDownloading = isDownloading,
+                                            downloadingDocumentId = downloadingDocumentId
+                                        )
+                                        
+                                        // TIN ID
+                                        EnhancedDocumentCard(
                             icon = Icons.Default.Description,
+                                            iconTint = if (tinIdDocument != null) AppColors.green else AppColors.gray400,
                             title = "BIR TAX Identification Number",
-                            status = "Not uploaded yet",
-                            isUploaded = false,
-                            actions = listOf("upload"),
-                            onUpload = { 
-                                selectedDocumentType = DocumentType.OTHER
+                                            status = if (tinIdDocument != null) "Uploaded" else "Not uploaded yet",
+                                            isUploaded = tinIdDocument != null,
+                                            document = tinIdDocument,
+                                            onViewClick = { doc -> scope.launch { viewDocument(doc) } },
+                                            onReplaceClick = { doc -> 
+                                                documentToReplace = doc.documentId
+                                                selectedDocumentType = DocumentType.TIN_ID
                                 filePicker.launch("*/*") 
-                            }
-                        )
-                        
-                        DocumentCard(
+                                            },
+                                            onDownloadClick = { doc -> scope.launch { downloadDocument(doc) } },
+                                            onUploadClick = { 
+                                                selectedDocumentType = DocumentType.TIN_ID
+                                                showUploadDialog = true
+                                            },
+                                            isDownloading = isDownloading,
+                                            downloadingDocumentId = downloadingDocumentId
+                                        )
+                                        
+                                        // BIR Form 2316
+                                        EnhancedDocumentCard(
                             icon = Icons.Default.Description,
+                                            iconTint = if (birForm2316 != null) AppColors.green else AppColors.gray400,
                             title = "BIR Form 2316",
-                            status = "Not uploaded yet",
-                            isUploaded = false,
-                            actions = listOf("upload"),
-                            onUpload = { 
-                                selectedDocumentType = DocumentType.OTHER
+                                            status = if (birForm2316 != null) "Uploaded" else "Not uploaded yet",
+                                            isUploaded = birForm2316 != null,
+                                            document = birForm2316,
+                                            onViewClick = { doc -> scope.launch { viewDocument(doc) } },
+                                            onReplaceClick = { doc -> 
+                                                documentToReplace = doc.documentId
+                                                selectedDocumentType = DocumentType.BIR_FORM_2316
                                 filePicker.launch("*/*") 
-                            }
-                        )
-                        
-                        DocumentCard(
+                                            },
+                                            onDownloadClick = { doc -> scope.launch { downloadDocument(doc) } },
+                                            onUploadClick = { 
+                                                selectedDocumentType = DocumentType.BIR_FORM_2316
+                                                showUploadDialog = true
+                                            },
+                                            isDownloading = isDownloading,
+                                            downloadingDocumentId = downloadingDocumentId
+                                        )
+                                    } else {
+                                        // Social Security Documents
+                                        // SSS ID
+                                        EnhancedDocumentCard(
                             icon = Icons.Default.Description,
+                                            iconTint = if (sssIdDocument != null) AppColors.green else AppColors.gray400,
                             title = "SSS ID",
-                            status = "Not uploaded yet",
-                            isUploaded = false,
-                            actions = listOf("upload"),
-                            onUpload = { 
-                                selectedDocumentType = DocumentType.OTHER
+                                            status = if (sssIdDocument != null) "Uploaded" else "Not uploaded yet",
+                                            isUploaded = sssIdDocument != null,
+                                            document = sssIdDocument,
+                                            onViewClick = { doc -> scope.launch { viewDocument(doc) } },
+                                            onReplaceClick = { doc -> 
+                                                documentToReplace = doc.documentId
+                                                selectedDocumentType = DocumentType.SSS_ID
                                 filePicker.launch("*/*") 
-                            }
-                        )
-                        
-                        DocumentCard(
+                                            },
+                                            onDownloadClick = { doc -> scope.launch { downloadDocument(doc) } },
+                                            onUploadClick = { 
+                                                selectedDocumentType = DocumentType.SSS_ID
+                                                showUploadDialog = true
+                                            },
+                                            isDownloading = isDownloading,
+                                            downloadingDocumentId = downloadingDocumentId
+                                        )
+                                        
+                                        // Philhealth ID
+                                        EnhancedDocumentCard(
                             icon = Icons.Default.Description,
+                                            iconTint = if (philhealthDocument != null) AppColors.green else AppColors.gray400,
                             title = "Philhealth ID",
-                            status = "Not uploaded yet",
-                            isUploaded = false,
-                            actions = listOf("upload"),
-                            onUpload = { 
-                                selectedDocumentType = DocumentType.OTHER
-                                filePicker.launch("*/*") 
-                            }
-                        )
-                        
-                        DocumentCard(
-                            icon = Icons.Default.Description,
-                            title = "PAG-IBIG Membership ID",
-                            status = "Not uploaded yet",
-                            isUploaded = false,
-                            actions = listOf("upload"),
-                            onUpload = { 
-                                selectedDocumentType = DocumentType.OTHER
-                                filePicker.launch("*/*") 
-                            }
-                        )
-                    } else {
-                        // Display actual government documents
-                        governmentDocuments.forEach { document ->
-                            DocumentCard(
-                                icon = Icons.Default.Description,
-                                iconTint = Color(0xFF22C55E),
-                                title = document.name,
-                                status = "Uploaded",
-                                isUploaded = true,
-                                actions = listOf("view", "replace", "download"),
-                                onView = { /* Open document view */ },
-                                onReplace = { 
-                                    documentToReplace = document.documentId
+                                            status = if (philhealthDocument != null) "Uploaded" else "Not uploaded yet",
+                                            isUploaded = philhealthDocument != null,
+                                            document = philhealthDocument,
+                                            onViewClick = { doc -> scope.launch { viewDocument(doc) } },
+                                            onReplaceClick = { doc -> 
+                                                documentToReplace = doc.documentId
+                                                selectedDocumentType = DocumentType.PHILHEALTH_ID
                                     filePicker.launch("*/*") 
                                 },
-                                onDownload = { 
-                                    scope.launch { 
-                                        downloadDocument(document) 
-                                    }
-                                },
-                                isDownloading = isDownloading && downloadingDocumentId == document.documentId
-                            )
-                        }
-                    }
-                    
-                    Spacer(modifier = Modifier.height(12.dp))
-                    
-                    // Company Section
-                    SectionHeader(
-                        icon = Icons.Default.Business,
-                        title = "Company"
-                    )
-                    
-                    if (companyDocuments.isEmpty()) {
-                        // Display default company document cards
-                        DocumentCard(
+                                            onDownloadClick = { doc -> scope.launch { downloadDocument(doc) } },
+                                            onUploadClick = { 
+                                                selectedDocumentType = DocumentType.PHILHEALTH_ID
+                                                showUploadDialog = true
+                                            },
+                                            isDownloading = isDownloading,
+                                            downloadingDocumentId = downloadingDocumentId
+                                        )
+                                        
+                                        // PAG-IBIG ID
+                                        EnhancedDocumentCard(
                             icon = Icons.Default.Description,
-                            title = "Confidentiality Agreement",
-                            status = "Not uploaded yet",
-                            isUploaded = false,
-                            actions = listOf("upload"),
-                            onUpload = { 
-                                selectedDocumentType = DocumentType.OTHER
-                                filePicker.launch("*/*") 
-                            }
-                        )
-                        
-                        DocumentCard(
-                            icon = Icons.Default.Description,
-                            title = "Employment Contract",
-                            status = "Not uploaded yet",
-                            isUploaded = false,
-                            actions = listOf("upload"),
-                            onUpload = { 
-                                selectedDocumentType = DocumentType.CONTRACT
-                                filePicker.launch("*/*") 
-                            }
-                        )
-                    } else {
-                        // Display actual company documents
-                        companyDocuments.forEach { document ->
-                            DocumentCard(
-                                icon = Icons.Default.Description,
-                                iconTint = Color(0xFF22C55E),
-                                title = document.name,
-                                status = "Uploaded",
-                                isUploaded = true,
-                                actions = listOf("view", "replace", "download"),
-                                onView = { /* Open document view */ },
-                                onReplace = { 
-                                    documentToReplace = document.documentId
+                                            iconTint = if (pagibigDocument != null) AppColors.green else AppColors.gray400,
+                                            title = "PAG-IBIG Membership ID",
+                                            status = if (pagibigDocument != null) "Uploaded" else "Not uploaded yet",
+                                            isUploaded = pagibigDocument != null,
+                                            document = pagibigDocument,
+                                            onViewClick = { doc -> scope.launch { viewDocument(doc) } },
+                                            onReplaceClick = { doc -> 
+                                                documentToReplace = doc.documentId
+                                                selectedDocumentType = DocumentType.PAG_IBIG_ID
                                     filePicker.launch("*/*") 
                                 },
-                                onDownload = { 
-                                    scope.launch { 
-                                        downloadDocument(document) 
+                                            onDownloadClick = { doc -> scope.launch { downloadDocument(doc) } },
+                                            onUploadClick = { 
+                                                selectedDocumentType = DocumentType.PAG_IBIG_ID
+                                                showUploadDialog = true
+                                            },
+                                            isDownloading = isDownloading,
+                                            downloadingDocumentId = downloadingDocumentId
+                                        )
                                     }
-                                },
-                                isDownloading = isDownloading && downloadingDocumentId == document.documentId
-                            )
-                        }
-                    }
-                    
-                    // Add some space at the bottom
+                                    
+                                    // Bottom spacer for better scrolling experience
                     Spacer(modifier = Modifier.height(80.dp))
                 }
             }
-        }
-        
-        // Document type selection dialog
-        if (showDocumentTypeDialog) {
-            AlertDialog(
-                onDismissRequest = { showDocumentTypeDialog = false },
-                title = { 
-                    Text(
-                        text = "Select Document Type",
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFF1F2937)
-                    ) 
-                },
-                text = {
-                    Column {
-                        DocumentType.values().forEach { type ->
+                            2 -> {
+                                // Company section header (fixed, not scrollable)
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable {
-                                        selectedDocumentType = type
-                                        showDocumentTypeDialog = false
-                                        uploadDocument()
-                                    }
-                                    .padding(vertical = 12.dp),
+                                        .padding(vertical = 8.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(
-                                    text = type.displayName,
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Normal,
-                                    color = Color(0xFF4B5563)
-                                )
-                            }
-                        }
-                    }
-                },
-                confirmButton = {},
-                dismissButton = {
-                    TextButton(
-                        onClick = { showDocumentTypeDialog = false },
-                        colors = ButtonDefaults.textButtonColors(
-                            contentColor = Color(0xFF3B82F6)
-                        )
-                    ) {
-                        Text("Cancel")
-                    }
-                },
-                containerColor = Color.White,
-                shape = RoundedCornerShape(12.dp)
-            )
-        }
-        
-        // Upload dialog
-        if (showUploadDialog) {
-            AlertDialog(
-                onDismissRequest = { 
-                    if (!isUploading) {
-                        showUploadDialog = false
-                        selectedFile = null
-                        selectedDocumentType = null
-                        fileName = ""
-                    }
-                },
-                title = { 
-                    Text(
-                        text = "Upload Document",
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFF1F2937)
-                    ) 
-                },
-                text = {
-                    Column {
-                        if (selectedFile != null) {
-                            Text(
-                                text = "Selected file: $fileName",
-                                color = Color(0xFF4B5563)
-                            )
-                        } else {
-                            Text(
-                                text = "Please select a file to upload",
-                                color = Color(0xFF4B5563)
-                            )
-                        }
-                        
-                        if (uploadError != null) {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = uploadError!!,
-                                color = Color(0xFFEF4444)
-                            )
-                        }
-                    }
-                },
-                confirmButton = {
-                    Button(
-                        onClick = {
-                            if (selectedFile == null) {
-                                filePicker.launch("*/*")
-                            } else {
-                                uploadDocument()
-                            }
-                        },
-                        enabled = !isUploading && (selectedFile == null || (selectedFile != null && selectedDocumentType != null)),
-                        contentPadding = PaddingValues(0.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .background(
-                                    brush = Brush.horizontalGradient(
-                                        colors = listOf(
-                                            Color(0xFF3B82F6), // Blue
-                                            Color(0xFF0EA5E9), // Light blue
-                                            Color(0xFF14B8A6)  // Teal
+                                    Box(
+                                        modifier = Modifier
+                                            .size(32.dp)
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(AppColors.blue50)
+                                            .padding(4.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Business,
+                                            contentDescription = null,
+                                            tint = AppColors.blue500,
+                                            modifier = Modifier.size(20.dp)
                                         )
-                                    ),
-                                    shape = RoundedCornerShape(12.dp)
-                                )
-                                .then(
-                                    if (!(!isUploading && (selectedFile == null || (selectedFile != null && selectedDocumentType != null)))) 
-                                        Modifier.background(
-                                            Color(0x80FFFFFF),
-                                            RoundedCornerShape(12.dp)
-                                        ) else Modifier
-                                )
-                                .padding(horizontal = 16.dp, vertical = 8.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Row(
-                                horizontalArrangement = Arrangement.Center,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                if (isUploading) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(16.dp),
-                                        color = Color.White,
-                                        strokeWidth = 2.dp
-                                    )
+                                    }
+                                    
                                     Spacer(modifier = Modifier.width(8.dp))
-                                }
+                                    
                                 Text(
-                                    text = if (selectedFile == null) "Select File" else "Upload",
-                                    color = Color.White,
-                                    fontWeight = FontWeight.Medium
-                                )
+                                        text = "Company",
+                                    fontSize = 16.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = AppColors.gray800,
+                                        letterSpacing = 0.1.sp
+                                    )
+                                }
+                                
+                                // Scrollable content with just the document cards
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .verticalScroll(scrollState),
+                                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    // Find documents for company section
+                                    val confidentialityDoc = documents.find { 
+                                        it.name == "Confidentiality Agreement" || it.documentType == "CONFIDENTIALITY_AGREEMENT" || it.documentType == "Confidentiality Agreement"
+                                    }
+                                    val employmentContract = documents.find { 
+                                        it.name == "Employment Contract" || it.documentType == "EMPLOYMENT_CONTRACT" || it.documentType == "Employment Contract"
+                                    }
+                                    
+                                    // Confidentiality Agreement
+                                    EnhancedDocumentCard(
+                                        icon = Icons.Default.Description,
+                                        iconTint = if (confidentialityDoc != null) AppColors.green else AppColors.gray400,
+                                        title = "Confidentiality Agreement",
+                                        status = if (confidentialityDoc != null) "Uploaded" else "Not uploaded yet",
+                                        isUploaded = confidentialityDoc != null,
+                                        document = confidentialityDoc,
+                                        onViewClick = { doc -> scope.launch { viewDocument(doc) } },
+                                        onReplaceClick = { doc -> 
+                                            documentToReplace = doc.documentId
+                                            selectedDocumentType = DocumentType.CONFIDENTIALITY_AGREEMENT
+                                            filePicker.launch("*/*") 
+                                        },
+                                        onDownloadClick = { doc -> scope.launch { downloadDocument(doc) } },
+                                        onUploadClick = { 
+                                            selectedDocumentType = DocumentType.CONFIDENTIALITY_AGREEMENT
+                                            showUploadDialog = true
+                                        },
+                                        isDownloading = isDownloading,
+                                        downloadingDocumentId = downloadingDocumentId
+                                    )
+                                    
+                                    // Employment Contract
+                                    EnhancedDocumentCard(
+                                        icon = Icons.Default.Description,
+                                        iconTint = if (employmentContract != null) AppColors.green else AppColors.gray400,
+                                        title = "Employment Contract",
+                                        status = if (employmentContract != null) "Uploaded" else "Not uploaded yet",
+                                        isUploaded = employmentContract != null,
+                                        document = employmentContract,
+                                        onViewClick = { doc -> scope.launch { viewDocument(doc) } },
+                                        onReplaceClick = { doc -> 
+                                            documentToReplace = doc.documentId
+                                            selectedDocumentType = DocumentType.EMPLOYMENT_CONTRACT
+                                            filePicker.launch("*/*") 
+                                        },
+                                        onDownloadClick = { doc -> scope.launch { downloadDocument(doc) } },
+                                        onUploadClick = { 
+                                            selectedDocumentType = DocumentType.EMPLOYMENT_CONTRACT
+                                            showUploadDialog = true
+                                        },
+                                        isDownloading = isDownloading,
+                                        downloadingDocumentId = downloadingDocumentId
+                                    )
+                                    
+                                    // Bottom spacer for better scrolling experience
+                                    Spacer(modifier = Modifier.height(80.dp))
+                                }
                             }
                         }
                     }
-                },
-                dismissButton = {
-                    TextButton(
-                        onClick = {
+                }
+            }
+        }
+    }
+    
+    // Show the upload dialog when needed
+    if (showUploadDialog) {
+        UploadDialog(
+            showUploadDialog = showUploadDialog,
+            isUploading = isUploading,
+            selectedFile = selectedFile,
+            selectedDocumentType = selectedDocumentType,
+            fileName = fileName,
+            uploadError = uploadError,
+            onDismissRequest = {
                             if (!isUploading) {
                                 showUploadDialog = false
                                 selectedFile = null
@@ -1284,443 +2077,112 @@ fun DocumentContent(
                                 fileName = ""
                             }
                         },
-                        enabled = !isUploading,
-                        colors = ButtonDefaults.textButtonColors(
-                            contentColor = Color(0xFF3B82F6)
-                        )
-                    ) {
-                        Text("Cancel")
-                    }
-                },
-                containerColor = Color.White,
-                shape = RoundedCornerShape(12.dp)
-            )
-        }
-    }
-}
-
-@Composable
-fun SectionHeader(
-    icon: ImageVector,
-    title: String
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = Color(0xFF3B82F6),
-            modifier = Modifier.size(24.dp)
-        )
-        
-        Spacer(modifier = Modifier.width(8.dp))
-        
-        Text(
-            text = title,
-            fontSize = 18.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = Color(0xFF1F2937)
+            onSelectFile = {
+                filePicker.launch("*/*")
+            },
+            onUpload = {
+                uploadDocument()
+            }
         )
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DocumentCard(
-    icon: ImageVector,
-    title: String,
-    status: String,
-    isUploaded: Boolean,
-    actions: List<String>,
-    iconTint: Color = Color.Gray,
-    onUpload: () -> Unit = {},
-    onView: () -> Unit = {},
-    onReplace: () -> Unit = {},
-    onDownload: () -> Unit = {},
-    isDownloading: Boolean = false
+fun UploadDialog(
+    showUploadDialog: Boolean,
+    isUploading: Boolean,
+    selectedFile: Uri?,
+    selectedDocumentType: DocumentType?,
+    fileName: String,
+    uploadError: String? = null,
+    onDismissRequest: () -> Unit,
+    onSelectFile: () -> Unit,
+    onUpload: () -> Unit
 ) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 6.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.White
-        ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 1.dp
-        ),
-        shape = RoundedCornerShape(8.dp)
+    Dialog(
+        onDismissRequest = onDismissRequest
     ) {
-        Row(
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = AppColors.white,
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .fillMaxWidth(0.9f)
+                .shadow(
+                    elevation = 8.dp,
+                    shape = RoundedCornerShape(16.dp),
+                    spotColor = AppColors.blue700.copy(alpha = 0.2f)
+                )
         ) {
-            // Icon with light blue background
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .background(
-                        color = Color(0xFFEFF6FF), 
-                        shape = RoundedCornerShape(8.dp)
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = if (isUploaded) Color(0xFF3B82F6) else Color(0xFF9CA3AF),
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-            
-            Spacer(modifier = Modifier.width(16.dp))
-            
-            // Content
             Column(
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                // Title
                 Text(
-                    text = title,
+                    text = "Document Upload",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = AppColors.gray800,
+                    textAlign = TextAlign.Center
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                // Message
+                Text(
+                    text = "Do you want to continue with document upload?",
+                    color = AppColors.gray700,
                     fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = Color(0xFF1F2937)
+                    textAlign = TextAlign.Center
                 )
                 
-                Text(
-                    text = if (isUploaded) "Uploaded" else "Not uploaded yet",
-                    fontSize = 12.sp,
-                    color = if (isUploaded) Color(0xFF22C55E) else Color(0xFF6B7280)
-                )
-            }
-            
-            // Actions
-            Row(
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                if (actions.contains("view") && isUploaded) {
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                // Action buttons
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // Cancel button
                     OutlinedButton(
-                        onClick = onView,
-                        modifier = Modifier.padding(end = 8.dp),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                        onClick = onDismissRequest,
+                        enabled = !isUploading,
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(48.dp),
                         colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = Color(0xFF3B82F6)
+                            contentColor = AppColors.blue500
                         ),
-                        border = BorderStroke(1.dp, Color(0xFFD1D5DB)),
+                        border = BorderStroke(1.dp, AppColors.blue300),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Visibility,
-                            contentDescription = "View",
-                            modifier = Modifier.size(16.dp)
+                        Text(
+                            "Cancel",
+                            fontWeight = FontWeight.Medium
                         )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("View", fontSize = 12.sp)
                     }
-                }
-                
-                if (actions.contains("replace") && isUploaded) {
-                    OutlinedButton(
-                        onClick = onReplace,
-                        modifier = Modifier.padding(end = 8.dp),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = Color(0xFF3B82F6)
-                        ),
-                        border = BorderStroke(1.dp, Color(0xFFD1D5DB)),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Refresh,
-                            contentDescription = "Replace",
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Replace", fontSize = 12.sp)
-                    }
-                }
-                
-                if (actions.contains("download") && isUploaded) {
+                    
+                    // Continue button
                     Button(
-                        onClick = onDownload,
-                        modifier = Modifier.padding(end = 8.dp),
-                        contentPadding = PaddingValues(0.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-                        enabled = !isDownloading,
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Box(
+                        onClick = onSelectFile,
+                        enabled = !isUploading,
                             modifier = Modifier
-                                .background(
-                                    brush = Brush.horizontalGradient(
-                                        colors = listOf(
-                                            Color(0xFF3B82F6), // Blue
-                                            Color(0xFF0EA5E9), // Light blue
-                                            Color(0xFF14B8A6)  // Teal
-                                        )
+                            .weight(1f)
+                            .height(48.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = AppColors.blue500,
+                            contentColor = Color.White
                                     ),
                                     shape = RoundedCornerShape(12.dp)
-                                )
-                                .then(
-                                    if (isDownloading) Modifier.background(
-                                        Color(0x80FFFFFF),
-                                        RoundedCornerShape(12.dp)
-                                    ) else Modifier
-                                )
-                                .padding(horizontal = 12.dp, vertical = 8.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            if (isDownloading) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(16.dp),
-                                    color = Color.White,
-                                    strokeWidth = 2.dp
-                                )
-                            } else {
-                                Icon(
-                                    imageVector = Icons.Default.Download,
-                                    contentDescription = "Download",
-                                    tint = Color.White,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                            }
-                        }
-                    }
-                }
-                
-                if (actions.contains("upload") && !isUploaded) {
-                    Button(
-                        onClick = onUpload,
-                        contentPadding = PaddingValues(0.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-                        shape = RoundedCornerShape(12.dp)
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .background(
-                                    brush = Brush.horizontalGradient(
-                                        colors = listOf(
-                                            Color(0xFF3B82F6), // Blue
-                                            Color(0xFF0EA5E9), // Light blue
-                                            Color(0xFF14B8A6)  // Teal
-                                        )
-                                    ),
-                                    shape = RoundedCornerShape(12.dp)
-                                )
-                                .padding(horizontal = 12.dp, vertical = 8.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Row(
-                                horizontalArrangement = Arrangement.Center,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Upload,
-                                    contentDescription = "Upload",
-                                    tint = Color.White,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
                                 Text(
-                                    text = "Upload", 
-                                    fontSize = 12.sp,
-                                    color = Color.White,
+                            text = "Continue",
+                            fontSize = 16.sp,
                                     fontWeight = FontWeight.Medium
                                 )
-                            }
-                        }
                     }
                 }
             }
-        }
-    }
-}
-
-@Composable
-fun DocumentItem(
-    document: Document,
-    isDownloading: Boolean = false,
-    onDownload: () -> Unit = {},
-    onReplace: () -> Unit = {}
-) {
-    val dateFormat = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
-    val uploadDate = try {
-        // Try to parse the date string
-        val date = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault()).parse(document.uploadDate)
-        date?.let { dateFormat.format(it) } ?: document.uploadDate
-    } catch (e: Exception) {
-        document.uploadDate
-    }
-    
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.dp, AppColors.gray200)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            // Document Icon and Name
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Document icon
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(AppColors.blue100),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Description,
-                        contentDescription = null,
-                        tint = AppColors.blue500,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-                
-                Spacer(modifier = Modifier.width(12.dp))
-                
-                // Document name and type
-                Column(
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text(
-                        text = document.name,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = AppColors.gray800,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    
-                    Text(
-                        text = document.documentType,
-                        fontSize = 14.sp,
-                        color = AppColors.gray500
-                    )
-                }
-                
-                // Download button
-                IconButton(
-                    onClick = onDownload,
-                    enabled = !isDownloading
-                ) {
-                    if (isDownloading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            color = AppColors.blue500,
-                            strokeWidth = 2.dp
-                        )
-                    } else {
-                        Icon(
-                            imageVector = Icons.Default.Download,
-                            contentDescription = "Download",
-                            tint = AppColors.blue500
-                        )
-                    }
-                }
-                
-                // Replace button
-                IconButton(
-                    onClick = onReplace
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.FileUpload,
-                        contentDescription = "Replace",
-                        tint = AppColors.blue500
-                    )
-                }
-            }
-            
-            HorizontalDivider(
-                modifier = Modifier.padding(vertical = 12.dp),
-                color = AppColors.gray200,
-                thickness = 1.dp
-            )
-            
-            // File details
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Left column
-                Column {
-                    DetailItem("File Name", document.fileName)
-                    DetailItem("Upload Date", uploadDate)
-                }
-                
-                // Right column
-                Column {
-                    DetailItem("File Type", document.fileType)
-                    DetailItem("Status", document.status, isStatus = true)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun DetailItem(
-    label: String,
-    value: String,
-    isStatus: Boolean = false
-) {
-    Row(
-        modifier = Modifier.padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = "$label:",
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Medium,
-            color = AppColors.gray500
-        )
-        
-        Spacer(modifier = Modifier.width(4.dp))
-        
-        if (isStatus) {
-            val (bgColor, textColor) = when(value.uppercase()) {
-                DocumentStatus.APPROVED.value -> Pair(AppColors.teal100, AppColors.teal900)
-                DocumentStatus.REJECTED.value -> Pair(AppColors.redLight, AppColors.red)
-                else -> Pair(AppColors.blue100, AppColors.blue700)
-            }
-            
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(4.dp))
-                    .background(bgColor)
-                    .padding(horizontal = 6.dp, vertical = 2.dp)
-            ) {
-                Text(
-                    text = value,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = textColor
-                )
-            }
-        } else {
-            Text(
-                text = value,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Normal,
-                color = AppColors.gray700
-            )
         }
     }
 }

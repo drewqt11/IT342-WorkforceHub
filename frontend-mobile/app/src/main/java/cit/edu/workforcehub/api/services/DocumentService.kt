@@ -18,7 +18,8 @@ interface DocumentService {
     suspend fun uploadDocument(
         @Path("employeeId") employeeId: String,
         @Part file: MultipartBody.Part,
-        @Query("documentType") documentType: String
+        @Query("documentType") documentType: String,
+        @Query("documentName") documentName: String? = null
     ): Response<Document>
     
     /**
@@ -28,7 +29,8 @@ interface DocumentService {
     @PUT("/api/documents/{documentId}")
     suspend fun replaceDocument(
         @Path("documentId") documentId: String,
-        @Part file: MultipartBody.Part
+        @Part file: MultipartBody.Part,
+        @Query("documentName") documentName: String? = null
     ): Response<Document>
     
     /**
@@ -53,6 +55,16 @@ interface DocumentService {
     @Streaming
     @GET("/api/documents/{documentId}/download")
     suspend fun downloadDocument(
+        @Path("documentId") documentId: String
+    ): Response<ResponseBody>
+
+    /**
+     * View a document directly.
+     * This endpoint returns a URL as plain text, not JSON.
+     */
+    @Headers("Accept: text/plain")
+    @GET("/api/documents/{documentId}/view")
+    suspend fun viewDocument(
         @Path("documentId") documentId: String
     ): Response<ResponseBody>
 } 

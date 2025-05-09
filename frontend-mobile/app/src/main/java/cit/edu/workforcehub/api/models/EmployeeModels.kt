@@ -122,15 +122,20 @@ data class OvertimeRequest(
  */
 @JsonClass(generateAdapter = true)
 data class ReimbursementRequest(
-    @Json(name = "reimbursementRequestId") val reimbursementRequestId: String? = null,
-    @Json(name = "employeeId") val employeeId: String,
+    @Json(name = "reimbursementId") val reimbursementId: String? = null,
+    @Json(name = "employeeId") val employeeId: String = "",
+    @Json(name = "employeeName") val employeeName: String? = null,
+    @Json(name = "planId") val planId: String? = null,
+    @Json(name = "planName") val planName: String? = null,
+    @Json(name = "planType") val planType: String? = null,
+    @Json(name = "requestDate") val requestDate: String? = null,
     @Json(name = "expenseDate") val expenseDate: String,
-    @Json(name = "amount") val amount: Double,
-    @Json(name = "category") val category: String,
-    @Json(name = "description") val description: String,
+    @Json(name = "amountRequested") val amount: Double,
+    @Json(name = "documentPath") val documentPath: String? = null,
+    @Json(name = "reason") val description: String,
     @Json(name = "status") val status: String? = "PENDING",
-    @Json(name = "approvedByManagerId") val approvedByManagerId: String? = null,
-    @Json(name = "approvedDate") val approvedDate: String? = null,
-    @Json(name = "submissionDate") val submissionDate: String? = null,
-    @Json(name = "receiptUrl") val receiptUrl: String? = null
+    @Json(name = "reviewedById") val reviewedById: String? = null,
+    @Json(name = "reviewedByName") val reviewedByName: String? = null,
+    @Json(name = "reviewedAt") val reviewedAt: String? = null,
+    @Json(name = "remarks") val remarks: String? = null
 ) 
