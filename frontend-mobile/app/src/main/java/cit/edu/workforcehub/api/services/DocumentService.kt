@@ -18,7 +18,8 @@ interface DocumentService {
     suspend fun uploadDocument(
         @Path("employeeId") employeeId: String,
         @Part file: MultipartBody.Part,
-        @Query("documentType") documentType: String
+        @Query("documentType") documentType: String,
+        @Query("documentName") documentName: String? = null
     ): Response<Document>
     
     /**
@@ -28,7 +29,8 @@ interface DocumentService {
     @PUT("/api/documents/{documentId}")
     suspend fun replaceDocument(
         @Path("documentId") documentId: String,
-        @Part file: MultipartBody.Part
+        @Part file: MultipartBody.Part,
+        @Query("documentName") documentName: String? = null
     ): Response<Document>
     
     /**

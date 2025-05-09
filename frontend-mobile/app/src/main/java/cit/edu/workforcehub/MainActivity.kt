@@ -340,29 +340,7 @@ fun WorkforceHubApp(
             }
             AppScreen.DOCUMENTS -> {
                 DocumentsViewScreen(
-                    onLogout = onLogout,
-                    onNavigateToDashboard = {
-                        onScreenChange(AppScreen.DASHBOARD)
-                    },
-                    onNavigateToAttendance = {
-                        onScreenChange(AppScreen.TIME_ATTENDANCE)
-                    },
-                    onNavigateToLeaveRequests = {
-                        onScreenChange(AppScreen.LEAVE_REQUESTS)
-                    },
-                    onNavigateToOvertimeRequests = {
-                        onScreenChange(AppScreen.OVERTIME_REQUESTS)
-                    },
-                    onNavigateToReimbursementRequests = {
-                        onScreenChange(AppScreen.REIMBURSEMENT_REQUESTS)
-                    },
-                    onNavigateToPerformance = {
-                        onScreenChange(AppScreen.PERFORMANCE)
-                    },
-                    onNavigateToTraining = {
-                        onScreenChange(AppScreen.TRAINING)
-                    },
-                    onNavigateToProfile = {
+                    onBackToProfile = {
                         onScreenChange(AppScreen.PROFILE)
                     }
                 )

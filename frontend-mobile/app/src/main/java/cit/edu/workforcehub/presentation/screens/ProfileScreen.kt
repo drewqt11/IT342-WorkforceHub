@@ -268,8 +268,10 @@ fun ProfileScreen(
                             .fillMaxSize()
                             .weight(1f)
                     ) {
+                        // Create a local copy to avoid smart cast issues
+                        val profile = profileData!!
                         ProfileContent(
-                            profile = profileData!!, 
+                            profile = profile, 
                             scrollState = scrollState, 
                             debugInfo = dataDebug,
                             onNavigateToDocuments = onNavigateToDocuments
