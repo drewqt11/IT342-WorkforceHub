@@ -7,6 +7,7 @@ import cit.edu.workforcehub.api.models.AuthRequest
 import cit.edu.workforcehub.api.models.AuthResponse
 import cit.edu.workforcehub.api.models.RefreshTokenRequest
 import cit.edu.workforcehub.api.services.AuthService
+import cit.edu.workforcehub.api.services.DocumentService
 import cit.edu.workforcehub.api.services.EmployeeService
 import cit.edu.workforcehub.api.services.HrService
 import kotlinx.coroutines.Dispatchers
@@ -41,22 +42,29 @@ object ApiHelper {
     /**
      * Get the auth service.
      */
-    fun getAuthService(): cit.edu.workforcehub.api.services.AuthService {
-        return cit.edu.workforcehub.api.ApiClient.createService(cit.edu.workforcehub.api.services.AuthService::class.java)
+    fun getAuthService(): AuthService {
+        return ApiClient.createService(AuthService::class.java)
     }
 
     /**
      * Get the employee service with authorization.
      */
     fun getEmployeeService(): EmployeeService {
-        return cit.edu.workforcehub.api.ApiClient.createService(EmployeeService::class.java, authToken)
+        return ApiClient.createService(EmployeeService::class.java, authToken)
     }
 
     /**
      * Get the HR service with authorization.
      */
     fun getHrService(): HrService {
-        return cit.edu.workforcehub.api.ApiClient.createService(HrService::class.java, authToken)
+        return ApiClient.createService(HrService::class.java, authToken)
+    }
+    
+    /**
+     * Get the document service with authorization.
+     */
+    fun getDocumentService(): DocumentService {
+        return ApiClient.createService(DocumentService::class.java, authToken)
     }
 
     /**

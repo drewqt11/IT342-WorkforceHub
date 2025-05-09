@@ -29,6 +29,7 @@ import cit.edu.workforcehub.presentation.screens.ReimbursementRequestsScreen
 import cit.edu.workforcehub.presentation.screens.PerformanceScreen
 import cit.edu.workforcehub.presentation.screens.TrainingScreen
 import cit.edu.workforcehub.presentation.screens.forms.ReimbursementRequestFormScreen
+import cit.edu.workforcehub.presentation.screens.DocumentsViewScreen
 import cit.edu.workforcehub.presentation.theme.AppTheme
 import kotlinx.coroutines.launch
 
@@ -337,6 +338,35 @@ fun WorkforceHubApp(
                     }
                 )
             }
+            AppScreen.DOCUMENTS -> {
+                DocumentsViewScreen(
+                    onLogout = onLogout,
+                    onNavigateToDashboard = {
+                        onScreenChange(AppScreen.DASHBOARD)
+                    },
+                    onNavigateToAttendance = {
+                        onScreenChange(AppScreen.TIME_ATTENDANCE)
+                    },
+                    onNavigateToLeaveRequests = {
+                        onScreenChange(AppScreen.LEAVE_REQUESTS)
+                    },
+                    onNavigateToOvertimeRequests = {
+                        onScreenChange(AppScreen.OVERTIME_REQUESTS)
+                    },
+                    onNavigateToReimbursementRequests = {
+                        onScreenChange(AppScreen.REIMBURSEMENT_REQUESTS)
+                    },
+                    onNavigateToPerformance = {
+                        onScreenChange(AppScreen.PERFORMANCE)
+                    },
+                    onNavigateToTraining = {
+                        onScreenChange(AppScreen.TRAINING)
+                    },
+                    onNavigateToProfile = {
+                        onScreenChange(AppScreen.PROFILE)
+                    }
+                )
+            }
             AppScreen.PERFORMANCE -> {
                 PerformanceScreen(
                     onLogout = onLogout,
@@ -412,6 +442,10 @@ fun WorkforceHubApp(
                     },
                     onNavigateToTraining = {
                         onScreenChange(AppScreen.TRAINING)
+                    },
+                    onNavigateToProfile = {},
+                    onNavigateToDocuments = {
+                        onScreenChange(AppScreen.DOCUMENTS)
                     }
                 )
             }

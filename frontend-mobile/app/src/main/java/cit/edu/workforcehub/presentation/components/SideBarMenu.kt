@@ -68,7 +68,8 @@ enum class AppScreen {
     PERFORMANCE,
     TRAINING,
     PROFILE,
-    ENROLLMENT
+    ENROLLMENT,
+    DOCUMENTS
 }
 
 /**
