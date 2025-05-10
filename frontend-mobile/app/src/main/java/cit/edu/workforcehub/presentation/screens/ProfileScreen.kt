@@ -381,185 +381,181 @@ fun ProfileCard(
         shape = RoundedCornerShape(12.dp),
         border = BorderStroke(1.dp, AppColors.gray200)
     ) {
-        Box(modifier = Modifier.fillMaxWidth()) {
-            // Add "View Documents" button at the top right corner
+        // Main profile content
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Get initials from profile name
+            val firstInitial = profile.firstName.firstOrNull()?.uppercase() ?: ""
+            val lastInitial = profile.lastName.firstOrNull()?.uppercase() ?: ""
+            val initials = "$firstInitial$lastInitial"
+            
+            // Profile Image - Redesigned to show user initials instead of icon
             Box(
                 modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(top = 16.dp, end = 16.dp)
+                    .size(100.dp)
+                    .shadow(
+                        elevation = 4.dp,
+                        shape = CircleShape,
+                        clip = false
+                    )
+                    .border(width = 2.dp, color = Color.White, shape = CircleShape)
+                    .clip(CircleShape)
+                    .background(AppColors.blue100),
+                contentAlignment = Alignment.Center
             ) {
-                Box(
-                    modifier = Modifier
-                        .height(28.dp)
-                        .shadow(
-                            elevation = 2.dp,
-                            shape = RoundedCornerShape(8.dp)
-                        )
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(
-                            brush = Brush.horizontalGradient(
-                                colors = listOf(AppColors.blue500, AppColors.teal500)
-                            )
-                        )
-                        .clickable { onNavigateToDocuments() }
-                        .padding(horizontal = 10.dp, vertical = 4.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Description,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(14.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = "View Documents",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = Color.White,
-                            modifier = Modifier.offset(y = (-1).dp)
-                        )
-                    }
-                }
+                Text(
+                    text = initials,
+                    color = AppColors.blue500,
+                    fontSize = 36.sp,
+                    fontWeight = FontWeight.Bold
+                )
             }
             
-            // Main profile content
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Profile Name
+            Text(
+                text = "${profile.firstName} ${profile.lastName}",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = AppColors.gray900
+            )
+            
+            // Job Title
+            Text(
+                text = profile.jobName ?: "Not Provided",
+                fontSize = 14.sp,
+                color = if (profile.jobName == null) AppColors.gray400 else AppColors.gray600,
+                modifier = Modifier.padding(vertical = 4.dp)
+            )
+            
+            // Contact Info
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .padding(top = 16.dp)
             ) {
-                // Get initials from profile name
-                val firstInitial = profile.firstName.firstOrNull()?.uppercase() ?: ""
-                val lastInitial = profile.lastName.firstOrNull()?.uppercase() ?: ""
-                val initials = "$firstInitial$lastInitial"
+                // Email
+                ContactInfoItem(
+                    icon = Icons.Default.Email,
+                    iconBgColor = AppColors.blue100,
+                    iconTint = AppColors.blue500,
+                    text = profile.email
+                )
                 
-                // Profile Image - Redesigned to show user initials instead of icon
-                Box(
-                    modifier = Modifier
-                        .size(100.dp)
-                        .shadow(
-                            elevation = 4.dp,
-                            shape = CircleShape,
-                            clip = false
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                // Phone
+                ContactInfoItem(
+                    icon = Icons.Default.Phone,
+                    iconBgColor = AppColors.teal100,
+                    iconTint = AppColors.teal500,
+                    text = profile.phoneNumber ?: "09685861226"
+                )
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                // Location
+                ContactInfoItem(
+                    icon = Icons.Default.LocationOn,
+                    iconBgColor = AppColors.blue100,
+                    iconTint = AppColors.blue500,
+                    text = profile.address ?: "Midori Plains Blk. 4 lot 7, Tungkop, Minglanilla"
+                )
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                // Job
+                ContactInfoItem(
+                    icon = Icons.Default.Business,
+                    iconBgColor = AppColors.teal100,
+                    iconTint = AppColors.teal500,
+                    text = profile.jobName ?: "Not Provided"
+                )
+            }
+            
+            // Divider
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = 16.dp),
+                color = AppColors.gray200,
+                thickness = 1.dp
+            )
+            
+            // Status indicators
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                // Status
+                StatusItem(
+                    icon = Icons.Default.Person,
+                    iconTint = AppColors.blue500,
+                    label = "Status",
+                    value = if (profile.status) "Active" else "Inactive",
+                    isActive = profile.status
+                )
+                
+                // Employment
+                StatusItem(
+                    icon = CustomIcons.AccessTime,
+                    iconTint = AppColors.teal500,
+                    label = "Employment",
+                    value = profile.employmentStatus ?: "FULL_TIME"
+                )
+                
+                // Role
+                StatusItem(
+                    icon = Icons.Default.Person,
+                    iconTint = AppColors.blue500,
+                    label = "Role",
+                    value = profile.roleName ?: "Employee",
+                    iconDrawableRes = CustomIcons.Medal
+                )
+            }
+            
+            // Add space before the button
+            Spacer(modifier = Modifier.height(20.dp))
+            
+            // "View Documents" button moved to the bottom
+            Box(
+                modifier = Modifier
+                    .align(Alignment.End)
+                    .height(30.dp)
+                    .shadow(
+                        elevation = 2.dp,
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(
+                        brush = Brush.horizontalGradient(
+                            colors = listOf(AppColors.blue500, AppColors.teal500)
                         )
-                        .border(width = 2.dp, color = Color.White, shape = CircleShape)
-                        .clip(CircleShape)
-                        .background(AppColors.blue100),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = initials,
-                        color = AppColors.blue500,
-                        fontSize = 36.sp,
-                        fontWeight = FontWeight.Bold
                     )
-                }
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                // Profile Name
-                Text(
-                    text = "${profile.firstName} ${profile.lastName}",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = AppColors.gray900
-                )
-                
-                // Job Title
-                Text(
-                    text = profile.jobName ?: "Not Provided",
-                    fontSize = 14.sp,
-                    color = if (profile.jobName == null) AppColors.gray400 else AppColors.gray600,
-                    modifier = Modifier.padding(vertical = 4.dp)
-                )
-                
-                // Contact Info
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 16.dp)
-                ) {
-                    // Email
-                    ContactInfoItem(
-                        icon = Icons.Default.Email,
-                        iconBgColor = AppColors.blue100,
-                        iconTint = AppColors.blue500,
-                        text = profile.email
-                    )
-                    
-                    Spacer(modifier = Modifier.height(12.dp))
-                    
-                    // Phone
-                    ContactInfoItem(
-                        icon = Icons.Default.Phone,
-                        iconBgColor = AppColors.teal100,
-                        iconTint = AppColors.teal500,
-                        text = profile.phoneNumber ?: "09685861226"
-                    )
-                    
-                    Spacer(modifier = Modifier.height(12.dp))
-                    
-                    // Location
-                    ContactInfoItem(
-                        icon = Icons.Default.LocationOn,
-                        iconBgColor = AppColors.blue100,
-                        iconTint = AppColors.blue500,
-                        text = profile.address ?: "Midori Plains Blk. 4 lot 7, Tungkop, Minglanilla"
-                    )
-                    
-                    Spacer(modifier = Modifier.height(12.dp))
-                    
-                    // Job
-                    ContactInfoItem(
-                        icon = Icons.Default.Business,
-                        iconBgColor = AppColors.teal100,
-                        iconTint = AppColors.teal500,
-                        text = profile.jobName ?: "Not Provided"
-                    )
-                }
-                
-                // Divider
-                HorizontalDivider(
-                    modifier = Modifier.padding(vertical = 16.dp),
-                    color = AppColors.gray200,
-                    thickness = 1.dp
-                )
-                
-                // Status indicators
+                    .clickable { onNavigateToDocuments() }
+                    .padding(horizontal = 10.dp, vertical = 4.dp),
+                contentAlignment = Alignment.Center
+            ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
                 ) {
-                    // Status
-                    StatusItem(
-                        icon = Icons.Default.Person,
-                        iconTint = AppColors.blue500,
-                        label = "Status",
-                        value = if (profile.status) "Active" else "Inactive",
-                        isActive = profile.status
+                    Icon(
+                        imageVector = Icons.Default.Description,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(14.dp)
                     )
-                    
-                    // Employment
-                    StatusItem(
-                        icon = CustomIcons.AccessTime,
-                        iconTint = AppColors.teal500,
-                        label = "Employment",
-                        value = profile.employmentStatus ?: "FULL_TIME"
-                    )
-                    
-                    // Role
-                    StatusItem(
-                        icon = Icons.Default.Person,
-                        iconTint = AppColors.blue500,
-                        label = "Role",
-                        value = profile.roleName ?: "Employee",
-                        iconDrawableRes = CustomIcons.Medal
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "View Documents",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White,
+                        modifier = Modifier.offset(y = (-1).dp)
                     )
                 }
             }

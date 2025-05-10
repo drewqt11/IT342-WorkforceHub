@@ -143,15 +143,29 @@ fun OvertimeRequestForm(
     
     // Date and time picker states
     val datePickerState = rememberDatePickerState()
+    
+    // Convert 12-hour time to 24-hour time for the time picker
+    val startHour24 = if (startAmPm) {
+        if (startHour == 12) 0 else startHour
+    } else {
+        if (startHour == 12) 12 else startHour + 12
+    }
+    
+    val endHour24 = if (endAmPm) {
+        if (endHour == 12) 0 else endHour
+    } else {
+        if (endHour == 12) 12 else endHour + 12
+    }
+    
     val startTimePickerState = rememberTimePickerState(
-        initialHour = startHour,
+        initialHour = startHour24,
         initialMinute = startMinute,
-        is24Hour = false
+        is24Hour = false  // Explicitly set to false for 12-hour format
     )
     val endTimePickerState = rememberTimePickerState(
-        initialHour = endHour,
+        initialHour = endHour24,
         initialMinute = endMinute,
-        is24Hour = false
+        is24Hour = false  // Explicitly set to false for 12-hour format
     )
     
     // Calculate total hours
@@ -179,14 +193,18 @@ fun OvertimeRequestForm(
     
     // Format time to display
     fun formatTime(hour: Int, minute: Int, isAm: Boolean): String {
-        val formattedHour = when {
-            hour == 0 && !isAm -> "12"
-            hour > 12 -> (hour - 12).toString()
-            hour == 0 && isAm -> "12"
-            else -> hour.toString()
+        // Convert hour to 12-hour format (1-12)
+        val hour12 = when {
+            hour == 0 -> 12  // 0:00 becomes 12:00 AM
+            hour > 12 -> hour - 12  // 13:00 becomes 1:00 PM
+            else -> hour  // 1-12 stays the same
         }
-        val formattedMinute = if (minute < 10) "0$minute" else minute.toString()
+        
+        // Format with leading zeros
+        val formattedHour = String.format("%02d", hour12)
+        val formattedMinute = String.format("%02d", minute)
         val period = if (isAm) "AM" else "PM"
+        
         return "$formattedHour:$formattedMinute $period"
     }
 
@@ -972,9 +990,17 @@ fun OvertimeRequestForm(
             if (showStartTimePicker) {
                 TimePickerDialog(
                     onDismissRequest = { showStartTimePicker = false },
-                    onConfirm = {
-                        startHour = startTimePickerState.hour
+                    onConfirm = { isAm ->
+                        // Extract hours and minutes from the time picker state 
+                        // and convert to 12-hour format with AM/PM
+                        val selectedHour = startTimePickerState.hour
+                        
+                        // Convert to 12-hour format
+                        startHour = selectedHour % 12
+                        if (startHour == 0) startHour = 12
+                        
                         startMinute = startTimePickerState.minute
+                        startAmPm = isAm
                         showStartTimePicker = false
                     },
                     timePickerState = startTimePickerState,
@@ -987,9 +1013,17 @@ fun OvertimeRequestForm(
             if (showEndTimePicker) {
                 TimePickerDialog(
                     onDismissRequest = { showEndTimePicker = false },
-                    onConfirm = {
-                        endHour = endTimePickerState.hour
+                    onConfirm = { isAm ->
+                        // Extract hours and minutes from the time picker state
+                        // and convert to 12-hour format with AM/PM
+                        val selectedHour = endTimePickerState.hour
+                        
+                        // Convert to 12-hour format
+                        endHour = selectedHour % 12
+                        if (endHour == 0) endHour = 12
+                        
                         endMinute = endTimePickerState.minute
+                        endAmPm = isAm
                         showEndTimePicker = false
                     },
                     timePickerState = endTimePickerState,
@@ -1006,11 +1040,22 @@ fun OvertimeRequestForm(
 @Composable
 fun TimePickerDialog(
     onDismissRequest: () -> Unit,
-    onConfirm: () -> Unit,
+    onConfirm: (Boolean) -> Unit,
     timePickerState: TimePickerState,
     confirmButtonColor: Color = AppColors.blue600,
     dismissButtonColor: Color = AppColors.gray700
 ) {
+    // Local state to track if we're displaying AM or PM
+    val isAm = remember { mutableStateOf(timePickerState.hour < 12) }
+    
+    // Current hour in 24-hour format from time picker
+    val currentHour = remember { mutableStateOf(timePickerState.hour) }
+    
+    // Update isAm when timePickerState.hour changes
+    LaunchedEffect(timePickerState.hour) {
+        isAm.value = timePickerState.hour < 12
+    }
+
     Dialog(
         onDismissRequest = onDismissRequest
     ) {
@@ -1044,6 +1089,8 @@ fun TimePickerDialog(
                     )
                 )
                 
+                // Removed AM/PM selector buttons
+                
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -1057,7 +1104,7 @@ fun TimePickerDialog(
                     }
                     
                     TextButton(
-                        onClick = onConfirm
+                        onClick = { onConfirm(isAm.value) }
                     ) {
                         Text("OK", color = confirmButtonColor)
                     }
