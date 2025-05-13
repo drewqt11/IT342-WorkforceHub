@@ -135,9 +135,9 @@ public class EmployeeController {
         return new ResponseEntity<>(employeeService.createEmployee(employeeDTO), HttpStatus.CREATED);
     }
 
-    @PutMapping("/hr/employees/{id}")
+    @PutMapping("/employee/{id}")
     @Operation(summary = "Update employee", description = "Update an existing employee")
-    @PreAuthorize("hasAnyRole('ROLE_HR', 'ROLE_ADMIN')")
+    @PreAuthorize("hasAnyRole('ROLE_EMPLOYEE', 'ROLE_HR', 'ROLE_ADMIN')")
     public ResponseEntity<EmployeeDTO> updateEmployee(@PathVariable String id,
             @Valid @RequestBody EmployeeDTO employeeDTO) {
         return ResponseEntity.ok(employeeService.updateEmployee(id, employeeDTO));

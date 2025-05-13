@@ -1378,7 +1378,7 @@ export default function EmployeeProfile() {
 
       const formattedGender = editedProfile.gender?.toUpperCase() || null
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hr/employees/${editedProfile.employeeId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/employee/${editedProfile.employeeId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -1434,8 +1434,8 @@ export default function EmployeeProfile() {
       { label: "Employee ID", field: "employeeId" as keyof EmployeeProfile, type: "text", readOnly: true },
       { label: "ID Number", field: "idNumber" as keyof EmployeeProfile, type: "text", readOnly: true },
       { label: "Email", field: "email" as keyof EmployeeProfile, type: "text", readOnly: true, noFormat: true },
-      { label: "First Name", field: "firstName" as keyof EmployeeProfile, type: "text" },
-      { label: "Last Name", field: "lastName" as keyof EmployeeProfile, type: "text" },
+      { label: "First Name", field: "firstName" as keyof EmployeeProfile, type: "text" , readOnly: true},
+      { label: "Last Name", field: "lastName" as keyof EmployeeProfile, type: "text" , readOnly: true},
       {
         label: "Gender",
         field: "gender" as keyof EmployeeProfile,
