@@ -97,4 +97,45 @@ data class LeaveRequest(
     @Json(name = "submissionDate") val submissionDate: String? = null,
     @Json(name = "remarks") val remarks: String? = null,
     @Json(name = "attachmentUrl") val attachmentUrl: String? = null
+)
+
+/**
+ * Model for overtime request.
+ */
+@JsonClass(generateAdapter = true)
+data class OvertimeRequest(
+    @Json(name = "otRequestId") val overtimeRequestId: String? = null,
+    @Json(name = "employeeId") val employeeId: String? = null,
+    @Json(name = "employeeName") val employeeName: String? = null,
+    @Json(name = "date") val date: String,
+    @Json(name = "startTime") val startTime: String,
+    @Json(name = "endTime") val endTime: String,
+    @Json(name = "totalHours") val totalHours: Double,
+    @Json(name = "reason") val reason: String,
+    @Json(name = "status") val status: String? = "PENDING",
+    @Json(name = "reviewedBy") val reviewedBy: String? = null,
+    @Json(name = "reviewedAt") val reviewedAt: String? = null
+)
+
+/**
+ * Model for reimbursement request.
+ */
+@JsonClass(generateAdapter = true)
+data class ReimbursementRequest(
+    @Json(name = "reimbursementId") val reimbursementId: String? = null,
+    @Json(name = "employeeId") val employeeId: String = "",
+    @Json(name = "employeeName") val employeeName: String? = null,
+    @Json(name = "planId") val planId: String? = null,
+    @Json(name = "planName") val planName: String? = null,
+    @Json(name = "planType") val planType: String? = null,
+    @Json(name = "requestDate") val requestDate: String? = null,
+    @Json(name = "expenseDate") val expenseDate: String,
+    @Json(name = "amountRequested") val amount: Double,
+    @Json(name = "documentPath") val documentPath: String? = null,
+    @Json(name = "reason") val description: String,
+    @Json(name = "status") val status: String? = "PENDING",
+    @Json(name = "reviewedById") val reviewedById: String? = null,
+    @Json(name = "reviewedByName") val reviewedByName: String? = null,
+    @Json(name = "reviewedAt") val reviewedAt: String? = null,
+    @Json(name = "remarks") val remarks: String? = null
 ) 

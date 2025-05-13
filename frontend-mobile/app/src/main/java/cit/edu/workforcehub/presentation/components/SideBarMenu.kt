@@ -25,13 +25,15 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -62,10 +64,12 @@ enum class AppScreen {
     DASHBOARD,
     TIME_ATTENDANCE,
     LEAVE_REQUESTS,
-    PERFORMANCE,
-    TRAINING,
+    OVERTIME_REQUESTS,
+    REIMBURSEMENT_REQUESTS,
+    REIMBURSEMENT_REQUEST_FORM,
     PROFILE,
-    ENROLLMENT
+    ENROLLMENT,
+    DOCUMENTS
 }
 
 /**
@@ -78,6 +82,8 @@ enum class AppScreen {
  * @param onNavigateToDashboard function to navigate to dashboard
  * @param onNavigateToAttendance function to navigate to time & attendance
  * @param onNavigateToLeaveRequests function to navigate to leave requests
+ * @param onNavigateToOvertimeRequests function to navigate to overtime requests
+ * @param onNavigateToReimbursementRequests function to navigate to reimbursement requests
  * @param onNavigateToPerformance function to navigate to performance
  * @param onNavigateToTraining function to navigate to training
  * @param onNavigateToProfile function to navigate to profile
@@ -91,6 +97,8 @@ fun UniversalDrawer(
     onNavigateToDashboard: () -> Unit,
     onNavigateToAttendance: () -> Unit,
     onNavigateToLeaveRequests: () -> Unit,
+    onNavigateToOvertimeRequests: () -> Unit,
+    onNavigateToReimbursementRequests: () -> Unit,
     onNavigateToPerformance: () -> Unit,
     onNavigateToTraining: () -> Unit,
     onNavigateToProfile: () -> Unit,
@@ -108,6 +116,8 @@ fun UniversalDrawer(
                 onNavigateToDashboard = onNavigateToDashboard,
                 onNavigateToAttendance = onNavigateToAttendance,
                 onNavigateToLeaveRequests = onNavigateToLeaveRequests,
+                onNavigateToOvertimeRequests = onNavigateToOvertimeRequests,
+                onNavigateToReimbursementRequests = onNavigateToReimbursementRequests,
                 onNavigateToPerformance = onNavigateToPerformance,
                 onNavigateToTraining = onNavigateToTraining,
                 onNavigateToProfile = onNavigateToProfile
@@ -134,7 +144,8 @@ data class MenuItem(
     val screen: AppScreen? = null,
     val onClick: () -> Unit,
     val hasSubmenu: Boolean = false,
-    val submenuItems: List<MenuItem> = emptyList()
+    val submenuItems: List<MenuItem> = emptyList(),
+    val isUnderDevelopment: Boolean = false
 )
 
 /**
@@ -152,15 +163,19 @@ fun SideBarMenu(
     onNavigateToDashboard: () -> Unit,
     onNavigateToAttendance: () -> Unit,
     onNavigateToLeaveRequests: () -> Unit,
+    onNavigateToOvertimeRequests: () -> Unit,
+    onNavigateToReimbursementRequests: () -> Unit,
     onNavigateToPerformance: () -> Unit,
     onNavigateToTraining: () -> Unit,
     onNavigateToProfile: () -> Unit
 ) {
-    val scope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
     
     // State to track which menu item is expanded
     var expandedItemTitle by remember { mutableStateOf<String?>(null) }
+    
+    // State to show development dialog
+    var showDevelopmentDialog by remember { mutableStateOf(false) }
     
     // Define menu sections and items
     val mainMenuItems = listOf(
@@ -169,10 +184,7 @@ fun SideBarMenu(
             icon = R.drawable.dashboard2,
             screen = AppScreen.DASHBOARD,
             onClick = {
-                scope.launch {
-                    drawerState.close()
-                    onNavigateToDashboard()
-                }
+                onNavigateToDashboard()
             }
         )
     )
@@ -182,10 +194,7 @@ fun SideBarMenu(
         icon = R.drawable.user,
         screen = AppScreen.PROFILE,
         onClick = {
-            scope.launch {
-                drawerState.close()
-                onNavigateToProfile()
-            }
+            onNavigateToProfile()
         }
     )
     
@@ -200,25 +209,29 @@ fun SideBarMenu(
                 title = "Philhealth",
                 icon = R.drawable.heart,
                 screen = null,
-                onClick = { /* Navigate to Philhealth Benefits */ }
+                onClick = { /* Navigate to Philhealth Benefits */ },
+                isUnderDevelopment = true
             ),
             MenuItem(
                 title = "Social Security",
                 icon = R.drawable.heart,
                 screen = null,
-                onClick = { /* Navigate to Social Security Benefits */ }
+                onClick = { /* Navigate to Social Security Benefits */ },
+                isUnderDevelopment = true
             ),
             MenuItem(
                 title = "Pag-ibig",
                 icon = R.drawable.heart,
                 screen = null,
-                onClick = { /* Navigate to Pag-ibig Benefits */ }
+                onClick = { /* Navigate to Pag-ibig Benefits */ },
+                isUnderDevelopment = true
             ),
             MenuItem(
                 title = "Other Benefits",
                 icon = R.drawable.heart,
                 screen = null,
-                onClick = { /* Navigate to Other Benefits */ }
+                onClick = { /* Navigate to Other Benefits */ },
+                isUnderDevelopment = true
             )
         )
     )
@@ -229,17 +242,15 @@ fun SideBarMenu(
             icon = R.drawable.clock,
             screen = AppScreen.TIME_ATTENDANCE,
             onClick = {
-                scope.launch {
-                    drawerState.close()
-                    onNavigateToAttendance()
-                }
+                onNavigateToAttendance()
             }
         ),
         MenuItem(
             title = "Schedule",
             icon = R.drawable.calendar,
             screen = null,
-            onClick = { /* Navigate to Schedule */ }
+            onClick = { /* Navigate to Schedule */ },
+            isUnderDevelopment = true
         ),
         MenuItem(
             title = "Requests",
@@ -253,23 +264,24 @@ fun SideBarMenu(
                     icon = R.drawable.time,
                     screen = AppScreen.LEAVE_REQUESTS,
                     onClick = {
-                        scope.launch {
-                            drawerState.close()
-                            onNavigateToLeaveRequests()
-                        }
+                        onNavigateToLeaveRequests()
                     }
                 ),
                 MenuItem(
                     title = "Overtime",
                     icon = R.drawable.time,
-                    screen = null,
-                    onClick = { /* Navigate to Overtime Requests */ }
+                    screen = AppScreen.OVERTIME_REQUESTS,
+                    onClick = {
+                        onNavigateToOvertimeRequests()
+                    }
                 ),
                 MenuItem(
                     title = "Reimbursement",
                     icon = R.drawable.time,
-                    screen = null,
-                    onClick = { /* Navigate to Reimbursement Requests */ }
+                    screen = AppScreen.REIMBURSEMENT_REQUESTS,
+                    onClick = {
+                        onNavigateToReimbursementRequests()
+                    }
                 )
             )
         )
@@ -279,19 +291,16 @@ fun SideBarMenu(
         MenuItem(
             title = "Training & Events",
             icon = R.drawable.graduation,
-            screen = AppScreen.TRAINING,
-            onClick = {
-                scope.launch {
-                    drawerState.close()
-                    onNavigateToTraining()
-                }
-            }
+            screen = null,
+            onClick = { /* Navigate to Careers */ },
+            isUnderDevelopment = true
         ),
         MenuItem(
             title = "Careers",
             icon = R.drawable.baggage,
             screen = null,
-            onClick = { /* Navigate to Careers */ }
+            onClick = { /* Navigate to Careers */ },
+            isUnderDevelopment = true
         ),
         MenuItem(
             title = "My Applications",
@@ -304,19 +313,22 @@ fun SideBarMenu(
                     title = "Benefits",
                     icon = R.drawable.heart,
                     screen = null,
-                    onClick = { /* Navigate to Benefits Applications */ }
+                    onClick = { /* Navigate to Benefits Applications */ },
+                    isUnderDevelopment = true
                 ),
                 MenuItem(
                     title = "Jobs",
                     icon = R.drawable.baggage,
                     screen = null,
-                    onClick = { /* Navigate to Job Applications */ }
+                    onClick = { /* Navigate to Job Applications */ },
+                    isUnderDevelopment = true
                 ),
                 MenuItem(
                     title = "Training & Events",
                     icon = R.drawable.graduation,
                     screen = null,
-                    onClick = { /* Navigate to Training Applications */ }
+                    onClick = { /* Navigate to Training Applications */ },
+                    isUnderDevelopment = true
                 )
             )
         )
@@ -325,32 +337,31 @@ fun SideBarMenu(
     val perfFeedbackItems = listOf(
         MenuItem(
             title = "Performance Evaluation",
-            icon = R.drawable.performance_icon,
-            screen = AppScreen.PERFORMANCE,
-            onClick = {
-                scope.launch {
-                    drawerState.close()
-                    onNavigateToPerformance()
-                }
-            }
+            icon = R.drawable.performance,
+            screen = null,
+            onClick = { /* Navigate to Careers */ },
+            isUnderDevelopment = true
         ),
         MenuItem(
             title = "Improvement Plan",
             icon = R.drawable.circle,
             screen = null,
-            onClick = { /* Navigate to Improvement Plan */ }
+            onClick = { /* Navigate to Improvement Plan */ },
+            isUnderDevelopment = true
         ),
         MenuItem(
             title = "Feedbacks & Complaints",
             icon = R.drawable.chat,
             screen = null,
-            onClick = { /* Navigate to Feedbacks & Complaints */ }
+            onClick = { /* Navigate to Feedbacks & Complaints */ },
+            isUnderDevelopment = true
         ),
         MenuItem(
             title = "Sanction Reports",
             icon = R.drawable.warning,
             screen = null,
-            onClick = { /* Navigate to Sanction Reports */ }
+            onClick = { /* Navigate to Sanction Reports */ },
+            isUnderDevelopment = true
         )
     )
     
@@ -359,10 +370,7 @@ fun SideBarMenu(
         icon = R.drawable.logout_icon,
         screen = null,
         onClick = {
-            scope.launch {
-                drawerState.close()
-                onLogout()
-            }
+            onLogout()
         }
     )
     
@@ -370,20 +378,20 @@ fun SideBarMenu(
         modifier = Modifier
             .fillMaxHeight()
             .width(300.dp),
-        color = AppColors.blue50,
+        color = AppColors.headerBackground,
         shadowElevation = 4.dp
     ) {
         Column(
             modifier = Modifier
                 .fillMaxHeight()
-                .background(AppColors.blue50)
+                .background(AppColors.headerBackground)
         ) {
             // Fixed Drawer header with app logo and title - This part won't scroll
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(AppColors.blue50)
-                    .padding(top = 26.dp, bottom = 16.dp, start = 36.dp, end = 16.dp),
+                    .padding(top = 36.dp, bottom = 16.dp, start = 26.dp, end = 16.dp),
                 contentAlignment = Alignment.CenterStart
             ) {
                 Row(
@@ -429,7 +437,7 @@ fun SideBarMenu(
             }
             
             // Divider between fixed header and scrollable content
-            Divider(
+            HorizontalDivider(
                 color = AppColors.gray200,
                 thickness = 2.dp,
             )
@@ -451,7 +459,8 @@ fun SideBarMenu(
                         tint = AppColors.blue700,
                         currentScreen = currentScreen,
                         expandedItemTitle = expandedItemTitle,
-                        onExpandedItemChange = { title -> expandedItemTitle = title }
+                        onExpandedItemChange = { title -> expandedItemTitle = title },
+                        onShowDevelopmentDialog = { showDevelopmentDialog = true }
                     )
                 }
                 
@@ -466,7 +475,8 @@ fun SideBarMenu(
                     tint = AppColors.blue700,
                     currentScreen = currentScreen,
                     expandedItemTitle = expandedItemTitle,
-                    onExpandedItemChange = { title -> expandedItemTitle = title }
+                    onExpandedItemChange = { title -> expandedItemTitle = title },
+                    onShowDevelopmentDialog = { showDevelopmentDialog = true }
                 )
                 
                 // Check if any submenu items are selected for the benefits menu
@@ -479,7 +489,8 @@ fun SideBarMenu(
                     tint = AppColors.blue700,
                     currentScreen = currentScreen,
                     expandedItemTitle = expandedItemTitle,
-                    onExpandedItemChange = { title -> expandedItemTitle = title }
+                    onExpandedItemChange = { title -> expandedItemTitle = title },
+                    onShowDevelopmentDialog = { showDevelopmentDialog = true }
                 )
                 
                 // WORK & SCHEDULE section
@@ -499,7 +510,8 @@ fun SideBarMenu(
                         tint = AppColors.blue700,
                         currentScreen = currentScreen,
                         expandedItemTitle = expandedItemTitle,
-                        onExpandedItemChange = { title -> expandedItemTitle = title }
+                        onExpandedItemChange = { title -> expandedItemTitle = title },
+                        onShowDevelopmentDialog = { showDevelopmentDialog = true }
                     )
                 }
                 
@@ -518,7 +530,8 @@ fun SideBarMenu(
                         tint = AppColors.blue700,
                         currentScreen = currentScreen,
                         expandedItemTitle = expandedItemTitle,
-                        onExpandedItemChange = { title -> expandedItemTitle = title }
+                        onExpandedItemChange = { title -> expandedItemTitle = title },
+                        onShowDevelopmentDialog = { showDevelopmentDialog = true }
                     )
                 }
                 
@@ -537,14 +550,15 @@ fun SideBarMenu(
                         tint = AppColors.blue700,
                         currentScreen = currentScreen,
                         expandedItemTitle = expandedItemTitle,
-                        onExpandedItemChange = { title -> expandedItemTitle = title }
+                        onExpandedItemChange = { title -> expandedItemTitle = title },
+                        onShowDevelopmentDialog = { showDevelopmentDialog = true }
                     )
                 }
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 
                 // Add divider before logout
-                Divider(
+                HorizontalDivider(
                     color = AppColors.gray200,
                     thickness = 2.dp,
                 )
@@ -558,12 +572,47 @@ fun SideBarMenu(
                     currentScreen = currentScreen,
                     textColor = AppColors.red,
                     expandedItemTitle = expandedItemTitle,
-                    onExpandedItemChange = { title -> expandedItemTitle = title }
+                    onExpandedItemChange = { title -> expandedItemTitle = title },
+                    onShowDevelopmentDialog = { showDevelopmentDialog = true }
                 )
                 
                 Spacer(modifier = Modifier.height(16.dp))
             }
         }
+    }
+    
+    // Development dialog
+    if (showDevelopmentDialog) {
+        AlertDialog(
+            onDismissRequest = { showDevelopmentDialog = false },
+            title = { 
+                Text(
+                    text = "Under Development",
+                    fontWeight = FontWeight.Bold,
+                    color = AppColors.blue700
+                ) 
+            },
+            text = { 
+                Text(
+                    text = "This feature is under development. Coming Soon!",
+                    fontSize = 16.sp,
+                    color = AppColors.gray800
+                ) 
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = { showDevelopmentDialog = false }
+                ) {
+                    Text(
+                        text = "OK",
+                        color = AppColors.blue500,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            },
+            containerColor = AppColors.white,
+            shape = RoundedCornerShape(16.dp)
+        )
     }
 }
 
@@ -593,7 +642,8 @@ fun MenuItemRow(
     currentScreen: AppScreen? = null,
     textColor: Color = AppColors.blue700,
     expandedItemTitle: String? = null,
-    onExpandedItemChange: (String?) -> Unit = {}
+    onExpandedItemChange: (String?) -> Unit = {},
+    onShowDevelopmentDialog: () -> Unit = {}
 ) {
     // Auto-expand submenu if any of its items are selected
     val shouldBeExpanded = item.hasSubmenu && 
@@ -642,6 +692,9 @@ fun MenuItemRow(
                                 onExpandedItemChange(item.title)
                             }
                             expanded = !expanded
+                        } else if (item.isUnderDevelopment) {
+                            // Show development dialog for items marked as under development
+                            onShowDevelopmentDialog()
                         } else {
                             // For regular menu items, just execute onClick
                             item.onClick()
@@ -725,7 +778,13 @@ fun MenuItemRow(
                                             color = if (isSubitemSelected) Color.White else Color.Transparent,
                                             shape = RoundedCornerShape(8.dp)
                                         )
-                                        .clickable { subItem.onClick() }
+                                        .clickable { 
+                                            if (subItem.isUnderDevelopment) {
+                                                onShowDevelopmentDialog()
+                                            } else {
+                                                subItem.onClick() 
+                                            }
+                                        }
                                 ) {
                                     Text(
                                         text = subItem.title,

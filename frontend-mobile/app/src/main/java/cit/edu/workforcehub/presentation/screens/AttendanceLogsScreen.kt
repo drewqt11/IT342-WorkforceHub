@@ -77,6 +77,8 @@ fun TimeAttendanceScreen(
     onNavigateToDashboard: () -> Unit = {},
     onNavigateToAttendance: () -> Unit = {},
     onNavigateToLeaveRequests: () -> Unit = {},
+    onNavigateToOvertimeRequests: () -> Unit = {},
+    onNavigateToReimbursementRequests: () -> Unit = {},
     onNavigateToPerformance: () -> Unit = {},
     onNavigateToTraining: () -> Unit = {},
     onNavigateToProfile: () -> Unit = {}
@@ -135,7 +137,7 @@ fun TimeAttendanceScreen(
 
     Surface(
         modifier = Modifier.fillMaxSize(),
-        color = AppColors.gray50
+        color = AppColors.gray100
     ) {
         UniversalDrawer(
             drawerState = drawerState,
@@ -144,6 +146,8 @@ fun TimeAttendanceScreen(
             onNavigateToDashboard = onNavigateToDashboard,
             onNavigateToAttendance = {},
             onNavigateToLeaveRequests = onNavigateToLeaveRequests,
+            onNavigateToOvertimeRequests = onNavigateToOvertimeRequests,
+            onNavigateToReimbursementRequests = onNavigateToReimbursementRequests,
             onNavigateToPerformance = onNavigateToPerformance,
             onNavigateToTraining = onNavigateToTraining,
             onNavigateToProfile = onNavigateToProfile
@@ -151,21 +155,22 @@ fun TimeAttendanceScreen(
             Box(modifier = Modifier.fillMaxSize()) {
                 // Fixed header on top
                 AppHeader(
-                    profileData = profileData,
-                    isLoading = isLoading,
                     onMenuClick = {
                         scope.launch {
                             drawerState.open()
                         }
                     },
-                    modifier = Modifier.zIndex(1f)
+                    modifier = Modifier.zIndex(1f),
+                    onProfileClick = onNavigateToProfile,
+                    forceAutoFetch = true, // Let AppHeader handle profile data fetching
+                    onLogoutClick = onLogout
                 )
 
                 // Scrollable content below header
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(top = 235.dp) // Adjust based on your header height
+                        .padding(top = 70.dp) // Adjusted for smaller header
                 ) {
                     if (isLoading) {
                         LoadingComponent()
@@ -361,18 +366,58 @@ fun TimeAttendanceScreen(
                                         Column(
                                             verticalArrangement = Arrangement.spacedBy(8.dp)
                                         ) {
-                                            attendanceRecords.forEach { record ->
+                                            // Filter out records where clockOutTime is null
+                                            val completedRecords = attendanceRecords.filter { record ->
+                                                record.clockOutTime != null
+                                            }
+
+                                            if (completedRecords.isEmpty()) {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .padding(vertical = 32.dp),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    Column(
+                                                        horizontalAlignment = Alignment.CenterHorizontally
+                                                    ) {
+                                                        Icon(
+                                                            imageVector = Icons.Default.Info,
+                                                            contentDescription = "No Records",
+                                                            tint = AppColors.gray400,
+                                                            modifier = Modifier.size(48.dp)
+                                                        )
+                                                        Spacer(modifier = Modifier.height(16.dp))
+                                                        Text(
+                                                            text = "No Completed Records",
+                                                            fontSize = 18.sp,
+                                                            fontWeight = FontWeight.Bold,
+                                                            color = AppColors.gray800
+                                                        )
+                                                        Text(
+                                                            text = "You don't have any completed attendance records yet",
+                                                            fontSize = 14.sp,
+                                                            color = AppColors.gray500,
+                                                            textAlign = TextAlign.Center
+                                                        )
+                                                    }
+                                                }
+                                            } else {
+                                                completedRecords.forEach { record ->
                                                 AttendanceRecord(
                                                     date = record.date,
                                                     clockIn = record.clockInTime,
-                                                    clockOut = record.clockOutTime
+                                                        clockOut = record.clockOutTime,
+                                                        remarks = record.remarks,
+                                                        status = record.status
                                                 )
                                                 
-                                                if (record != attendanceRecords.last()) {
-                                                    Divider(
+                                                    if (record != completedRecords.last()) {
+                                                    HorizontalDivider(
                                                         modifier = Modifier.padding(vertical = 8.dp),
                                                         color = AppColors.gray200
                                                     )
+                                                    }
                                                 }
                                             }
                                         }
@@ -392,6 +437,8 @@ fun AttendanceRecord(
     date: String,
     clockIn: String?,
     clockOut: String?,
+    remarks: String? = null,
+    status: String? = null
 ) {
     Column(
         modifier = Modifier
@@ -504,7 +551,7 @@ fun AttendanceRecord(
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // Vertical Divider
-                Divider(
+                VerticalDivider(
                     modifier = Modifier
                         .height(40.dp)
                         .width(2.dp)
@@ -525,12 +572,12 @@ fun AttendanceRecord(
                     ) {
                         Icon(
                             imageVector = Icons.Default.CheckCircle,
-                            contentDescription = "Present",
+                            contentDescription = remarks ?: status ?: "Status",
                             tint = AppColors.green,
                             modifier = Modifier.size(12.dp)
                         )
                         Text(
-                            text = "PRESENT",
+                            text = remarks?.uppercase() ?: status?.uppercase() ?: "PRESENT",
                             fontSize = 12.sp,
                             color = AppColors.green,
                             fontWeight = FontWeight.Medium

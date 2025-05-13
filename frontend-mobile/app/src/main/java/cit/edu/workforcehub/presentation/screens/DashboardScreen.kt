@@ -75,6 +75,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.res.painterResource
@@ -120,6 +121,8 @@ fun DashboardScreen(
     onLogout: () -> Unit = {},
     onNavigateToAttendance: () -> Unit = {},
     onNavigateToLeaveRequests: () -> Unit = {},
+    onNavigateToOvertimeRequests: () -> Unit = {},
+    onNavigateToReimbursementRequests: () -> Unit = {},
     onNavigateToPerformance: () -> Unit = {},
     onNavigateToTraining: () -> Unit = {},
     onNavigateToProfile: () -> Unit = {}
@@ -253,7 +256,7 @@ fun DashboardScreen(
 
     Surface(
         modifier = Modifier.fillMaxSize(),
-        color = cit.edu.workforcehub.presentation.theme.AppColors.gray50
+        color = cit.edu.workforcehub.presentation.theme.AppColors.gray100
     ) {
         // Using the Universal Drawer instead of directly using ModalNavigationDrawer
         UniversalDrawer(
@@ -267,6 +270,8 @@ fun DashboardScreen(
             onNavigateToDashboard = {}, // Already on dashboard, no need to navigate
             onNavigateToAttendance = onNavigateToAttendance,
             onNavigateToLeaveRequests = onNavigateToLeaveRequests,
+            onNavigateToOvertimeRequests = onNavigateToOvertimeRequests,
+            onNavigateToReimbursementRequests = onNavigateToReimbursementRequests,
             onNavigateToPerformance = onNavigateToPerformance,
             onNavigateToTraining = onNavigateToTraining,
             onNavigateToProfile = onNavigateToProfile
@@ -350,15 +355,117 @@ fun DashboardScreen(
                         Column(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .padding(top = 235.dp) // Increased from 190.dp to move cards further down
+                                .padding(top = 70.dp)
                                 .verticalScroll(scrollState),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            // Add some spacing before the Time Tracker Card
-                            Spacer(modifier = Modifier.height(16.dp))
+                            // Add spacing at the top to move content down
+                            Spacer(modifier = Modifier.height(20.dp))
                             
                             // Check if user account is active and show appropriate content
                             if (profileData?.status == true) {
+                                // Welcome card
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 16.dp)
+                                        .shadow(
+                                            elevation = 8.dp,
+                                            shape = RoundedCornerShape(16.dp),
+                                            spotColor = AppColors.blue500.copy(alpha = 0.25f)
+                                        )
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .background(
+                                                brush = Brush.linearGradient(
+                                                    colors = listOf(AppColors.blue500, AppColors.teal500),
+                                                    start = Offset(0f, 0f),
+                                                    end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
+                                                )
+                                            )
+                                            .padding(24.dp),
+                                        contentAlignment = Alignment.CenterStart
+                                    ) {
+                                        // Decorative circles in background
+                                        Canvas(
+                                            modifier = Modifier.fillMaxSize()
+                                        ) {
+                                            // Large circle in bottom-right
+                                            drawCircle(
+                                                color = Color.White,
+                                                radius = size.width * 0.5f,
+                                                center = Offset(size.width * 1.2f, size.height * 1.2f),
+                                                alpha = 0.15f
+                                            )
+                                            
+                                            // Medium circle in top-left
+                                            drawCircle(
+                                                color = Color.White,
+                                                radius = size.width * 0.3f,
+                                                center = Offset(-size.width * 0.1f, -size.height * 0.1f),
+                                                alpha = 0.1f
+                                            )
+                                            
+                                            // Small circle in middle-right
+                                            drawCircle(
+                                                color = Color.White,
+                                                radius = size.width * 0.2f,
+                                                center = Offset(size.width * 0.9f, size.height * 0.5f),
+                                                alpha = 0.12f
+                                            )
+
+                                            // Extra small circles for additional detail
+                                            drawCircle(
+                                                color = Color.White,
+                                                radius = size.width * 0.1f,
+                                                center = Offset(size.width * 0.15f, size.height * 0.85f),
+                                                alpha = 0.08f
+                                            )
+
+                                            drawCircle(
+                                                color = Color.White,
+                                                radius = size.width * 0.15f,
+                                                center = Offset(size.width * 0.75f, size.height * 0.2f),
+                                                alpha = 0.1f
+                                            )
+                                        }
+
+                                        Column(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalAlignment = Alignment.Start
+                                        ) {
+                                            Text(
+                                                text = "Welcome back,",
+                                                fontSize = 16.sp,
+                                                fontWeight = FontWeight.Normal,
+                                                color = Color.White,
+                                                textAlign = TextAlign.Start
+                                            )
+                                            Text(
+                                                text = "${profileData?.firstName ?: ""} ${profileData?.lastName ?: ""}",
+                                                fontSize = 24.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color.White,
+                                                modifier = Modifier.padding(top = 4.dp),
+                                                textAlign = TextAlign.Start
+                                            )
+                                            Text(
+                                                text = "${profileData?.idNumber ?: ""}",
+                                                fontSize = 14.sp,
+                                                fontWeight = FontWeight.Normal,
+                                                color = Color.White.copy(alpha = 0.8f),
+                                                modifier = Modifier.padding(top = 4.dp),
+                                                textAlign = TextAlign.Start
+                                            )
+                                        }
+                                    }
+                                }
+                                
+                                // Add increased spacing between welcome card and time tracker
+                                Spacer(modifier = Modifier.height(20.dp))
+                                
                                 // Time Tracker Card - only shown if user is active
                                 TimeTrackerCardWrapper(
                                     currentDate = currentDate,
@@ -463,14 +570,15 @@ fun DashboardScreen(
                     
                     // Fixed header on top (doesn't scroll)
                     AppHeader(
-                        profileData = profileData,
-                        isLoading = isLoading,
-                        onMenuClick = {
+                        onMenuClick = { 
                             scope.launch {
                                 drawerState.open()
                             }
                         },
-                        modifier = Modifier.zIndex(1f) // Ensure header stays on top
+                        modifier = Modifier.zIndex(1f),
+                        onProfileClick = onNavigateToProfile,
+                        forceAutoFetch = true, // Let AppHeader handle profile data fetching
+                        onLogoutClick = onLogout
                     )
                 }
             }
@@ -672,13 +780,13 @@ private fun CollapsedTimeTrackerCard(
                         modifier = Modifier
                             .fillMaxWidth(),
                         colors = CardDefaults.cardColors(
-                            containerColor = Color.White
-                        ),
-                        elevation = CardDefaults.cardElevation(
-                            defaultElevation = 1.dp
-                        ),
-                        shape = RoundedCornerShape(16.dp)
-                    ) {
+                                containerColor = Color.White
+                            ),
+                            elevation = CardDefaults.cardElevation(
+                                defaultElevation = 1.dp
+                            ),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             modifier = Modifier

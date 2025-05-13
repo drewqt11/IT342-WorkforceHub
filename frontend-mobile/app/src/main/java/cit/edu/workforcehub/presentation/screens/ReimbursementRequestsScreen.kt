@@ -1,6 +1,5 @@
 package cit.edu.workforcehub.presentation.screens
 
-import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -21,7 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Info
@@ -29,8 +28,8 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
@@ -62,22 +61,21 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import kotlinx.coroutines.launch
-import cit.edu.workforcehub.R
 import cit.edu.workforcehub.api.ApiHelper
 import cit.edu.workforcehub.api.models.EmployeeProfile
-import cit.edu.workforcehub.api.models.LeaveRequest
+import cit.edu.workforcehub.api.models.ReimbursementRequest
 import cit.edu.workforcehub.presentation.components.AppHeader
 import cit.edu.workforcehub.presentation.components.AppScreen
 import cit.edu.workforcehub.presentation.components.LoadingComponent
 import cit.edu.workforcehub.presentation.components.UniversalDrawer
-import cit.edu.workforcehub.presentation.screens.forms.LeaveRequestForm
 import cit.edu.workforcehub.presentation.theme.AppColors
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import kotlin.reflect.full.memberProperties
+import java.text.NumberFormat
+import java.util.Locale
 
 /**
  * Formats a date string from ISO format (YYYY-MM-DD) to a readable format (Month DD, YYYY)
@@ -94,7 +92,15 @@ private fun formatDate(dateString: String): String {
 }
 
 /**
- * Returns a color based on the status of a leave request
+ * Formats an amount to currency format
+ */
+private fun formatCurrency(amount: Double): String {
+    val format = NumberFormat.getCurrencyInstance(Locale.US)
+    return format.format(amount)
+}
+
+/**
+ * Returns a color based on the status of a request
  */
 private fun getStatusColor(status: String): Color {
     return when (status.uppercase()) {
@@ -106,7 +112,7 @@ private fun getStatusColor(status: String): Color {
 }
 
 /**
- * Returns a background color based on the status of a leave request
+ * Returns a background color based on the status of a request
  */
 private fun getStatusBackgroundColor(status: String): Color {
     return when (status.uppercase()) {
@@ -117,23 +123,8 @@ private fun getStatusBackgroundColor(status: String): Color {
     }
 }
 
-/**
- * Try to extract a valid ID from a leave request.
- * This looks at multiple possible ID fields to find a non-null value.
- * IMPORTANT: Do NOT use employeeId as a fallback, as that will cause API errors.
- */
-private fun extractLeaveRequestId(request: LeaveRequest): String? {
-    // Only use the standard field, do not fall back to employeeId
-    if (!request.leaveRequestId.isNullOrEmpty()) {
-        return request.leaveRequestId
-    }
-    
-    // Don't try other ID fields - employeeId is not a valid substitute
-    return null
-}
-
 @Composable
-fun LeaveRequestScreen(
+fun ReimbursementRequestsScreen(
     onLogout: () -> Unit = {},
     onNavigateToDashboard: () -> Unit = {},
     onNavigateToAttendance: () -> Unit = {},
@@ -142,7 +133,8 @@ fun LeaveRequestScreen(
     onNavigateToReimbursementRequests: () -> Unit = {},
     onNavigateToPerformance: () -> Unit = {},
     onNavigateToTraining: () -> Unit = {},
-    onNavigateToProfile: () -> Unit = {}
+    onNavigateToProfile: () -> Unit = {},
+    onNavigateToSubmitRequest: () -> Unit = {}
 ) {
     // State for drawer
     val drawerState = rememberDrawerState(DrawerValue.Closed)
@@ -156,34 +148,38 @@ fun LeaveRequestScreen(
     var isLoading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
     
-    // State for leave requests
-    var leaveRequests by remember { mutableStateOf<List<LeaveRequest>>(emptyList()) }
-    var isLoadingLeaveRequests by remember { mutableStateOf(true) }
-    var leaveRequestsError by remember { mutableStateOf<String?>(null) }
+    // State for reimbursement requests
+    var reimbursementRequests by remember { mutableStateOf<List<ReimbursementRequest>>(emptyList()) }
+    var isLoadingReimbursementRequests by remember { mutableStateOf(true) }
+    var reimbursementRequestsError by remember { mutableStateOf<String?>(null) }
     
     // State for navigation and dialogs
     var showConfirmationDialog by remember { mutableStateOf(false) }
-    var showLeaveRequestForm by remember { mutableStateOf(false) }
-    
-    // State for cancel confirmation
-    var showCancelConfirmationDialog by remember { mutableStateOf(false) }
-    var selectedRequestToCancel by remember { mutableStateOf<LeaveRequest?>(null) }
-    var isCancelling by remember { mutableStateOf(false) }
+    var shouldNavigateToSubmitReimbursementRequest by remember { mutableStateOf(false) }
     
     // Snackbar host state
     val snackbarHostState = remember { SnackbarHostState() }
-    
-    // Inside the LeaveRequestScreen function, add a state for the selected tab
+
+    // Add state for the selected tab
     var selectedTabIndex by remember { mutableStateOf(0) }
     val tabTitles = listOf("Pending", "Approved", "Rejected")
 
     // Filter requests based on the selected tab
-    val filteredRequests = remember(leaveRequests, selectedTabIndex) {
+    val filteredRequests = remember(reimbursementRequests, selectedTabIndex) {
         when (selectedTabIndex) {
-            0 -> leaveRequests.filter { (it.status ?: "").uppercase() == "PENDING" }
-            1 -> leaveRequests.filter { (it.status ?: "").uppercase() == "APPROVED" }
-            2 -> leaveRequests.filter { (it.status ?: "").uppercase() == "REJECTED" }
-            else -> leaveRequests
+            0 -> reimbursementRequests.filter { (it.status ?: "").uppercase() == "PENDING" }
+            1 -> reimbursementRequests.filter { (it.status ?: "").uppercase() == "APPROVED" }
+            2 -> reimbursementRequests.filter { (it.status ?: "").uppercase() == "REJECTED" }
+            else -> reimbursementRequests
+        }
+    }
+    
+    // Handle navigation
+    LaunchedEffect(shouldNavigateToSubmitReimbursementRequest) {
+        if (shouldNavigateToSubmitReimbursementRequest) {
+            // Navigate to the ReimbursementRequestFormScreen
+            onNavigateToSubmitRequest()
+            shouldNavigateToSubmitReimbursementRequest = false
         }
     }
 
@@ -206,61 +202,23 @@ fun LeaveRequestScreen(
         }
     }
     
-    // Fetch leave requests
+    // Fetch reimbursement requests
     LaunchedEffect(key1 = true) {
         try {
             val employeeService = ApiHelper.getEmployeeService()
-            val response = employeeService.getLeaveRequests()
+            val response = employeeService.getReimbursementRequests()
             
             if (response.isSuccessful && response.body() != null) {
-                leaveRequests = response.body()!!
-                
-                // Debug: Log all leave request IDs to check if they're present
-                leaveRequests.forEachIndexed { index, request ->
-                    val extractedId = extractLeaveRequestId(request)
-                    Log.d("LeaveRequestsScreen", "Leave request #$index: Standard ID=${request.leaveRequestId}, Extracted ID=$extractedId, status=${request.status}")
-                }
-                
-                isLoadingLeaveRequests = false
+                reimbursementRequests = response.body()!!
+                isLoadingReimbursementRequests = false
             } else {
-                leaveRequestsError = "Failed to load leave requests: ${response.message()}"
-                isLoadingLeaveRequests = false
+                reimbursementRequestsError = "Failed to load reimbursement requests: ${response.message()}"
+                isLoadingReimbursementRequests = false
             }
         } catch (e: Exception) {
-            leaveRequestsError = "Error loading leave requests: ${e.message}"
-            isLoadingLeaveRequests = false
+            reimbursementRequestsError = "Error loading reimbursement requests: ${e.message}"
+            isLoadingReimbursementRequests = false
         }
-    }
-
-    // If showing the leave request form, display it
-    if (showLeaveRequestForm) {
-        LeaveRequestForm(
-            onBackPressed = { 
-                showLeaveRequestForm = false 
-            },
-            onSuccess = {
-                // Refresh the leave requests list and return to the main screen
-                showLeaveRequestForm = false
-                isLoadingLeaveRequests = true
-                scope.launch {
-                    try {
-                        val employeeService = ApiHelper.getEmployeeService()
-                        val response = employeeService.getLeaveRequests()
-                        
-                        if (response.isSuccessful && response.body() != null) {
-                            leaveRequests = response.body()!!
-                        } else {
-                            snackbarHostState.showSnackbar("Failed to refresh leave requests: ${response.message()}")
-                        }
-                    } catch (e: Exception) {
-                        snackbarHostState.showSnackbar("Error refreshing leave requests: ${e.message}")
-                    } finally {
-                        isLoadingLeaveRequests = false
-                    }
-                }
-            }
-        )
-        return // Return early to show only the form
     }
 
     Surface(
@@ -270,13 +228,13 @@ fun LeaveRequestScreen(
         // Using the UniversalDrawer
         UniversalDrawer(
             drawerState = drawerState,
-            currentScreen = AppScreen.LEAVE_REQUESTS,
+            currentScreen = AppScreen.REIMBURSEMENT_REQUESTS,
             onLogout = onLogout,
             onNavigateToDashboard = onNavigateToDashboard,
             onNavigateToAttendance = onNavigateToAttendance,
-            onNavigateToLeaveRequests = {}, // Already on leave requests, no need to navigate
+            onNavigateToLeaveRequests = onNavigateToLeaveRequests,
             onNavigateToOvertimeRequests = onNavigateToOvertimeRequests,
-            onNavigateToReimbursementRequests = onNavigateToReimbursementRequests,
+            onNavigateToReimbursementRequests = {}, // Already on reimbursement requests, no need to navigate
             onNavigateToPerformance = onNavigateToPerformance,
             onNavigateToTraining = onNavigateToTraining,
             onNavigateToProfile = onNavigateToProfile
@@ -301,18 +259,18 @@ fun LeaveRequestScreen(
                         .fillMaxSize()
                         .padding(top = 70.dp) // Adjusted for smaller header
                 ) {
-                // Show loading component if data is still loading
-                if (isLoading) {
-                    LoadingComponent()
-                } else {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
+                    // Show loading component if data is still loading
+                    if (isLoading) {
+                        LoadingComponent()
+                    } else {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
                                 .padding(horizontal = 16.dp, vertical = 16.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            // Header section - Add Leave Requests header
+                            // Header section - Add Reimbursement Requests header
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -339,8 +297,8 @@ fun LeaveRequestScreen(
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Default.CalendarToday,
-                                        contentDescription = "Leave Icon",
+                                        imageVector = Icons.Default.AttachMoney,
+                                        contentDescription = "Reimbursement Icon",
                                         tint = Color.White,
                                         modifier = Modifier.size(24.dp)
                                     )
@@ -348,20 +306,20 @@ fun LeaveRequestScreen(
                                 
                                 Spacer(modifier = Modifier.width(12.dp))
                                 
-                                // Leave Requests text
+                                // Reimbursement Requests text
                                 Text(
-                                    text = "Leave Requests",
+                                    text = "Reimbursement Requests",
                                     fontSize = 28.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = AppColors.gray800
                                 )
                             }
                             
-                            // Main Leave Requests Card
+                            // Main Reimbursement Requests Card
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .weight(1f), // Make the card take remaining space
+                                    .weight(1f),  // Make the card take remaining space
                                 colors = CardDefaults.cardColors(containerColor = AppColors.white),
                                 shape = RoundedCornerShape(16.dp),
                                 border = BorderStroke(1.dp, AppColors.gray200)
@@ -403,7 +361,7 @@ fun LeaveRequestScreen(
                                                     color = Color.White.copy(alpha = 0.6f),
                                                     shape = RoundedCornerShape(12.dp)
                                                 )
-                                                        .clickable { showConfirmationDialog = true },
+                                                    .clickable { showConfirmationDialog = true },
                                             shape = RoundedCornerShape(12.dp),
                                             color = Color.Transparent
                                         ) {
@@ -440,7 +398,7 @@ fun LeaveRequestScreen(
                                         }
                                     }
                                     
-                                        // Leave Requests Directory header
+                                        // Reimbursement Requests Directory header
                                         Column {
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
@@ -448,32 +406,32 @@ fun LeaveRequestScreen(
                                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
                                         Icon(
-                                            imageVector = Icons.Default.CalendarToday,
-                                            contentDescription = "Leave Requests Directory",
+                                            imageVector = Icons.Default.AttachMoney,
+                                            contentDescription = "Reimbursement Requests Directory",
                                             tint = AppColors.blue500
                                         )
                                         Column {
                                             Text(
-                                                text = "Leave Requests Directory",
+                                                text = "Reimbursement Requests Directory",
                                                 fontSize = 18.sp,
                                                 fontWeight = FontWeight.Bold,
                                                 color = AppColors.gray800
                                             )
                                             Text(
-                                                text = "Track request status, dates, and outcomes",
+                                                text = "Submit and track expense reimbursements",
                                                 fontSize = 14.sp,
                                                 color = AppColors.gray500
                                             )
+                                        }
                                     }
-                                }
-                                
-                                Spacer(modifier = Modifier.height(16.dp))
-                                
+
+                                    Spacer(modifier = Modifier.height(16.dp))
+
                                             // Status filter tabs
                                             TabRow(
                                                 selectedTabIndex = selectedTabIndex,
                                                 containerColor = Color.Transparent,
-                                                contentColor = AppColors.teal500,
+                                                contentColor = AppColors.blue500,
                                                 indicator = { tabPositions ->
                                                     if (selectedTabIndex < tabPositions.size) {
                                                         Box(
@@ -518,11 +476,11 @@ fun LeaveRequestScreen(
                                         }
                                     }
                                     
-                                    // THIS IS THE SCROLLABLE PART - Leave requests list
-                                    if (isLoadingLeaveRequests) {
+                                    // THIS IS THE SCROLLABLE PART - Reimbursement requests list
+                                    if (isLoadingReimbursementRequests) {
                                         Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
+                                            modifier = Modifier
+                                                .fillMaxWidth()
                                                 .weight(1f)
                                                 .padding(vertical = 32.dp),
                                             contentAlignment = Alignment.Center
@@ -532,10 +490,10 @@ fun LeaveRequestScreen(
                                                 modifier = Modifier.size(32.dp)
                                             )
                                         }
-                                    } else if (leaveRequestsError != null) {
+                                    } else if (reimbursementRequestsError != null) {
                                         Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
+                                            modifier = Modifier
+                                                .fillMaxWidth()
                                                 .weight(1f)
                                                 .padding(16.dp)
                                                 .clip(RoundedCornerShape(8.dp))
@@ -549,17 +507,17 @@ fun LeaveRequestScreen(
                                                     imageVector = Icons.Default.Error,
                                                     contentDescription = "Error",
                                                     tint = AppColors.red,
-                                            modifier = Modifier.size(24.dp)
-                                        )
+                                                    modifier = Modifier.size(24.dp)
+                                                )
                                                 Spacer(modifier = Modifier.height(8.dp))
-                                        Text(
+                                                Text(
                                                     text = "Error Loading Requests",
-                                            fontSize = 16.sp,
+                                                    fontSize = 16.sp,
                                                     fontWeight = FontWeight.Bold,
                                                     color = AppColors.red
                                                 )
                                                 Text(
-                                                    text = leaveRequestsError ?: "Unknown error occurred",
+                                                    text = reimbursementRequestsError ?: "Unknown error occurred",
                                                     fontSize = 14.sp,
                                                     color = AppColors.red.copy(alpha = 0.8f),
                                                     textAlign = TextAlign.Center
@@ -567,14 +525,14 @@ fun LeaveRequestScreen(
                                             }
                                         }
                                     } else if (filteredRequests.isEmpty()) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
                                                 .weight(1f)
                                                 .padding(vertical = 32.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Column(
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Column(
                                                 horizontalAlignment = Alignment.CenterHorizontally
                                             ) {
                                                 Icon(
@@ -584,27 +542,27 @@ fun LeaveRequestScreen(
                                                     modifier = Modifier.size(48.dp)
                                                 )
                                                 Spacer(modifier = Modifier.height(16.dp))
-                                    Text(
+                                                Text(
                                                     text = "No Records Found",
                                                     fontSize = 18.sp,
-                                        fontWeight = FontWeight.Bold,
+                                                    fontWeight = FontWeight.Bold,
                                                     color = AppColors.gray800
-                                    )
-                                    Text(
+                                                )
+                                                Text(
                                                     text = when (selectedTabIndex) {
-                                                        0 -> "You don't have any pending leave requests"
-                                                        1 -> "You don't have any approved leave requests"
-                                                        2 -> "You don't have any rejected leave requests"
-                                                        else -> "You haven't submitted any leave requests yet"
+                                                        0 -> "You don't have any pending reimbursement requests"
+                                                        1 -> "You don't have any approved reimbursement requests"
+                                                        2 -> "You don't have any rejected reimbursement requests"
+                                                        else -> "You haven't submitted any reimbursement requests yet"
                                                     },
                                                     fontSize = 14.sp,
                                                     color = AppColors.gray500,
-                                        textAlign = TextAlign.Center
-                                    )
+                                                    textAlign = TextAlign.Center
+                                                )
                                             }
                                         }
                                     } else {
-                                        // SCROLLABLE CONTENT - Leave requests list
+                                        // SCROLLABLE CONTENT - Reimbursement requests list
                                         Column(
                                             modifier = Modifier
                                                 .fillMaxWidth()
@@ -647,13 +605,13 @@ fun LeaveRequestScreen(
                                                         Column(
                                                             modifier = Modifier.padding(16.dp)
                                                         ) {
-                                                            // Top row with leave type and status
+                                                            // Top row with category/amount and status
                                                             Row(
                                                                 modifier = Modifier.fillMaxWidth(),
                                                                 horizontalArrangement = Arrangement.SpaceBetween,
                                                                 verticalAlignment = Alignment.CenterVertically
                                                             ) {
-                                                                // Leave type with icon
+                                                                // Category and amount with icon
                                                                 Row(
                                                                     verticalAlignment = Alignment.CenterVertically,
                                                                 ) {
@@ -674,8 +632,8 @@ fun LeaveRequestScreen(
                                                                         contentAlignment = Alignment.Center
                                                                     ) {
                                                                         Icon(
-                                                                            imageVector = Icons.Default.CalendarToday,
-                                                                            contentDescription = "Leave type",
+                                                                            imageVector = Icons.Default.AttachMoney,
+                                                                            contentDescription = "Amount",
                                                                             tint = Color.White,
                                                                             modifier = Modifier.size(18.dp)
                                                                         )
@@ -684,7 +642,7 @@ fun LeaveRequestScreen(
                                                                     Spacer(modifier = Modifier.width(8.dp))
                                                                     
                                                                     Text(
-                                                                        text = request.leaveType,
+                                                                        text = request.planName?.let { "$it: ${formatCurrency(request.amount)}" } ?: formatCurrency(request.amount),
                                                                         fontSize = 16.sp,
                                                                         fontWeight = FontWeight.Bold,
                                                                         color = AppColors.blue700
@@ -725,111 +683,53 @@ fun LeaveRequestScreen(
                                                             
                                                             Spacer(modifier = Modifier.height(16.dp))
                                                             
-                                                    HorizontalDivider(
+                                                            HorizontalDivider(
                                                                 color = AppColors.gray200.copy(alpha = 0.6f),
                                                                 thickness = 1.dp
                                                             )
                                                             
                                                             Spacer(modifier = Modifier.height(12.dp))
                                                             
-                                                            // Date range row
+                                                            // Date row
                                                             Row(
                                                                 verticalAlignment = Alignment.CenterVertically,
                                                                 modifier = Modifier.padding(vertical = 2.dp)
                                                             ) {
                                                                 Icon(
-                                                                    imageVector = Icons.Default.CalendarToday,
-                                                                    contentDescription = "Dates",
-                                                                    tint = AppColors.gray500,
-                                                                    modifier = Modifier.size(16.dp)
-                                                                )
-                                                                Spacer(modifier = Modifier.width(8.dp))
-                                                                Text(
-                                                                    text = "${formatDate(request.startDate)} to ${formatDate(request.endDate)}",
-                                                                    fontSize = 14.sp,
-                                                                    color = AppColors.gray700,
-                                                                    fontWeight = FontWeight.Medium
-                                                    )
-                                                }
-                                                            
-                                                            Spacer(modifier = Modifier.height(8.dp))
-                                                            
-                                                            // Reason row
-                                                            Row(
-                                                                verticalAlignment = Alignment.Top,
-                                                                modifier = Modifier.padding(vertical = 2.dp)
-                                                            ) {
-                                                                Icon(
                                                                     imageVector = Icons.Default.Info,
-                                                                    contentDescription = "Reason",
+                                                                    contentDescription = "Date",
                                                                     tint = AppColors.gray500,
                                                                     modifier = Modifier.size(16.dp)
                                                                 )
                                                                 Spacer(modifier = Modifier.width(8.dp))
                                                                 Text(
-                                                                    text = "Reason: ${request.reason}",
+                                                                    text = "Date: ${formatDate(request.expenseDate)}",
                                                                     fontSize = 14.sp,
                                                                     color = AppColors.gray700,
                                                                     fontWeight = FontWeight.Medium
                                                                 )
                                                             }
                                                             
-                                                            // Add Cancel button for PENDING requests
-                                                            if ((request.status ?: "").uppercase() == "PENDING") {
-                                                                Spacer(modifier = Modifier.height(12.dp))
-                                                                HorizontalDivider(
-                                                                    color = AppColors.gray200.copy(alpha = 0.6f),
-                                                                    thickness = 1.dp
+                                                            Spacer(modifier = Modifier.height(8.dp))
+                                                            
+                                                            // Description row
+                                                            Row(
+                                                                verticalAlignment = Alignment.Top,
+                                                                modifier = Modifier.padding(vertical = 2.dp)
+                                                            ) {
+                                                                Icon(
+                                                                    imageVector = Icons.Default.Info,
+                                                                    contentDescription = "Description",
+                                                                    tint = AppColors.gray500,
+                                                                    modifier = Modifier.size(16.dp)
                                                                 )
-                                                                Spacer(modifier = Modifier.height(12.dp))
-                                                                
-                                                                Box(
-                                                                    modifier = Modifier
-                                                                        .fillMaxWidth(),
-                                                                    contentAlignment = Alignment.CenterEnd
-                                                                ) {
-                                                                    Surface(
-                                                                        modifier = Modifier
-                                                                            .shadow(
-                                                                                elevation = 2.dp,
-                                                                                shape = RoundedCornerShape(8.dp),
-                                                                                spotColor = AppColors.red.copy(alpha = 0.3f)
-                                                                            )
-                                                                            .border(
-                                                                                width = 1.dp,
-                                                                                color = Color.White.copy(alpha = 0.6f),
-                                                                                shape = RoundedCornerShape(8.dp)
-                                                                            )
-                                                                            .clickable { 
-                                                                                // Debug the request before setting it
-                                                                                Log.d("LeaveRequestsScreen", "Selected leave request for cancellation: $request")
-                                                                                Log.d("LeaveRequestsScreen", "Request ID before setting: ${request.leaveRequestId}")
-                                                                                Log.d("LeaveRequestsScreen", "Extracted ID: ${extractLeaveRequestId(request)}")
-                                                                                
-                                                                                selectedRequestToCancel = request
-                                                                                showCancelConfirmationDialog = true
-                                                                            },
-                                                                        shape = RoundedCornerShape(8.dp),
-                                                                        color = Color.Transparent
-                                                                    ) {
-                                                                        Box(
-                                                                            modifier = Modifier
-                                                                                .width(100.dp)
-                                                                                .background(
-                                                                                    color = AppColors.red.copy(alpha = 0.8f)
-                                                                                )
-                                                                                .padding(horizontal = 10.dp, vertical = 6.dp),
-                                                                            contentAlignment = Alignment.Center
-                                                                        ) {
-                                                                            Text(
-                                                                                text = "Cancel",
-                                                                                color = Color.White,
-                                                                                fontWeight = FontWeight.Medium,
-                                                                                fontSize = 12.sp
-                                                                            )
-                                                                        }
-                                                                    }
-                                                                }
+                                                                Spacer(modifier = Modifier.width(8.dp))
+                                                                Text(
+                                                                    text = "Description: ${request.description}",
+                                                                    fontSize = 14.sp,
+                                                                    color = AppColors.gray700,
+                                                                    fontWeight = FontWeight.Medium
+                                                                )
                                                             }
                                                         }
                                                     }
@@ -855,10 +755,10 @@ fun LeaveRequestScreen(
                         .align(Alignment.BottomCenter)
                         .padding(bottom = 16.dp)
                 ) {
-                        Snackbar(
+                    Snackbar(
                         modifier = Modifier.padding(horizontal = 16.dp),
-                            action = {
-                                        Text(
+                        action = {
+                            Text(
                                 text = "OK",
                                 color = AppColors.blue100,
                                 modifier = Modifier.clickable { snackbarHostState.currentSnackbarData?.dismiss() }
@@ -875,13 +775,13 @@ fun LeaveRequestScreen(
                         onDismissRequest = { showConfirmationDialog = false },
                         title = { 
                     Text(
-                                text = "Submit Leave Request",
+                                text = "Submit Reimbursement Request",
                                 fontWeight = FontWeight.Bold
                             ) 
                         },
                         text = { 
                             Text(
-                                text = "Do you want to proceed with submitting a new leave request?",
+                                text = "Do you want to proceed with submitting a new reimbursement request?",
                                 fontSize = 16.sp
                             ) 
                         },
@@ -889,181 +789,24 @@ fun LeaveRequestScreen(
                             TextButton(
                                 onClick = {
                                     showConfirmationDialog = false
-                                    showLeaveRequestForm = true
+                                    shouldNavigateToSubmitReimbursementRequest = true
                                 }
                             ) {
                                 Text(
                                     text = "Proceed",
                                     color = AppColors.blue500,
                                     fontWeight = FontWeight.Bold
-                                )
-                            }
+                            )
+                        }
                         },
                         dismissButton = {
                             TextButton(
                                 onClick = { showConfirmationDialog = false }
                             ) {
-                            Text(
-                                text = "Cancel",
-                                color = AppColors.gray600
-                            )
-                            }
-                        },
-                        containerColor = AppColors.white,
-                        shape = RoundedCornerShape(16.dp)
-                    )
-                }
-                
-                // Cancel Confirmation Dialog
-                if (showCancelConfirmationDialog && selectedRequestToCancel != null) {
-                    AlertDialog(
-                        onDismissRequest = { 
-                            if (!isCancelling) {
-                                showCancelConfirmationDialog = false
-                                selectedRequestToCancel = null
-                            }
-                        },
-                        title = { 
-                            Text(
-                                text = "Cancel Request",
-                                fontWeight = FontWeight.Bold,
-                                color = AppColors.gray800
-                            ) 
-                        },
-                        text = { 
-            Column {
-                                // Debug information about the request
-                                Log.d("LeaveRequestsScreen", "Selected request: $selectedRequestToCancel")
-                                Log.d("LeaveRequestsScreen", "Request ID: ${selectedRequestToCancel?.leaveRequestId}")
-                                Log.d("LeaveRequestsScreen", "Request status: ${selectedRequestToCancel?.status}")
-                                Log.d("LeaveRequestsScreen", "Request type: ${selectedRequestToCancel?.leaveType}")
-                                
-                    Text(
-                                    text = "Are you sure you want to cancel this request?",
-                        fontSize = 16.sp,
-                                    color = AppColors.gray700
-                                )
-                                
-                                if (isCancelling) {
-                                    Spacer(modifier = Modifier.height(16.dp))
-                        Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.Center,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        CircularProgressIndicator(
-                                            modifier = Modifier.size(24.dp),
-                                            color = AppColors.blue500,
-                                            strokeWidth = 2.dp
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                            text = "Cancelling...",
-                                            fontSize = 14.sp,
-                                            color = AppColors.blue500
-                                        )
-                                    }
-                                }
-                            }
-                        },
-                        confirmButton = {
-                            TextButton(
-                                onClick = {
-                                    // Debug the selected request
-                                    Log.d("LeaveRequestsScreen", "Full request object: $selectedRequestToCancel")
-
-                                    // Get the request ID using our utility function
-                                    val requestId = selectedRequestToCancel?.let { extractLeaveRequestId(it) }
-                                    
-                                    // Log the request ID for debugging
-                                    Log.d("LeaveRequestsScreen", "Attempting to cancel leave request with ID: $requestId")
-                                    
-                                    if (!requestId.isNullOrEmpty()) {
-                                        isCancelling = true
-                                        
-                                        scope.launch {
-                                            try {
-                                                val employeeService = ApiHelper.getEmployeeService()
-                                                
-                                                // Log right before API call
-                                                Log.d("LeaveRequestsScreen", "Calling cancelLeaveRequest API with ID: $requestId")
-                                                
-                                                // Use runCatching to capture the error details
-                                                runCatching {
-                                                    employeeService.cancelLeaveRequest(id = requestId)
-                                                }.onSuccess { response ->
-                                                    // Log API response
-                                                    Log.d("LeaveRequestsScreen", "Cancel API response code: ${response.code()}")
-                                                    Log.d("LeaveRequestsScreen", "Cancel API response message: ${response.message()}")
-                                                    
-                                                    if (response.isSuccessful) {
-                                                        // On success, refresh the list of requests
-                                                        val updatedListResponse = employeeService.getLeaveRequests()
-                                                        if (updatedListResponse.isSuccessful && updatedListResponse.body() != null) {
-                                                            leaveRequests = updatedListResponse.body()!!
-                                                            snackbarHostState.showSnackbar("Request cancelled successfully")
-                                                        } else {
-                                                            Log.e("LeaveRequestsScreen", "Failed to refresh list: ${updatedListResponse.code()} - ${updatedListResponse.message()}")
-                                                            snackbarHostState.showSnackbar("Request cancelled, but failed to refresh list")
-                                                        }
-                                                    } else {
-                                                        // Log the error details
-                                                        Log.e("LeaveRequestsScreen", "Cancel request failed: ${response.code()} - ${response.message()}")
-                                                        val errorBody = response.errorBody()?.string()
-                                                        Log.e("LeaveRequestsScreen", "Error body: $errorBody")
-                                                        
-                                                        snackbarHostState.showSnackbar("Failed to cancel request: ${response.message()}")
-                                                    }
-                                                }.onFailure { e ->
-                                                    // Detailed exception logging
-                                                    Log.e("LeaveRequestsScreen", "Exception during API call: ${e.javaClass.simpleName}", e)
-                                                    Log.e("LeaveRequestsScreen", "Exception message: ${e.message}")
-                                                    Log.e("LeaveRequestsScreen", "Exception cause: ${e.cause?.message}")
-                                                    snackbarHostState.showSnackbar("Error: ${e.message}")
-                                                }
-                                            } catch (e: Exception) {
-                                                // Log the exception details
-                                                Log.e("LeaveRequestsScreen", "Exception cancelling request", e)
-                                                snackbarHostState.showSnackbar("Error cancelling request: ${e.message}")
-                                            } finally {
-                                                isCancelling = false
-                                                showCancelConfirmationDialog = false
-                                                selectedRequestToCancel = null
-                                            }
-                                        }
-                                    } else {
-                                        // Handle null or empty ID case
-                                        Log.e("LeaveRequestsScreen", "Cannot cancel - request ID is null or empty")
-                                        scope.launch {
-                                            snackbarHostState.showSnackbar("Cannot cancel request - missing request ID")
-                                        }
-                                        showCancelConfirmationDialog = false
-                                        selectedRequestToCancel = null
-                                    }
-                                },
-                                enabled = !isCancelling
-                            ) {
                 Text(
-                                    text = "Yes",
-                                    color = if (!isCancelling) AppColors.red else AppColors.gray400,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        },
-                        dismissButton = {
-                            TextButton(
-                                onClick = { 
-                                    if (!isCancelling) {
-                                        showCancelConfirmationDialog = false
-                                        selectedRequestToCancel = null
-                                    }
-                                },
-                                enabled = !isCancelling
-                            ) {
-                                Text(
-                                    text = "No",
-                                    color = if (!isCancelling) AppColors.gray600 else AppColors.gray400
-                                )
+                                    text = "Cancel",
+                    color = AppColors.gray600
+                )
                             }
                         },
                         containerColor = AppColors.white,
@@ -1077,11 +820,12 @@ fun LeaveRequestScreen(
 
 @Preview(showBackground = true)
 @Composable
-fun LeaveRequestScreenPreview() {
+fun ReimbursementRequestsScreenPreview() {
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = AppColors.gray50
     ) {
-        LeaveRequestScreen()
+        ReimbursementRequestsScreen()
     }
 }
+
