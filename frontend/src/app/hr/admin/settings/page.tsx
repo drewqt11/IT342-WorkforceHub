@@ -336,7 +336,6 @@ export default function SettingsPage() {
     // Normalize the role value to ensure consistent format
     const normalizedRole = roleValue.toUpperCase();
     const role = roles.find((r) => r.value === normalizedRole);
-    console.log("Getting label for role:", normalizedRole, "Found role:", role);
     return role ? role.label : normalizedRole; // Fallback to the role value if no label found
   };
 

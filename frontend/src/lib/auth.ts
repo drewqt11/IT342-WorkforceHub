@@ -271,6 +271,7 @@ export const authService = {
         }
         this.clearTokens();
         this.clearAllCookies();
+        localStorage.clear();
         window.location.href = '/';
     },
 

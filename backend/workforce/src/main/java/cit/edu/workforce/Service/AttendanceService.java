@@ -21,6 +21,7 @@ import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
@@ -28,13 +29,14 @@ import java.util.stream.Collectors;
 
 /**
  * AttendanceService - Service for managing attendance records
- * Updated file: Removed location validation to follow the ERD
+ * Updated file: Added time zone configuration for Asia/Manila
  */
 @Service
 public class AttendanceService {
 
     private final AttendanceRecordRepository attendanceRepository;
     private final EmployeeRepository employeeRepository;
+    private static final ZoneId ZONE_ID = ZoneId.of("Asia/Manila");
 
     @Autowired
     public AttendanceService(
@@ -54,7 +56,7 @@ public class AttendanceService {
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee not found"));
 
         // Check if employee has already clocked in today
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(ZONE_ID);
         Optional<AttendanceRecordEntity> existingRecord = attendanceRepository.findByEmployeeAndDate(employee, today);
         if (existingRecord.isPresent() && existingRecord.get().getClockInTime() != null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "You have already clocked in today");
@@ -68,7 +70,7 @@ public class AttendanceService {
         }
 
         // Set clock in time and status - Ensure military time format
-        LocalTime currentTime = LocalTime.now().truncatedTo(ChronoUnit.SECONDS);
+        LocalTime currentTime = LocalTime.now(ZONE_ID).truncatedTo(ChronoUnit.SECONDS);
         // Validate time format
         if (currentTime.getHour() < 0 || currentTime.getHour() > 23 || 
             currentTime.getMinute() < 0 || currentTime.getMinute() > 59 ||
@@ -105,7 +107,7 @@ public class AttendanceService {
     @Transactional
     public AttendanceRecordDTO clockOut(ClockInRequestDTO clockOutRequest) {
         EmployeeEntity employee = getCurrentEmployee();
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(ZONE_ID);
 
         // Find today's attendance record
         AttendanceRecordEntity record = attendanceRepository.findByEmployeeAndDate(employee, today)
@@ -120,7 +122,7 @@ public class AttendanceService {
         }
 
         // Update record with clock out time - Ensure military time format
-        LocalTime currentTime = LocalTime.now().truncatedTo(ChronoUnit.SECONDS);
+        LocalTime currentTime = LocalTime.now(ZONE_ID).truncatedTo(ChronoUnit.SECONDS);
         // Validate time format
         if (currentTime.getHour() < 0 || currentTime.getHour() > 23 || 
             currentTime.getMinute() < 0 || currentTime.getMinute() > 59 ||
@@ -181,7 +183,7 @@ public class AttendanceService {
     @Transactional(readOnly = true)
     public Optional<AttendanceRecordDTO> getTodayAttendance() {
         EmployeeEntity employee = getCurrentEmployee();
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(ZONE_ID);
         
         return attendanceRepository.findByEmployeeAndDate(employee, today)
                 .map(this::convertToDTO);
@@ -308,7 +310,7 @@ public class AttendanceService {
         }
 
         // Update clock out time - Ensure military time format
-        LocalTime currentTime = LocalTime.now().truncatedTo(ChronoUnit.SECONDS);
+        LocalTime currentTime = LocalTime.now(ZONE_ID).truncatedTo(ChronoUnit.SECONDS);
         // Validate time format
         if (currentTime.getHour() < 0 || currentTime.getHour() > 23 || 
             currentTime.getMinute() < 0 || currentTime.getMinute() > 59 ||

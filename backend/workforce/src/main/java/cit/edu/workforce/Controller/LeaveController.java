@@ -1,6 +1,5 @@
 package cit.edu.workforce.Controller;
 
-import cit.edu.workforce.DTO.LeaveBalanceDTO;
 import cit.edu.workforce.DTO.LeaveRequestDTO;
 import cit.edu.workforce.Service.LeaveService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -19,23 +18,21 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
 /**
- * LeaveController - Provides API endpoints for leave request and balance management
- * New file: Provides API endpoints for leave request and balance management
+ * LeaveController - Provides API endpoints for leave request management
+ * New file: Provides API endpoints for leave request management
  * This controller handles all leave-related operations including:
  * - Creating and managing leave requests
- * - Viewing and updating leave balances
  * - Approving or rejecting leave requests
  * - Searching leave records by various criteria
  */
 @RestController
 @RequestMapping("/api")
-@Tag(name = "Leave Management", description = "API for managing leave requests and balances")
+@Tag(name = "Leave Management", description = "API for managing leave requests")
 @SecurityRequirement(name = "bearerAuth")
 public class LeaveController {
 
@@ -95,16 +92,6 @@ public class LeaveController {
         return leaveService.getLeaveRequestById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
-    }
-
-    /**
-     * Get all leave balances for the current employee
-     */
-    @GetMapping("/employee/leave-balances")
-    @Operation(summary = "Get my leave balances", description = "Get all leave balances for the current employee")
-    @PreAuthorize("hasAnyRole('ROLE_EMPLOYEE', 'ROLE_HR', 'ROLE_ADMIN')")
-    public ResponseEntity<List<LeaveBalanceDTO>> getMyLeaveBalances() {
-        return ResponseEntity.ok(leaveService.getCurrentEmployeeLeaveBalances());
     }
 
     /**
@@ -198,58 +185,6 @@ public class LeaveController {
         
         String reason = requestBody != null ? requestBody.get("reason") : null;
         return ResponseEntity.ok(leaveService.reviewLeaveRequest(id, "REJECTED"));
-    }
-
-    /**
-     * Get all leave balances for a specific employee
-     * Admin/HR only endpoint
-     */
-    @GetMapping("/hr/leave-balances/employee/{employeeId}")
-    @Operation(summary = "Get employee leave balances", description = "Get all leave balances for a specific employee")
-    @PreAuthorize("hasAnyRole('ROLE_HR', 'ROLE_ADMIN')")
-    public ResponseEntity<List<LeaveBalanceDTO>> getEmployeeLeaveBalances(@PathVariable String employeeId) {
-        return ResponseEntity.ok(leaveService.getEmployeeLeaveBalances(employeeId));
-    }
-
-    /**
-     * Manually adjust leave balance for an employee
-     * Admin/HR only endpoint
-     */
-    @PatchMapping("/hr/leave-balances/{id}/adjust")
-    @Operation(summary = "Adjust leave balance", description = "Manually adjust the leave balance for an employee")
-    @PreAuthorize("hasAnyRole('ROLE_HR', 'ROLE_ADMIN')")
-    public ResponseEntity<LeaveBalanceDTO> adjustLeaveBalance(
-            @PathVariable String id,
-            @RequestParam BigDecimal adjustmentDays,
-            @RequestParam(required = false) String reason) {
-
-        LeaveBalanceDTO leaveBalanceDTO = new LeaveBalanceDTO();
-        leaveBalanceDTO.setLeaveType("ANNUAL");
-        leaveBalanceDTO.setAllocatedDays(adjustmentDays);
-        
-        return ResponseEntity.ok(leaveService.createOrUpdateLeaveBalance(id, leaveBalanceDTO));
-    }
-
-    /**
-     * Initialize leave balances for a new employee
-     * Admin/HR only endpoint
-     */
-    @PostMapping("/hr/leave-balances/employee/{employeeId}/initialize")
-    @Operation(summary = "Initialize leave balances", description = "Set up initial leave balances for a new employee")
-    @PreAuthorize("hasAnyRole('ROLE_HR', 'ROLE_ADMIN')")
-    public ResponseEntity<List<LeaveBalanceDTO>> initializeLeaveBalances(@PathVariable String employeeId) {
-        LeaveBalanceDTO annualLeave = new LeaveBalanceDTO();
-        annualLeave.setLeaveType("ANNUAL");
-        annualLeave.setAllocatedDays(new BigDecimal("20"));
-        
-        LeaveBalanceDTO sickLeave = new LeaveBalanceDTO();
-        sickLeave.setLeaveType("SICK");
-        sickLeave.setAllocatedDays(new BigDecimal("10"));
-        
-        LeaveBalanceDTO savedAnnual = leaveService.createOrUpdateLeaveBalance(employeeId, annualLeave);
-        LeaveBalanceDTO savedSick = leaveService.createOrUpdateLeaveBalance(employeeId, sickLeave);
-        
-        return ResponseEntity.ok(List.of(savedAnnual, savedSick));
     }
 
     /**

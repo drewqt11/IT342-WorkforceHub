@@ -1,13 +1,10 @@
 package cit.edu.workforce.Service;
 
-import cit.edu.workforce.DTO.LeaveBalanceDTO;
 import cit.edu.workforce.DTO.LeaveRequestDTO;
 import cit.edu.workforce.Entity.EmployeeEntity;
-import cit.edu.workforce.Entity.LeaveBalanceEntity;
 import cit.edu.workforce.Entity.LeaveRequestEntity;
 import cit.edu.workforce.Entity.UserAccountEntity;
 import cit.edu.workforce.Repository.EmployeeRepository;
-import cit.edu.workforce.Repository.LeaveBalanceRepository;
 import cit.edu.workforce.Repository.LeaveRequestRepository;
 import cit.edu.workforce.Repository.UserAccountRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,25 +26,22 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
- * LeaveService - Service for managing leave requests and balances
- * New file: Provides functionality for creating and managing leave requests and balances
+ * LeaveService - Service for managing leave requests
+ * New file: Provides functionality for creating and managing leave requests
  */
 @Service
 public class LeaveService {
 
     private final LeaveRequestRepository leaveRequestRepository;
-    private final LeaveBalanceRepository leaveBalanceRepository;
     private final EmployeeRepository employeeRepository;
     private final UserAccountRepository userAccountRepository;
 
     @Autowired
     public LeaveService(
             LeaveRequestRepository leaveRequestRepository,
-            LeaveBalanceRepository leaveBalanceRepository,
             EmployeeRepository employeeRepository,
             UserAccountRepository userAccountRepository) {
         this.leaveRequestRepository = leaveRequestRepository;
-        this.leaveBalanceRepository = leaveBalanceRepository;
         this.employeeRepository = employeeRepository;
         this.userAccountRepository = userAccountRepository;
     }
@@ -57,62 +51,60 @@ public class LeaveService {
      */
     @Transactional
     public LeaveRequestDTO createLeaveRequest(LeaveRequestDTO leaveRequestDTO) {
-        EmployeeEntity employee = getCurrentEmployee();
-        
-        // Validate leave type
-        String leaveType = leaveRequestDTO.getLeaveType();
-        if (leaveType == null || leaveType.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Leave type is required");
+        try {
+            EmployeeEntity employee = getCurrentEmployee();
+            
+            // Validate leave type
+            String leaveType = leaveRequestDTO.getLeaveType();
+            if (leaveType == null || leaveType.isEmpty()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Leave type is required");
+            }
+            
+            // Validate dates
+            LocalDate startDate = leaveRequestDTO.getStartDate();
+            LocalDate endDate = leaveRequestDTO.getEndDate();
+            if (startDate == null || endDate == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Start and end dates are required");
+            }
+            
+            if (startDate.isBefore(LocalDate.now())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot request leave for past dates");
+            }
+            
+            if (endDate.isBefore(startDate)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "End date must be after start date");
+            }
+            
+            // Check if employee has any overlapping leave requests
+            List<LeaveRequestEntity> overlappingRequests = leaveRequestRepository.findOverlappingLeaveRequests(
+                    employee, startDate, endDate);
+            if (!overlappingRequests.isEmpty()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "You already have a leave request for this period");
+            }
+            
+            // Calculate total days
+            BigDecimal totalDays = calculateTotalLeaveDays(startDate, endDate);
+            
+            // Create leave request
+            LeaveRequestEntity leaveRequest = new LeaveRequestEntity();
+            leaveRequest.setEmployee(employee);
+            leaveRequest.setLeaveType(leaveType);
+            leaveRequest.setStartDate(startDate);
+            leaveRequest.setEndDate(endDate);
+            leaveRequest.setTotalDays(totalDays);
+            leaveRequest.setReason(leaveRequestDTO.getReason());
+            leaveRequest.setStatus("PENDING");
+            leaveRequest.setCreatedAt(LocalDateTime.now());
+            leaveRequest.setUpdatedAt(LocalDateTime.now());
+            
+            LeaveRequestEntity savedRequest = leaveRequestRepository.save(leaveRequest);
+            return convertToDTO(savedRequest);
+        } catch (ResponseStatusException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, 
+                "Failed to create leave request: " + e.getMessage());
         }
-        
-        // Validate dates
-        LocalDate startDate = leaveRequestDTO.getStartDate();
-        LocalDate endDate = leaveRequestDTO.getEndDate();
-        if (startDate == null || endDate == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Start and end dates are required");
-        }
-        
-        if (startDate.isBefore(LocalDate.now())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot request leave for past dates");
-        }
-        
-        if (endDate.isBefore(startDate)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "End date must be after start date");
-        }
-        
-        // Check if employee has any overlapping leave requests
-        List<LeaveRequestEntity> overlappingRequests = leaveRequestRepository.findOverlappingLeaveRequests(
-                employee, startDate, endDate);
-        if (!overlappingRequests.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "You already have a leave request for this period");
-        }
-        
-        // Calculate total days
-        BigDecimal totalDays = calculateTotalLeaveDays(startDate, endDate);
-        
-        // Check leave balance
-        LeaveBalanceEntity leaveBalance = leaveBalanceRepository.findByEmployeeAndLeaveType(employee, leaveType)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, 
-                        "No leave balance found for leave type: " + leaveType));
-        
-        if (leaveBalance.getRemainingDays().compareTo(totalDays) < 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, 
-                    "Insufficient leave balance. Available: " + leaveBalance.getRemainingDays() + 
-                    ", Requested: " + totalDays);
-        }
-        
-        // Create leave request
-        LeaveRequestEntity leaveRequest = new LeaveRequestEntity();
-        leaveRequest.setEmployee(employee);
-        leaveRequest.setLeaveType(leaveType);
-        leaveRequest.setStartDate(startDate);
-        leaveRequest.setEndDate(endDate);
-        leaveRequest.setTotalDays(totalDays);
-        leaveRequest.setReason(leaveRequestDTO.getReason());
-        leaveRequest.setStatus("PENDING");
-        
-        LeaveRequestEntity savedRequest = leaveRequestRepository.save(leaveRequest);
-        return convertToDTO(savedRequest);
     }
 
     /**
@@ -247,11 +239,6 @@ public class LeaveService {
         leaveRequest.setReviewedBy(getCurrentUser());
         leaveRequest.setReviewedAt(LocalDateTime.now());
         
-        // Update leave balance if approved
-        if ("APPROVED".equals(status)) {
-            updateLeaveBalance(leaveRequest);
-        }
-        
         LeaveRequestEntity updatedRequest = leaveRequestRepository.save(leaveRequest);
         return convertToDTO(updatedRequest);
     }
@@ -275,112 +262,6 @@ public class LeaveService {
         
         return leaveRequestRepository.findByEmployee(employee, pageable)
                 .map(this::convertToDTO);
-    }
-
-    /**
-     * Get leave balances for the current employee
-     */
-    @Transactional(readOnly = true)
-    public List<LeaveBalanceDTO> getCurrentEmployeeLeaveBalances() {
-        EmployeeEntity employee = getCurrentEmployee();
-        
-        return leaveBalanceRepository.findByEmployee(employee).stream()
-                .map(this::convertToLeaveBalanceDTO)
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Get leave balance for the current employee and leave type
-     */
-    @Transactional(readOnly = true)
-    public Optional<LeaveBalanceDTO> getCurrentEmployeeLeaveBalance(String leaveType) {
-        EmployeeEntity employee = getCurrentEmployee();
-        
-        return leaveBalanceRepository.findByEmployeeAndLeaveType(employee, leaveType)
-                .map(this::convertToLeaveBalanceDTO);
-    }
-
-    /**
-     * Get leave balances for a specific employee (HR only)
-     */
-    @Transactional(readOnly = true)
-    public List<LeaveBalanceDTO> getEmployeeLeaveBalances(String employeeId) {
-        EmployeeEntity employee = employeeRepository.findById(employeeId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee not found"));
-        
-        return leaveBalanceRepository.findByEmployee(employee).stream()
-                .map(this::convertToLeaveBalanceDTO)
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Create or update a leave balance (HR only)
-     */
-    @Transactional
-    public LeaveBalanceDTO createOrUpdateLeaveBalance(String employeeId, LeaveBalanceDTO leaveBalanceDTO) {
-        EmployeeEntity employee = employeeRepository.findById(employeeId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee not found"));
-        
-        // Validate leave type
-        String leaveType = leaveBalanceDTO.getLeaveType();
-        if (leaveType == null || leaveType.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Leave type is required");
-        }
-        
-        // Check if leave balance already exists
-        LeaveBalanceEntity leaveBalance = leaveBalanceRepository
-                .findByEmployeeAndLeaveType(employee, leaveType)
-                .orElse(new LeaveBalanceEntity());
-        
-        // Set/update fields
-        if (leaveBalance.getBalanceId() == null) {
-            leaveBalance.setEmployee(employee);
-            leaveBalance.setLeaveType(leaveType);
-        }
-        
-        if (leaveBalanceDTO.getAllocatedDays() != null) {
-            // Calculate remaining days
-            BigDecimal usedDays = leaveBalance.getUsedDays() != null ? 
-                    leaveBalance.getUsedDays() : BigDecimal.ZERO;
-            BigDecimal remainingDays = leaveBalanceDTO.getAllocatedDays().subtract(usedDays);
-            
-            leaveBalance.setAllocatedDays(leaveBalanceDTO.getAllocatedDays());
-            leaveBalance.setRemainingDays(remainingDays);
-        }
-        
-        if (leaveBalanceDTO.getResetDate() != null) {
-            leaveBalance.setResetDate(leaveBalanceDTO.getResetDate());
-        } else if (leaveBalance.getResetDate() == null) {
-            // Set default reset date to one year from now
-            leaveBalance.setResetDate(LocalDate.now().plusYears(1));
-        }
-        
-        LeaveBalanceEntity savedBalance = leaveBalanceRepository.save(leaveBalance);
-        return convertToLeaveBalanceDTO(savedBalance);
-    }
-
-    /**
-     * Update leave balance when a leave request is approved
-     */
-    private void updateLeaveBalance(LeaveRequestEntity leaveRequest) {
-        LeaveBalanceEntity leaveBalance = leaveBalanceRepository
-                .findByEmployeeAndLeaveType(leaveRequest.getEmployee(), leaveRequest.getLeaveType())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, 
-                        "No leave balance found for leave type: " + leaveRequest.getLeaveType()));
-        
-        // Update used and remaining days
-        BigDecimal newUsedDays = leaveBalance.getUsedDays().add(leaveRequest.getTotalDays());
-        BigDecimal newRemainingDays = leaveBalance.getAllocatedDays().subtract(newUsedDays);
-        
-        if (newRemainingDays.compareTo(BigDecimal.ZERO) < 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, 
-                    "Insufficient leave balance. This request would result in a negative balance.");
-        }
-        
-        leaveBalance.setUsedDays(newUsedDays);
-        leaveBalance.setRemainingDays(newRemainingDays);
-        
-        leaveBalanceRepository.save(leaveBalance);
     }
 
     /**
@@ -426,27 +307,6 @@ public class LeaveService {
     }
 
     /**
-     * Convert LeaveBalanceEntity to LeaveBalanceDTO
-     */
-    private LeaveBalanceDTO convertToLeaveBalanceDTO(LeaveBalanceEntity entity) {
-        if (entity == null) {
-            return null;
-        }
-        
-        LeaveBalanceDTO dto = new LeaveBalanceDTO();
-        dto.setBalanceId(entity.getBalanceId());
-        dto.setEmployeeId(entity.getEmployee().getEmployeeId());
-        dto.setEmployeeName(entity.getEmployee().getFirstName() + " " + entity.getEmployee().getLastName());
-        dto.setLeaveType(entity.getLeaveType());
-        dto.setAllocatedDays(entity.getAllocatedDays());
-        dto.setUsedDays(entity.getUsedDays());
-        dto.setRemainingDays(entity.getRemainingDays());
-        dto.setResetDate(entity.getResetDate());
-        
-        return dto;
-    }
-
-    /**
      * Get the currently authenticated employee
      */
     private EmployeeEntity getCurrentEmployee() {
@@ -466,5 +326,20 @@ public class LeaveService {
         
         return userAccountRepository.findByEmailAddress(userEmail)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
+    }
+
+    /**
+     * Check if a leave request belongs to the current employee
+     * Used for authorization checks
+     */
+    public boolean isOwnLeaveRequest(String leaveId) {
+        try {
+            EmployeeEntity currentEmployee = getCurrentEmployee();
+            return leaveRequestRepository.findById(leaveId)
+                    .map(request -> request.getEmployee().getEmployeeId().equals(currentEmployee.getEmployeeId()))
+                    .orElse(false);
+        } catch (Exception e) {
+            return false;
+        }
     }
 } 

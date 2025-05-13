@@ -42,7 +42,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Toaster } from "sonner";
+import { Toaster, toast } from "sonner";
 import {
   Pagination,
   PaginationContent,
@@ -64,6 +64,8 @@ interface AttendanceRecord {
   status: string;
   remarks: string | null;
   overtimeHours: number | null;
+  tardinessMinutes: number | null;
+  undertimeMinutes: number | null;
   approvedByManager: boolean;
 }
 
@@ -250,6 +252,22 @@ export default function AttendanceRecordsPage() {
     }
   };
 
+  // Add this new helper function
+  const formatTimeFromMinutes = (minutes: number | null) => {
+    if (minutes === null || minutes === 0) return "-"
+    
+    const hours = Math.floor(minutes / 60)
+    const remainingMinutes = Math.floor(minutes % 60)
+    const seconds = Math.floor((minutes % 1) * 60)
+    
+    const parts = []
+    if (hours > 0) parts.push(`${hours}h`)
+    if (remainingMinutes > 0) parts.push(`${remainingMinutes}m`)
+    if (seconds > 0) parts.push(`${seconds}s`)
+    
+    return parts.join(" ") || "0m"
+  }
+
   // Calculate statistics
   const getPresentCount = () => {
     return records.filter(
@@ -277,6 +295,46 @@ export default function AttendanceRecordsPage() {
     const startIndex = 0;
     const endIndex = filteredRecords.length;
     return filteredRecords.slice(startIndex, endIndex);
+  };
+
+  const handleApprove = async (employeeId: string, attendanceId: string) => {
+    try {
+      const token = authService.getToken();
+      if (!token) {
+        router.push("/");
+        return;
+      }
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/hr/attendance/${attendanceId}/approve`,
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            employeeId: employeeId,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          router.push("/");
+          return;
+        }
+        if (response.status === 404) {
+          throw new Error("Attendance record not found");
+        }
+        throw new Error("Failed to approve attendance");
+      }
+
+      toast.success("Attendance approved successfully");
+      fetchRecords(); // Refresh the records after approval
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to approve attendance");
+    }
   };
 
   return (
@@ -572,6 +630,12 @@ export default function AttendanceRecordsPage() {
                         Overtime
                       </TableHead>
                       <TableHead className="text-[#4B5563] dark:text-[#D1D5DB] font-medium">
+                        Tardiness
+                      </TableHead>
+                      <TableHead className="text-[#4B5563] dark:text-[#D1D5DB] font-medium">
+                        Under Time
+                      </TableHead>
+                      <TableHead className="text-[#4B5563] dark:text-[#D1D5DB] font-medium">
                         Approved
                       </TableHead>
                     </TableRow>
@@ -595,8 +659,7 @@ export default function AttendanceRecordsPage() {
                                 {record.employeeName}
                               </div>
                               <div className="text-sm text-[#6B7280] dark:text-[#9CA3AF]">
-                                {employeeProfiles[record.employeeId]?.email ||
-                                  record.employeeEmail}
+                                {record.employeeEmail}
                               </div>
                             </div>
                           </div>
@@ -664,15 +727,38 @@ export default function AttendanceRecordsPage() {
                         <TableCell className="text-[#4B5563] dark:text-[#D1D5DB]">
                           {record.overtimeHours?.toFixed(2) || "-"}
                         </TableCell>
+                        <TableCell className="text-[#4B5563] dark:text-[#D1D5DB] font-medium">
+                          {record.tardinessMinutes ? (
+                            <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
+                              {formatTimeFromMinutes(record.tardinessMinutes)}
+                            </Badge>
+                          ) : (
+                            "-"
+                          )}
+                        </TableCell>
+                        <TableCell className="text-[#4B5563] dark:text-[#D1D5DB] font-medium">
+                          {record.undertimeMinutes ? (
+                            <Badge className="bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-400">
+                              {formatTimeFromMinutes(record.undertimeMinutes)}
+                            </Badge>
+                          ) : (
+                            "-"
+                          )}
+                        </TableCell>
                         <TableCell>
                           {record.approvedByManager ? (
                             <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 font-normal">
                               Yes
                             </Badge>
                           ) : (
-                            <Badge className="bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400 font-normal">
-                              No
-                            </Badge>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleApprove(record.employeeId, record.attendanceId)}
+                              className="h-8 w-8 hover:bg-green-100 dark:hover:bg-green-900/30"
+                            >
+                              <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                            </Button>
                           )}
                         </TableCell>
                       </TableRow>

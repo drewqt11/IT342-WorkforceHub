@@ -10,11 +10,12 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 
 /**
  * AttendanceRecordEntity - Represents an employee's attendance record for a specific date
- * Updated file: Removed location fields to follow the ERD
+ * Updated file: Added time zone configuration for Asia/Manila
  */
 @Entity
 @Table(name = "attendance_record")
@@ -22,6 +23,8 @@ import java.time.temporal.ChronoUnit;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AttendanceRecordEntity {
+
+    private static final ZoneId ZONE_ID = ZoneId.of("Asia/Manila");
 
     @Id
     @GeneratedValue(generator = "custom-attendance-id")
@@ -77,7 +80,7 @@ public class AttendanceRecordEntity {
 
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
+        createdAt = LocalDateTime.now(ZONE_ID);
         if (clockInTime != null) {
             clockInTime = clockInTime.truncatedTo(ChronoUnit.SECONDS);
         }
@@ -88,7 +91,7 @@ public class AttendanceRecordEntity {
     
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now(ZONE_ID);
         if (clockInTime != null) {
             clockInTime = clockInTime.truncatedTo(ChronoUnit.SECONDS);
         }

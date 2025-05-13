@@ -1,5 +1,6 @@
 package cit.edu.workforce.Entity;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -31,9 +32,11 @@ public class DepartmentEntity {
 
     // New mapping: Department has many JobTitles
     @OneToMany(mappedBy = "department", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference("department-jobtitles")
     private List<JobTitleEntity> jobTitles = new ArrayList<>();
     
     // New relationship added: Department has many job listings
     @OneToMany(mappedBy = "department", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference("department-jobs")
     private List<JobListingEntity> jobListings = new ArrayList<>();
 }

@@ -24,11 +24,12 @@ import org.springframework.web.server.ResponseStatusException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.List;
 
 /**
  * AttendanceController - Provides API endpoints for attendance management
- * New file: Provides API endpoints for attendance clock-in/out and management
+ * Updated file: Added time zone configuration for Asia/Manila
  * This controller handles all attendance-related operations including:
  * - Clock-in and clock-out for employees
  * - Retrieving attendance records
@@ -41,6 +42,7 @@ import java.util.List;
 public class AttendanceController {
 
     private final AttendanceService attendanceService;
+    private static final ZoneId ZONE_ID = ZoneId.of("Asia/Manila");
 
     @Autowired
     public AttendanceController(AttendanceService attendanceService) {

@@ -178,6 +178,33 @@ export function ClockInOut() {
     return false;
   });
 
+  // Add useEffect to fetch employee profile
+  useEffect(() => {
+    const fetchEmployeeProfile = async () => {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/employee/profile`, {
+          headers: {
+            'Authorization': `Bearer ${authService.getToken()}`,
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch employee profile');
+        }
+
+        const data = await response.json();
+        setEmployeeProfile(data);
+      } catch (error) {
+        toast.error("Failed to fetch employee profile", {
+          description: "Please refresh the page or contact support if the issue persists.",
+          duration: 5000,
+        });
+      }
+    };
+
+    fetchEmployeeProfile();
+  }, []);
+
   // Format milliseconds to MM:SS
   const formatElapsedTime = (ms: number): string => {
     const minutes = Math.floor(ms / 60000)
@@ -217,62 +244,38 @@ export function ClockInOut() {
     return date.toLocaleTimeString('en-US', {
       hour: 'numeric',
       minute: '2-digit',
-      hour12: true
+      hour12: true,
+      timeZone: 'Asia/Manila'
     });
   }
 
-  // Add these helper functions after the imports
-  const getPSTDate = (): Date => {
-    return new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
-  };
-
-  const formatDateToPST = (date: Date): string => {
-    return date.toLocaleString('en-US', {
-      timeZone: 'America/Los_Angeles',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    }).split(',')[0].replace(/(\d+)\/(\d+)\/(\d+)/, '$3-$1-$2');
-  };
-
-  const formatTimeToPST = (date: Date): string => {
-    return date.toLocaleString('en-US', {
-      timeZone: 'America/Los_Angeles',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false,
-    });
-  };
-
-  // Update the useEffect for current time
   useEffect(() => {
     const updateTime = () => {
-      const now = getPSTDate();
+      const now = new Date();
       setCurrentTime(
         now.toLocaleTimeString([], {
           hour: "2-digit",
           minute: "2-digit",
           second: "2-digit",
-          timeZone: 'America/Los_Angeles'
+          timeZone: 'Asia/Manila'
         }),
-      );
+      )
       setCurrentDate(
         now.toLocaleDateString([], {
           weekday: "long",
           month: "long",
           day: "numeric",
-          timeZone: 'America/Los_Angeles'
+          timeZone: 'Asia/Manila'
         }),
-      );
-      setSeconds(now.getSeconds());
-    };
+      )
+      setSeconds(now.getSeconds())
+    }
 
-    updateTime();
-    const timer = setInterval(updateTime, 1000);
+    updateTime()
+    const timer = setInterval(updateTime, 1000)
 
-    return () => clearInterval(timer);
-  }, []);
+    return () => clearInterval(timer)
+  }, [])
 
   // Break timer effect
   useEffect(() => {
@@ -332,6 +335,11 @@ export function ClockInOut() {
       setAfternoonBreakTime(0);
       resetBreakStates();
       localStorage.removeItem('clockStatus');
+      localStorage.removeItem('overtimeStatus');
+      localStorage.removeItem('overtimeUsed');
+      localStorage.removeItem('overtimeStartTime');
+      localStorage.removeItem('overtimeElapsedTime');
+      localStorage.removeItem('attendanceRecord');
     };
 
     const fetchTodayAttendance = async () => {
@@ -363,6 +371,9 @@ export function ClockInOut() {
         if (!response.ok) {
           if (response.status === 404) {
             resetAllStates();
+            localStorage.setItem('attendanceRecord', JSON.stringify(null));
+            localStorage.setItem('clockStatus', 'out');
+            localStorage.setItem('overtimeStatus', 'inactive');
             return;
           }
           throw new Error('Failed to fetch attendance');
@@ -401,22 +412,24 @@ export function ClockInOut() {
           }
         } else {
           resetAllStates();
+          localStorage.setItem('attendanceRecord', JSON.stringify(null));
         }
       } catch (error) {
-        console.error('Error fetching attendance:', error);
         resetAllStates();
+        localStorage.setItem('attendanceRecord', JSON.stringify(null));
       }
     };
 
     fetchTodayAttendance();
   }, []);
 
-  // Reset clock-in status at midnight
+  // Reset clock-in status at midnight Manila time
   useEffect(() => {
     const checkNewDay = () => {
       const now = new Date();
-      if (now.getHours() === 0 && now.getMinutes() === 0 && now.getSeconds() === 0) {
-        // Reset all states at midnight
+      const manilaTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Manila' }));
+      if (manilaTime.getHours() === 0 && manilaTime.getMinutes() === 0 && manilaTime.getSeconds() === 0) {
+        // Reset all states at midnight Manila time
         setStatus('out');
         setTodayClockIn(false);
         setWorkStartTime(null);
@@ -436,6 +449,10 @@ export function ClockInOut() {
         localStorage.removeItem('morningBreakUsed');
         localStorage.removeItem('afternoonBreakUsed');
         localStorage.removeItem('attendanceRecord');
+        localStorage.removeItem('overtimeStatus');
+        localStorage.removeItem('overtimeUsed');
+        localStorage.removeItem('overtimeStartTime');
+        localStorage.removeItem('overtimeElapsedTime');
       }
     };
 
@@ -445,19 +462,26 @@ export function ClockInOut() {
 
   // Work time tracking effect
   useEffect(() => {
-    if (status === "in" && breakStatus === "inactive") {
+    if (status === "in") {
       workTimerRef.current = setInterval(() => {
-        if (attendanceInfo?.clockInTime) {
-          const workTime = calculateWorkTime(
-            attendanceInfo.clockInTime,
-            attendanceInfo.date,
-            totalBreakTime
-          );
-          setElapsedWorkTime(formatWorkTime(workTime));
-        } else if (workStartTime) {
-          // Fallback to local timer if no attendance info
-          const elapsed = Date.now() - workStartTime + totalWorkTime;
-          setElapsedWorkTime(formatWorkTime(elapsed));
+        // Get clock-in time from localStorage
+        const storedAttendance = localStorage.getItem('attendanceRecord');
+        if (storedAttendance) {
+          const parsedAttendance = JSON.parse(storedAttendance);
+          if (parsedAttendance.clockInTime && parsedAttendance.date) {
+            // Create a Date object for clock-in time in Manila timezone
+            const clockInDate = new Date(parsedAttendance.date + 'T' + parsedAttendance.clockInTime);
+            const now = new Date();
+            
+            // Calculate elapsed time in milliseconds
+            const elapsedMs = now.getTime() - clockInDate.getTime();
+            
+            // Store the elapsed time in localStorage
+            localStorage.setItem('elapsedWorkTime', elapsedMs.toString());
+            
+            // Update the displayed elapsed time
+            setElapsedWorkTime(formatWorkTime(elapsedMs));
+          }
         }
       }, 1000);
     } else if (workTimerRef.current) {
@@ -469,40 +493,20 @@ export function ClockInOut() {
         clearInterval(workTimerRef.current);
       }
     };
-  }, [status, breakStatus, workStartTime, totalWorkTime, attendanceInfo, totalBreakTime]);
+  }, [status]);
 
-  // Clear error after 5 seconds
+  // Add effect to restore elapsed time on mount
   useEffect(() => {
-    if (error) {
-      const timer = setTimeout(() => {
-        setError(null)
-      }, 5000)
-      return () => clearTimeout(timer)
-    }
-  }, [error])
-
-  useEffect(() => {
-    const fetchEmployeeProfile = async () => {
-      try {
-        const profile = await authService.getEmployeeProfile();
-        setEmployeeProfile(profile);
-      } catch (error) {
-        
+    if (status === "in") {
+      const storedElapsedTime = localStorage.getItem('elapsedWorkTime');
+      if (storedElapsedTime) {
+        const elapsedMs = parseInt(storedElapsedTime);
+        setElapsedWorkTime(formatWorkTime(elapsedMs));
       }
-    };
+    }
+  }, [status]);
 
-    fetchEmployeeProfile();
-  }, []);
-
-  // Update the calculateWorkTime function
-  const calculateWorkTime = (clockInTime: string, date: string, totalBreakTime: number): number => {
-    const clockInDate = new Date(`${date}T${clockInTime}`);
-    const now = getPSTDate();
-    const elapsedMs = now.getTime() - clockInDate.getTime();
-    return Math.max(0, elapsedMs - totalBreakTime);
-  };
-
-  // Update the handleClockIn function
+  // Update handleClockIn to reset elapsed time
   const handleClockIn = async () => {
     if (todayClockIn) {
       toast.error("You have already clocked in today", {
@@ -520,11 +524,43 @@ export function ClockInOut() {
       return;
     }
 
-    try {
-      const currentPSTDate = getPSTDate();
-      const currentDate = formatDateToPST(currentPSTDate);
-      const currentTime = formatTimeToPST(currentPSTDate);
+    // Check if work schedule exists
+    if (!employeeProfile.workTimeInSched) {
+      toast.error("Can't clock in", {
+        description: "No Schedule found. Please contact your HR Admin",
+        duration: 5000,
+      });
+      return;
+    }
 
+    // Check if current time is before work schedule start time
+    const currentTime = new Date();
+    const [workInHours, workInMinutes] = employeeProfile.workTimeInSched.split(':').map(Number);
+    const workInTime = new Date();
+    workInTime.setHours(workInHours, workInMinutes, 0);
+
+    if (currentTime < workInTime) {
+      toast.error("Cannot clock in", {
+        description: `Your work schedule starts at ${formatTimeToStandard(employeeProfile.workTimeInSched)}. Please wait until your scheduled start time.`,
+        duration: 5000,
+      });
+      return;
+    }
+
+    // Check if current time is beyond work schedule end time
+    const [workOutHours, workOutMinutes] = employeeProfile.workTimeOutSched.split(':').map(Number);
+    const workOutTime = new Date();
+    workOutTime.setHours(workOutHours, workOutMinutes, 0);
+
+    if (currentTime > workOutTime) {
+      toast.error("Cannot clock in", {
+        description: `Your work schedule has ended for today (${formatTimeToStandard(employeeProfile.workTimeOutSched)}). Please contact your manager if you need to work overtime.`,
+        duration: 5000,
+      });
+      return;
+    }
+
+    try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/employee/attendance/clock-in`, {
         method: 'POST',
         headers: {
@@ -533,9 +569,7 @@ export function ClockInOut() {
         },
         body: JSON.stringify({
           employeeId: employeeProfile.employeeId,
-          remarks: null,
-          clockInTime: currentTime,
-          date: currentDate
+          remarks: null
         })
       });
 
@@ -567,12 +601,8 @@ export function ClockInOut() {
       
       setStatus("in");
       setTodayClockIn(true);
-      const nowMs = currentPSTDate.getTime();
-      setWorkStartTime(nowMs);
-      setTotalWorkTime(0);
       setElapsedWorkTime("00:00:00");
-      setTotalBreakTime(0);
-      setTotalBreakDisplay("00:00");
+      localStorage.removeItem('elapsedWorkTime');
       localStorage.setItem('clockStatus', 'in');
       
       toast.success("Successfully clocked in", {
@@ -588,7 +618,7 @@ export function ClockInOut() {
     }
   };
 
-  // Update the handleClockOut function
+  // Update handleClockOut to clear elapsed time
   const handleClockOut = async () => {
     if (status !== "in") {
       toast.error("Cannot clock out", {
@@ -607,10 +637,6 @@ export function ClockInOut() {
     }
 
     try {
-      const now = getPSTDate();
-      const currentDate = formatDateToPST(now);
-      const currentTime = formatTimeToPST(now);
-
       const todayResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/employee/attendance/today`, {
         headers: {
           'Authorization': `Bearer ${authService.getToken()}`,
@@ -636,9 +662,7 @@ export function ClockInOut() {
         },
         body: JSON.stringify({
           employeeId: employeeProfile?.employeeId,
-          remarks: null,
-          clockOutTime: currentTime,
-          date: currentDate
+          remarks: null
         })
       });
 
@@ -666,30 +690,20 @@ export function ClockInOut() {
       localStorage.setItem('attendanceRecord', JSON.stringify(displayData));
       localStorage.setItem('clockStatus', 'out');
 
+
       // Reset all states and clear localStorage
       setStatus("out");
       setTodayClockIn(false);
       setWorkStartTime(null);
       setTotalWorkTime(0);
       setElapsedWorkTime("00:00:00");
-      setTotalBreakTime(0);
-      setTotalBreakDisplay("00:00");
-      setMorningBreakTime(0);
-      setLunchBreakTime(0);
-      setAfternoonBreakTime(0);
-      setLunchBreakUsed(false);
-      setMorningBreakUsed(false);
-      setAfternoonBreakUsed(false);
-      
-      // Clear all localStorage items except attendance record
-      localStorage.removeItem('lunchBreakUsed');
-      localStorage.removeItem('morningBreakUsed');
-      localStorage.removeItem('afternoonBreakUsed');
+      localStorage.removeItem('elapsedWorkTime');
+      localStorage.setItem('clockStatus', 'out');
 
       if (data.clockInTime && data.clockOutTime) {
-        const clockInDate = new Date(`${data.date}T${data.clockInTime}`);
-        const clockOutDate = new Date(`${data.date}T${data.clockOutTime}`);
-        const finalWorkTime = Math.max(0, clockOutDate.getTime() - clockInDate.getTime() - totalBreakTime);
+        const clockInDate = new Date(data.date + 'T' + data.clockInTime);
+        const clockOutDate = new Date(data.date + 'T' + data.clockOutTime);
+        const finalWorkTime = clockOutDate.getTime() - clockInDate.getTime();
         setElapsedWorkTime(formatWorkTime(finalWorkTime));
       }
 
@@ -989,12 +1003,13 @@ export function ClockInOut() {
     }
   }, [overtimeStatus, overtimeStartTime]);
 
-  // Reset overtime state at midnight
+  // Reset overtime state at midnight Manila time
   useEffect(() => {
     const checkNewDay = () => {
       const now = new Date();
-      if (now.getHours() === 0 && now.getMinutes() === 0 && now.getSeconds() === 0) {
-        // Reset overtime states at midnight
+      const manilaTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Manila' }));
+      if (manilaTime.getHours() === 0 && manilaTime.getMinutes() === 0 && manilaTime.getSeconds() === 0) {
+        // Reset overtime states at midnight Manila time
         setOvertimeStatus("inactive");
         setOvertimeStartTime(null);
         setOvertimeElapsedTime("00:00:00");
@@ -1420,7 +1435,7 @@ export function ClockInOut() {
                     <div className="flex flex-col items-center p-3 bg-white dark:bg-[#1F2937]/50 rounded-lg border border-[#E5E7EB] dark:border-[#E5E7EB]/20">
                       <span className="text-xs text-[#6B7280] dark:text-[#6B7280] mb-1">Total Hours</span>
                       <span className="text-sm font-medium text-[#1F2937] dark:text-[#F9FAFB]">
-                        {attendanceInfo.totalHours || '0'} hour(s)
+                        {attendanceInfo.totalHours && attendanceInfo.totalHours > 0 ? attendanceInfo.totalHours : '0'} hour(s)
                       </span>
                     </div>
 
@@ -1466,7 +1481,7 @@ export function ClockInOut() {
 
             {/* Overtime Section - Only show when clocked out */}
             {status === "out" && attendanceInfo?.clockInTime && (
-              <div className="w-full bg-gradient-to-r from-[#F59E0B]/10 to-[#F9FAFB] dark:from-[#F59E0B]/20 dark:to-[#1F2937] rounded-xl p-4 shadow-sm border border-[#E5E7EB] dark:border-[#E5E7EB]/20">
+              <div className="w-full bg-gradient-to-r from-[#F59E0B]/10 to-[#F9FAFB] dark:from-[#F59E0B]/20 dark:to-[#1F2937] rounded-xl p-4 shadow-sm border border-[#E5E7EB] dark:border-[#E5E7EB]/20 mb-8">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <div

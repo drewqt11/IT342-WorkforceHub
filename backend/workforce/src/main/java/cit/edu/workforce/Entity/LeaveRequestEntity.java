@@ -9,6 +9,7 @@ import org.hibernate.annotations.GenericGenerator;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 /**
  * LeaveRequestEntity - Represents an employee's request for leave
@@ -21,6 +22,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class LeaveRequestEntity {
+
+    private static final ZoneId ZONE_ID = ZoneId.of("Asia/Manila");
 
     @Id
     @GeneratedValue(generator = "custom-leave-id")
@@ -67,11 +70,11 @@ public class LeaveRequestEntity {
 
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
+        createdAt = LocalDateTime.now(ZONE_ID);
     }
     
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now(ZONE_ID);
     }
 } 

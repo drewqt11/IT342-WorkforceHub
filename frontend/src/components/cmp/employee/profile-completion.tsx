@@ -62,13 +62,6 @@ export function ProfileCompletion() {
       }
     }
     
-    // Debug logging
-    console.log(`Checking status for ${field}:`, {
-      profileValue: profile[field],
-      draftValue: draftData?.formData?.[field],
-      hasDraft: !!draftData
-    })
-    
     // Only check these specific fields
     const fieldsToCheck = [
       'firstName',
@@ -157,11 +150,6 @@ export function ProfileCompletion() {
     }, 0)
     
     const percentage = Math.round((completedWeight / totalWeight) * 100)
-    console.log('Completion percentage calculation:', {
-      completedWeight,
-      totalWeight,
-      percentage
-    })
     
     return percentage
   }
@@ -194,14 +182,6 @@ export function ProfileCompletion() {
           const value = profile[field]
           return value !== null && value !== undefined && value !== "" && value !== false
         })
-
-      console.log('Profile Completion Update:', {
-        completionPercentage,
-        completedFields,
-        totalFields: fieldsToCheck.length,
-        lastSaved: lastSaved?.toISOString(),
-        missingFields: missingFields.map(f => ({ field: f.label, section: f.section })),
-      })
     }
   }, [profile, completionPercentage, lastSaved, missingFields])
 

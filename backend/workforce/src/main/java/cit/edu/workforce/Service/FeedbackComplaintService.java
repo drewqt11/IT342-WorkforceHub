@@ -192,6 +192,15 @@ public class FeedbackComplaintService {
     }
 
     /**
+     * Get all feedback/complaints (HR/Admin only)
+     */
+    @Transactional(readOnly = true)
+    public Page<FeedbackComplaintDTO> getAllFeedbackComplaints(Pageable pageable) {
+        return feedbackComplaintRepository.findAll(pageable)
+                .map(this::convertToDTO);
+    }
+
+    /**
      * Check if the current user is authorized to access this feedback/complaint
      */
     public boolean isAuthorizedForFeedbackComplaint(FeedbackComplaintEntity feedbackComplaint) {

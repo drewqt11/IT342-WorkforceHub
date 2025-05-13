@@ -9,6 +9,7 @@ import org.hibernate.annotations.GenericGenerator;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 /**
  * LeaveBalanceEntity - Represents an employee's leave balance
@@ -22,19 +23,20 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class LeaveBalanceEntity {
 
+    private static final ZoneId ZONE_ID = ZoneId.of("Asia/Manila");
+
     @Id
     @GeneratedValue(generator = "custom-balance-id")
     @GenericGenerator(name = "custom-balance-id", strategy = "cit.edu.workforce.Utils.LeaveBalanceIdGenerator")
     @Column(name = "balance_id", updatable = false, nullable = false, length = 16)
     private String balanceId;
 
-    // New relationship added: Leave balance belongs to an Employee
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "emp_id", nullable = false)
     private EmployeeEntity employee;
 
     @Column(name = "leave_type", nullable = false)
-    private String leaveType; // Sick, Vacation
+    private String leaveType;
 
     @Column(name = "allocated_days", precision = 5, scale = 2, nullable = false)
     private BigDecimal allocatedDays;
@@ -56,8 +58,7 @@ public class LeaveBalanceEntity {
 
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        // Initialize remaining days to allocated days
+        createdAt = LocalDateTime.now(ZONE_ID);
         if (remainingDays == null) {
             remainingDays = allocatedDays;
         }
@@ -65,6 +66,6 @@ public class LeaveBalanceEntity {
     
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now(ZONE_ID);
     }
 } 

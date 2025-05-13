@@ -11,16 +11,17 @@ import {
   Calendar,
   Settings,
   Building2,
-  Heart,
-  GraduationCap,
   ChevronDown,
   ChevronRight,
   Users,
-  Briefcase,
-  BarChart,
-  LogOut,
-  X,
   Clock8,
+  BarChart,
+  Heart,
+  Coins,
+  Clock,
+  GraduationCap,
+  AlertCircle,
+  Briefcase,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
@@ -79,6 +80,10 @@ export function AppSidebar({ isMobile, onClose }: AppSidebarProps) {
           href: "/hr/admin/employees/all",
         },
         {
+          title: "Work Schedules",
+          href: "/hr/admin/employees/set-schedule",
+        },
+        {
           title: "Pending Activation",
           href: "/hr/admin/employees/activate",
         },
@@ -111,29 +116,6 @@ export function AppSidebar({ isMobile, onClose }: AppSidebarProps) {
           title: "Leave Requests",
           href: "/hr/admin/attendance/leave-requests",
         },
-        {
-          title: "Attendance Reports",
-          href: "/hr/admin/attendance/reports",
-        },
-      ],
-    },
-    /*{
-      title: "Recruitment",
-      href: "/hr/admin/recruitment",
-      icon: Briefcase,
-      subItems: [
-        {
-          title: "Job Postings",
-          href: "/hr/admin/recruitment/jobs",
-        },
-        {
-          title: "Applications",
-          href: "/hr/admin/recruitment/applications",
-        },
-        {
-          title: "Interviews",
-          href: "/hr/admin/recruitment/interviews",
-        },
       ],
     },
     {
@@ -153,39 +135,73 @@ export function AppSidebar({ isMobile, onClose }: AppSidebarProps) {
           title: "Other Benefits",
           href: "/hr/admin/benefits/other",
         },
+        {
+          title: "Benefit Enrollment",
+          href: "/hr/admin/benefits/enrollment",
+        },
       ],
     },
+
     {
-      title: "Career",
-      href: "#career-divider",
+      title: "Reimbursement Requests",
+      href: "/hr/admin/reimbursements",
+      icon: Coins,
+    },
+    {
+      title: "Careers",
+      href: "#careers-divider",
       icon: LayoutDashboard,
       isDivider: true,
     },
     {
-      title: "Training",
-      href: "/hr/admin/training",
+      title: "Recruiment",
+      href: "/hr/admin/recruitment",
+      icon: Briefcase,
+      subItems: [
+        {
+          title: "Job Postings",
+          href: "/hr/admin/recruitment/jobs",
+        },
+      ],
+    },
+    {
+      title: "Training & Development",
+      href: "#training-divider",
+      icon: LayoutDashboard,
+      isDivider: true,
+    },
+    {
+      title: "Employee Trainings",
+      href: "/hr/admin/employees/trainings",
       icon: GraduationCap,
     },
+    {
+      title: "Company Events",
+      href: "/hr/admin/employees/company-events",
+      icon: Calendar,
+    },
+    {
+      title: "Feedbacks & Sanctions",
+      href: "#resolve-complaints-divider",
+      icon: LayoutDashboard,
+      isDivider: true,
+    },
+    {
+      title: "Resolve Complaints/Feedbacks",
+      href: "/hr/admin/employees/resolutions",
+      icon: AlertCircle,
+    },
+    
+    /*
+    
+    
     {
       title: "Documents",
       href: "/hr/admin/documents",
       icon: FileText,
     },
-    {
-      title: "Schedule",
-      href: "/hr/admin/schedule",
-      icon: Calendar,
-    },
-    {
-      title: "Reports",
-      href: "/hr/admin/reports",
-      icon: BarChart,
-    },
-    /*{
-      title: "Settings",
-      href: "/hr/admin/settings",
-      icon: Settings,
-    },*/
+    
+   */
   ]
 
   const settingsItem: MenuItem = {

@@ -59,8 +59,13 @@ public class TrainingEnrollmentService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Training program not found"));
         
         // Check if already enrolled
-        if (trainingEnrollmentRepository.findByEmployeeAndTrainingProgram(employee, trainingProgram).isPresent()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Employee is already enrolled in this training program");
+        Optional<TrainingEnrollmentEntity> existing = trainingEnrollmentRepository.findByEmployeeAndTrainingProgram(employee, trainingProgram);
+        if (existing.isPresent()) {
+            String status = existing.get().getStatus();
+            if (!"Cancelled".equalsIgnoreCase(status)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Employee is already enrolled in this training program");
+            }
+            // If status is Cancelled, allow re-enrollment
         }
         
         // Create and save enrollment entity
@@ -92,8 +97,13 @@ public class TrainingEnrollmentService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found"));
         
         // Check if already enrolled
-        if (trainingEnrollmentRepository.findByEmployeeAndEvent(employee, event).isPresent()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Employee is already enrolled in this event");
+        Optional<TrainingEnrollmentEntity> existing = trainingEnrollmentRepository.findByEmployeeAndEvent(employee, event);
+        if (existing.isPresent()) {
+            String status = existing.get().getStatus();
+            if (!"Cancelled".equalsIgnoreCase(status)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Employee is already enrolled in this event");
+            }
+            // If status is Cancelled, allow re-enrollment
         }
         
         // Create and save enrollment entity

@@ -7,10 +7,11 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZoneId;
 
 /**
  * AttendanceRecordDTO - Data Transfer Object for AttendanceRecord entity
- * Updated file: Removed location fields to follow the ERD
+ * Updated file: Added time zone configuration for Asia/Manila
  */
 @Data
 @NoArgsConstructor
@@ -31,4 +32,15 @@ public class AttendanceRecordDTO {
     private Integer undertimeMinutes;
     private String reasonForAbsence;
     private boolean approvedByManager;
+    private static final ZoneId ZONE_ID = ZoneId.of("Asia/Manila");
+
+    // Helper method to get time in Asia/Manila timezone
+    public LocalTime getClockInTimeInManila() {
+        return clockInTime != null ? clockInTime : null;
+    }
+
+    // Helper method to get time in Asia/Manila timezone
+    public LocalTime getClockOutTimeInManila() {
+        return clockOutTime != null ? clockOutTime : null;
+    }
 } 

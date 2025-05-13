@@ -9,7 +9,7 @@ import org.hibernate.annotations.GenericGenerator;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "document")
+@Table(name = "documents")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -24,11 +24,14 @@ public class DocumentEntity {
     @Column(name = "document_type", nullable = false)
     private String documentType;
 
-    @Column(name = "file_path", nullable = false)
-    private String filePath;
-
     @Column(name = "file_name")
     private String fileName;
+
+    @Column(name = "file_content", columnDefinition = "bytea")
+    private byte[] fileContent;
+
+    @Column(name = "file_type")
+    private String fileType;
 
     @Column(name = "status", nullable = false)
     private String status;

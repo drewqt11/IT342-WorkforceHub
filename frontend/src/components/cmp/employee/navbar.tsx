@@ -46,7 +46,7 @@ export function Navbar({ onMobileMenuToggle }: NavbarProps) {
     status: "",
   });
   const [isLoading, setIsLoading] = useState(true);
-  const { userStatus } = useUser();
+  const { user } = useUser();
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -228,26 +228,6 @@ export function Navbar({ onMobileMenuToggle }: NavbarProps) {
         >
           {isDarkMode ? <Sun className="h-4 w-4 md:h-5 md:w-5" /> : <Moon className="h-4 w-4 md:h-5 md:w-5" />}
         </Button>
-
-        <div className="relative flex-shrink-0">
-          <Button
-            variant="ghost"
-            size="icon"
-            className={cn(
-              "relative rounded-full h-9 w-9 md:h-10 md:w-10 flex-shrink-0 transition-all duration-300",
-              isDarkMode
-                ? "bg-blue-900 hover:bg-blue-800 active:bg-blue-700 text-blue-300"
-                : "bg-white hover:bg-blue-100 hover:text-blue-600 active:bg-blue-200 text-blue-500",
-            )}
-          >
-            <Bell className="h-4 w-4 md:h-5 md:w-5" />
-            {notifications > 0 && (
-              <span className="absolute -right-1 -top-1 flex h-4 w-4 md:h-5 md:w-5 items-center justify-center rounded-full bg-red-500 text-xs text-white shadow-lg">
-                {notifications}
-              </span>
-            )}
-          </Button>
-        </div>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

@@ -45,9 +45,9 @@ interface MenuItem {
 
 export function AppSidebar() {
   const pathname = usePathname()
-  const { userStatus } = useUser()
-  const isInactive = userStatus === "Inactive"
-  const isActive = userStatus === "Active"
+  const { user } = useUser()
+  const isInactive = user?.status === false
+  const isActive = user?.status === true
   const [openSubMenu, setOpenSubMenu] = useState<string | null>(null)
 
   const toggleSubMenu = (title: string) => {
@@ -79,20 +79,27 @@ export function AppSidebar() {
             icon: Heart,
             subItems: [
               {
-                title: "Philhealth",
-                href: "/employee/benefits/philhealth",
+                title: "Health Insurance",
+                href: "/employee/benefits/health",
               },
               {
-                title: "Social Security",
-                href: "/employee/benefits/social-security",
-              },
-              {
-                title: "Pag-ibig",
-                href: "/employee/benefits/pag-ibig",
+                title: "Retirement",
+                href: "/employee/benefits/retirement",
               },
               {
                 title: "Other Benefits",
                 href: "/employee/benefits/other",
+              },
+            ],
+          },
+          {
+            title: "My Applications",
+            href: "/employee/applications",
+            icon: PenLine,
+            subItems: [
+              {
+                title: "Benefits",
+                href: "/employee/applications/benefits",
               },
             ],
           },
@@ -108,15 +115,14 @@ export function AppSidebar() {
             icon: Clock8,
           },
           {
-            title: "Schedule",
-            href: "/employee/schedule",
-            icon: Calendar,
-          },
-          {
             title: "Requests",
             href: "/employee/requests",
             icon: CalendarClockIcon,
             subItems: [
+              {
+                title: "All Requests",
+                href: "/employee/requests/all",
+              },
               {
                 title: "Leave",
                 href: "/employee/requests/leave",
@@ -138,58 +144,30 @@ export function AppSidebar() {
             isDivider: true,
           },
           {
+            title: "Job Listings",
+            href: "/employee/jobs",
+            icon: Briefcase,
+          },
+          
+          {
             title: "Training & Events",
             href: "/employee/training-events",
             icon: GraduationCap,
           },
           {
-            title: "Careers",
-            href: "/employee/career",
-            icon: Briefcase,
-          },
-          {
-            title: "My Applications",
-            href: "/employee/applications",
-            icon: PenLine,
-            subItems: [
-              {
-                title: "Benefits",
-                href: "/employee/applications/benefits",
-              },
-              {
-                title: "Jobs",
-                href: "/employee/applications/jobs",
-              },
-              {
-                title: "Trainings & Events",
-                href: "/employee/applications/training",
-              }, 
-            ],
-          },
-          {
-            title: "Performance & Feedback",
-            href: "#performance-divider",
+            title: "Feedback & Complaints",
+            href: "#feedback-divider",
             icon: LayoutDashboard,
             isDivider: true,
           },
           {
-            title: "Performance Evaluation",
-            href: "/employee/performance/evaluation",
-            icon: BarChart2,
-          },
-          {
-            title: "Improvement Plan",
-            href: "/employee/performance/improvement",
-            icon: Target,
-          },
-          {
             title: "Feedbacks & Complaints",
-            href: "/employee/performance/feedbacks",
+            href: "/employee/feedbacks",
             icon: MessageSquare,
           },
           {
-            title: "Sanction Reports",
-            href: "/employee/performance/sanction-reports",
+            title: "All Sanction Reports",
+            href: "/employee/all-sanction-reports",
             icon: AlertTriangle,
           },
         ]

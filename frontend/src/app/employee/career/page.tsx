@@ -16,7 +16,7 @@ export default function CareerPage() {
       try {
         const token = authService.getToken()
         if (!token) {
-          router.push("/login")
+          router.push("/")
           return
         }
 

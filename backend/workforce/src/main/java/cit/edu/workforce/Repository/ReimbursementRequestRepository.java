@@ -1,6 +1,5 @@
 package cit.edu.workforce.Repository;
 
-import cit.edu.workforce.Entity.BenefitPlanEntity;
 import cit.edu.workforce.Entity.EmployeeEntity;
 import cit.edu.workforce.Entity.ReimbursementRequestEntity;
 import cit.edu.workforce.Entity.UserAccountEntity;
@@ -30,16 +29,6 @@ public interface ReimbursementRequestRepository extends JpaRepository<Reimbursem
      * Find paginated reimbursement requests for a specific employee
      */
     Page<ReimbursementRequestEntity> findByEmployee(EmployeeEntity employee, Pageable pageable);
-    
-    /**
-     * Find all reimbursement requests for a specific benefit plan
-     */
-    List<ReimbursementRequestEntity> findByBenefitPlan(BenefitPlanEntity benefitPlan);
-    
-    /**
-     * Find paginated reimbursement requests for a specific benefit plan
-     */
-    Page<ReimbursementRequestEntity> findByBenefitPlan(BenefitPlanEntity benefitPlan, Pageable pageable);
     
     /**
      * Find reimbursement requests by status (PENDING, APPROVED, REJECTED)

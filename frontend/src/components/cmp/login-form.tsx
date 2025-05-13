@@ -17,7 +17,6 @@ export default function MicrosoftLoginForm() {
     try {
       await authService.loginWithMicrosoft();
     } catch (error) {
-      console.error("Authentication error:", error);
       setIsLoading(false);
     }
   };

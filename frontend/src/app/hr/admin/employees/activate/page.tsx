@@ -279,7 +279,6 @@ export default function ActivateEmployeesPage() {
         isActive: emp.isActive
       }))
 
-      console.log('Processed Employees:', processedEmployees);
       
       setEmployees(processedEmployees)
       setTotalPages(Math.ceil(processedEmployees.length / itemsPerPage))
@@ -428,7 +427,6 @@ export default function ActivateEmployeesPage() {
         isActive: emp.isActive
       }))
 
-      console.log('Processed Employees:', processedEmployees);
       
       setEmployees(processedEmployees)
       setTotalPages(Math.ceil(processedEmployees.length / itemsPerPage))
@@ -544,7 +542,6 @@ export default function ActivateEmployeesPage() {
         isActive: emp.isActive
       }))
 
-      console.log('Processed Employees:', processedEmployees);
       
       setEmployees(processedEmployees);
       setTotalPages(Math.ceil(processedEmployees.length / itemsPerPage));
@@ -1095,8 +1092,6 @@ export default function ActivateEmployeesPage() {
         status: emp.status || false,
         employmentStatus: emp.employmentStatus || "INACTIVE"
       }))
-
-      console.log('Processed Employees:', processedEmployees);
       
       setEmployees(processedEmployees);
       setTotalPages(Math.ceil(processedEmployees.length / itemsPerPage));

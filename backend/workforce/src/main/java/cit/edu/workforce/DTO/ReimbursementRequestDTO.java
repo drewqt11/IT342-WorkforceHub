@@ -20,13 +20,11 @@ public class ReimbursementRequestDTO {
     private String reimbursementId;
     private String employeeId;
     private String employeeName;
-    private String planId;
-    private String planName;
-    private String planType;
     private LocalDate requestDate;
     private LocalDate expenseDate;
     private BigDecimal amountRequested;
-    private String documentPath;
+    private byte[] receiptImage1;
+    private byte[] receiptImage2;
     private String reason;
     private String status;
     private String reviewedById;

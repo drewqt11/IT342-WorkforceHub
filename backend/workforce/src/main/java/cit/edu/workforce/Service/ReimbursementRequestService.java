@@ -1,11 +1,9 @@
 package cit.edu.workforce.Service;
 
 import cit.edu.workforce.DTO.ReimbursementRequestDTO;
-import cit.edu.workforce.Entity.BenefitPlanEntity;
 import cit.edu.workforce.Entity.EmployeeEntity;
 import cit.edu.workforce.Entity.ReimbursementRequestEntity;
 import cit.edu.workforce.Entity.UserAccountEntity;
-import cit.edu.workforce.Repository.BenefitPlanRepository;
 import cit.edu.workforce.Repository.EmployeeRepository;
 import cit.edu.workforce.Repository.ReimbursementRequestRepository;
 import cit.edu.workforce.Repository.UserAccountRepository;
@@ -29,24 +27,21 @@ import java.util.stream.Collectors;
 /**
  * ReimbursementRequestService - Service for managing reimbursement requests
  * New file: This service provides methods for creating, reading, updating, and managing
- * reimbursement requests for employee benefits.
+ * reimbursement requests for employees.
  */
 @Service
 public class ReimbursementRequestService {
 
     private final ReimbursementRequestRepository reimbursementRequestRepository;
-    private final BenefitPlanRepository benefitPlanRepository;
     private final EmployeeRepository employeeRepository;
     private final UserAccountRepository userAccountRepository;
 
     @Autowired
     public ReimbursementRequestService(
             ReimbursementRequestRepository reimbursementRequestRepository,
-            BenefitPlanRepository benefitPlanRepository,
             EmployeeRepository employeeRepository,
             UserAccountRepository userAccountRepository) {
         this.reimbursementRequestRepository = reimbursementRequestRepository;
-        this.benefitPlanRepository = benefitPlanRepository;
         this.employeeRepository = employeeRepository;
         this.userAccountRepository = userAccountRepository;
     }
@@ -149,23 +144,14 @@ public class ReimbursementRequestService {
         validateReimbursementRequest(reimbursementRequestDTO);
         
         EmployeeEntity employee = getCurrentEmployee();
-        BenefitPlanEntity benefitPlan = benefitPlanRepository.findById(reimbursementRequestDTO.getPlanId())
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Benefit plan not found with ID: " + reimbursementRequestDTO.getPlanId()));
-
-        // Check if the benefit plan is active
-        if (!benefitPlan.isActive()) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "Cannot submit reimbursement for an inactive benefit plan");
-        }
 
         ReimbursementRequestEntity request = new ReimbursementRequestEntity();
         request.setEmployee(employee);
-        request.setBenefitPlan(benefitPlan);
         request.setRequestDate(LocalDate.now());
         request.setExpenseDate(reimbursementRequestDTO.getExpenseDate());
         request.setAmountRequested(reimbursementRequestDTO.getAmountRequested());
-        request.setDocumentPath(reimbursementRequestDTO.getDocumentPath());
+        request.setReceiptImage1(reimbursementRequestDTO.getReceiptImage1());
+        request.setReceiptImage2(reimbursementRequestDTO.getReceiptImage2());
         request.setReason(reimbursementRequestDTO.getReason());
         request.setStatus("PENDING");
 
@@ -190,23 +176,13 @@ public class ReimbursementRequestService {
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Employee not found with ID: " + employeeId));
 
-        BenefitPlanEntity benefitPlan = benefitPlanRepository.findById(reimbursementRequestDTO.getPlanId())
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Benefit plan not found with ID: " + reimbursementRequestDTO.getPlanId()));
-
-        // Check if the benefit plan is active
-        if (!benefitPlan.isActive()) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "Cannot submit reimbursement for an inactive benefit plan");
-        }
-
         ReimbursementRequestEntity request = new ReimbursementRequestEntity();
         request.setEmployee(employee);
-        request.setBenefitPlan(benefitPlan);
         request.setRequestDate(LocalDate.now());
         request.setExpenseDate(reimbursementRequestDTO.getExpenseDate());
         request.setAmountRequested(reimbursementRequestDTO.getAmountRequested());
-        request.setDocumentPath(reimbursementRequestDTO.getDocumentPath());
+        request.setReceiptImage1(reimbursementRequestDTO.getReceiptImage1());
+        request.setReceiptImage2(reimbursementRequestDTO.getReceiptImage2());
         request.setReason(reimbursementRequestDTO.getReason());
         request.setStatus("PENDING");
 
@@ -250,8 +226,12 @@ public class ReimbursementRequestService {
             request.setAmountRequested(reimbursementRequestDTO.getAmountRequested());
         }
         
-        if (reimbursementRequestDTO.getDocumentPath() != null) {
-            request.setDocumentPath(reimbursementRequestDTO.getDocumentPath());
+        if (reimbursementRequestDTO.getReceiptImage1() != null) {
+            request.setReceiptImage1(reimbursementRequestDTO.getReceiptImage1());
+        }
+        
+        if (reimbursementRequestDTO.getReceiptImage2() != null) {
+            request.setReceiptImage2(reimbursementRequestDTO.getReceiptImage2());
         }
         
         if (reimbursementRequestDTO.getReason() != null && !reimbursementRequestDTO.getReason().trim().isEmpty()) {
@@ -386,10 +366,6 @@ public class ReimbursementRequestService {
      * @param reimbursementRequestDTO Reimbursement request to validate
      */
     private void validateReimbursementRequest(ReimbursementRequestDTO reimbursementRequestDTO) {
-        if (reimbursementRequestDTO.getPlanId() == null || reimbursementRequestDTO.getPlanId().trim().isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Benefit plan ID is required");
-        }
-        
         if (reimbursementRequestDTO.getExpenseDate() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Expense date is required");
         }
@@ -408,6 +384,10 @@ public class ReimbursementRequestService {
         
         if (reimbursementRequestDTO.getReason() == null || reimbursementRequestDTO.getReason().trim().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Reason is required");
+        }
+
+        if (reimbursementRequestDTO.getReceiptImage1() == null || reimbursementRequestDTO.getReceiptImage1().length == 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "At least one receipt image is required");
         }
     }
 
@@ -470,19 +450,17 @@ public class ReimbursementRequestService {
         dto.setReimbursementId(request.getReimbursementId());
         dto.setEmployeeId(request.getEmployee().getEmployeeId());
         dto.setEmployeeName(request.getEmployee().getFirstName() + " " + request.getEmployee().getLastName());
-        dto.setPlanId(request.getBenefitPlan().getPlanId());
-        dto.setPlanName(request.getBenefitPlan().getPlanName());
-        dto.setPlanType(request.getBenefitPlan().getPlanType());
         dto.setRequestDate(request.getRequestDate());
         dto.setExpenseDate(request.getExpenseDate());
         dto.setAmountRequested(request.getAmountRequested());
-        dto.setDocumentPath(request.getDocumentPath());
+        dto.setReceiptImage1(request.getReceiptImage1());
+        dto.setReceiptImage2(request.getReceiptImage2());
         dto.setReason(request.getReason());
         dto.setStatus(request.getStatus());
         
         if (request.getReviewedBy() != null) {
             dto.setReviewedById(request.getReviewedBy().getUserId());
-            dto.setReviewedByName(request.getReviewedBy().getEmailAddress()); // Use email if no name available
+            dto.setReviewedByName(request.getReviewedBy().getEmailAddress());
         }
         
         dto.setReviewedAt(request.getReviewedAt());

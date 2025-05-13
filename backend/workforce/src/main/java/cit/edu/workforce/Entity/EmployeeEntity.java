@@ -9,6 +9,7 @@ import org.hibernate.annotations.GenericGenerator;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
 
 @Entity
 @Table(name = "employee")
@@ -16,6 +17,8 @@ import java.time.LocalTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class EmployeeEntity {
+
+    private static final ZoneId ZONE_ID = ZoneId.of("Asia/Manila");
 
     @Id
     @GeneratedValue(generator = "custom-employee-id")
@@ -92,6 +95,6 @@ public class EmployeeEntity {
 
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
+        createdAt = LocalDateTime.now(ZONE_ID);
     }
 }

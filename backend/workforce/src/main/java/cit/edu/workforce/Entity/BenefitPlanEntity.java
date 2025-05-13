@@ -56,10 +56,6 @@ public class BenefitPlanEntity {
     // New relationship added: Benefit Plan has many Benefit Enrollments
     @OneToMany(mappedBy = "benefitPlan", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<BenefitEnrollmentEntity> enrollments = new ArrayList<>();
-    
-    // New relationship added: Benefit Plan has many Reimbursement Requests
-    @OneToMany(mappedBy = "benefitPlan", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ReimbursementRequestEntity> reimbursementRequests = new ArrayList<>();
 
     @PrePersist
     protected void onCreate() {

@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: 'http://localhost:8081/api/:path*',
+        destination: 'https://java-app-6sj5.onrender.com/api/:path*',
       },
     ];
   },

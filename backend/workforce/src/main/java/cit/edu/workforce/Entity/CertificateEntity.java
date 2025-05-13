@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 /**
  * CertificateEntity - Represents a certificate uploaded by an employee for a training or event
@@ -19,6 +20,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CertificateEntity {
+
+    private static final ZoneId ZONE_ID = ZoneId.of("Asia/Manila");
 
     @Id
     @GeneratedValue(generator = "custom-certificate-id")
@@ -53,7 +56,7 @@ public class CertificateEntity {
     
     @PrePersist
     protected void onCreate() {
-        uploadedAt = LocalDateTime.now();
+        uploadedAt = LocalDateTime.now(ZONE_ID);
         if (status == null) {
             status = "Pending";
         }

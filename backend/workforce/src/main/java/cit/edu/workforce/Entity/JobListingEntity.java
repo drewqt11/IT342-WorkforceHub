@@ -1,5 +1,7 @@
 package cit.edu.workforce.Entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -54,10 +56,12 @@ public class JobListingEntity {
     // New relationship added: Job listing belongs to a department
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "department_id")
+    @JsonBackReference("department-jobs")
     private DepartmentEntity department;
     
     // New relationship added: Job listing has many application records
     @OneToMany(mappedBy = "jobListing", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference("job-applications")
     private List<ApplicationRecordEntity> applications = new ArrayList<>();
     
     // Set default values

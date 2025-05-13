@@ -178,4 +178,22 @@ public class FeedbackComplaintController {
 
         return ResponseEntity.ok(feedbackComplaintService.getFeedbackComplaintsByCategory(category, pageable));
     }
+
+    /**
+     * Get all feedback/complaints (HR/Admin only)
+     */
+    @GetMapping("/hr/feedback/all")
+    @Operation(summary = "Get all feedback", description = "Get all paginated feedback and complaints")
+    @PreAuthorize("hasAnyRole('ROLE_HR', 'ROLE_ADMIN')")
+    public ResponseEntity<Page<FeedbackComplaintDTO>> getAllFeedbackComplaints(
+            @Parameter(description = "Page number (0-based)") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Page size") @RequestParam(defaultValue = "10") int size,
+            @Parameter(description = "Sort field") @RequestParam(defaultValue = "submittedAt") String sortBy,
+            @Parameter(description = "Sort direction") @RequestParam(defaultValue = "desc") String direction) {
+
+        Sort sort = "desc".equalsIgnoreCase(direction) ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        return ResponseEntity.ok(feedbackComplaintService.getAllFeedbackComplaints(pageable));
+    }
 } 

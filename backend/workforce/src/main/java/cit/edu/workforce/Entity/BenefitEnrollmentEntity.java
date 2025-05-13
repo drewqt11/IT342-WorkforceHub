@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,6 +22,8 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class BenefitEnrollmentEntity {
+
+    private static final ZoneId ZONE_ID = ZoneId.of("Asia/Manila");
 
     @Id
     @GeneratedValue(generator = "custom-benefit-enrollment-id")
@@ -54,7 +57,7 @@ public class BenefitEnrollmentEntity {
     @PrePersist
     protected void onCreate() {
         if (enrollmentDate == null) {
-            enrollmentDate = LocalDate.now();
+            enrollmentDate = LocalDate.now(ZONE_ID);
         }
         if (status == null || status.isEmpty()) {
             status = "Active";

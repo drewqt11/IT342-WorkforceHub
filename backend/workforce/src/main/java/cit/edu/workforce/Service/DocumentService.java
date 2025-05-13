@@ -1,5 +1,6 @@
 package cit.edu.workforce.Service;
 
+import cit.edu.workforce.DTO.DocumentDTO;
 import cit.edu.workforce.Entity.DocumentEntity;
 import cit.edu.workforce.Entity.EmployeeEntity;
 import cit.edu.workforce.Repository.DocumentRepository;
@@ -14,11 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -53,29 +50,13 @@ public class DocumentService {
         EmployeeEntity employee = employeeRepository.findById(employeeId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee not found"));
 
-        // Create directory if it doesn't exist
-        File directory = new File(uploadDir + "/" + employeeId);
-        if (!directory.exists()) {
-            directory.mkdirs();
-        }
-
         try {
-            // Generate a unique filename
-            String originalFilename = file.getOriginalFilename();
-            String fileExtension = originalFilename != null && originalFilename.contains(".") ?
-                originalFilename.substring(originalFilename.lastIndexOf('.')) : "";
-            String uniqueFilename = UUID.randomUUID() + fileExtension;
-            String filePath = uploadDir + "/" + employeeId + "/" + uniqueFilename;
-
-            // Save file to disk
-            Path path = Paths.get(filePath);
-            Files.write(path, file.getBytes());
-
             // Save document metadata to database
             DocumentEntity document = new DocumentEntity();
             document.setDocumentType(documentType);
-            document.setFilePath(filePath);
-            document.setFileName(originalFilename);
+            document.setFileName(file.getOriginalFilename());
+            document.setFileType(file.getContentType());
+            document.setFileContent(file.getBytes());
             document.setStatus("PENDING");
             document.setUploadedAt(LocalDateTime.now());
             document.setEmployee(employee);
@@ -181,5 +162,57 @@ public class DocumentService {
             .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_HR"));
 
         return isOwner || isAdmin;
+    }
+
+    /**
+     * Get document content by ID
+     */
+    @Transactional(readOnly = true)
+    public byte[] getDocumentContent(String documentId) {
+        DocumentEntity document = documentRepository.findById(documentId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Document not found"));
+        return document.getFileContent();
+    }
+
+    /**
+     * Replace an existing document with a new one
+     *
+     * @param documentId ID of the document to replace
+     * @param file New file to replace the existing document
+     * @return The updated DocumentEntity
+     */
+    @Transactional
+    public DocumentEntity replaceDocument(String documentId, MultipartFile file) {
+        DocumentEntity document = documentRepository.findById(documentId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Document not found"));
+
+        try {
+            // Update document metadata
+            document.setFileName(file.getOriginalFilename());
+            document.setFileType(file.getContentType());
+            document.setFileContent(file.getBytes());
+            document.setStatus("PENDING"); // Reset status to pending for review
+            document.setUploadedAt(LocalDateTime.now());
+            document.setApprovedAt(null); // Clear approval timestamp
+
+            return documentRepository.save(document);
+        } catch (IOException e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to replace document: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Convert DocumentEntity to DocumentDTO
+     */
+    public DocumentDTO convertToDTO(DocumentEntity document) {
+        return new DocumentDTO(
+            document.getDocumentId(),
+            document.getDocumentType(),
+            document.getFileName(),
+            document.getStatus(),
+            document.getUploadedAt(),
+            document.getApprovedAt(),
+            document.getEmployee().getEmployeeId()
+        );
     }
 }

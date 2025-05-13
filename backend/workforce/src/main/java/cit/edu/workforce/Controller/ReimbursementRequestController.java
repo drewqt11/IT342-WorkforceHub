@@ -14,10 +14,15 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.io.IOException;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -90,14 +95,34 @@ public class ReimbursementRequestController {
      * Create a new reimbursement request for the current employee
      * Endpoint accessible to all authenticated users
      */
-    @PostMapping("/employee/reimbursement-requests")
+    @PostMapping(value = "/employee/reimbursement-requests", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Create reimbursement request", description = "Create a new reimbursement request for the current employee")
     @PreAuthorize("hasAnyRole('ROLE_EMPLOYEE', 'ROLE_HR', 'ROLE_ADMIN')")
     public ResponseEntity<ReimbursementRequestDTO> createReimbursementRequest(
-            @Valid @RequestBody ReimbursementRequestDTO reimbursementRequestDTO) {
-        return new ResponseEntity<>(
-                reimbursementRequestService.createReimbursementRequest(reimbursementRequestDTO),
-                HttpStatus.CREATED);
+            @RequestParam("expenseDate") String expenseDate,
+            @RequestParam("amountRequested") String amountRequested,
+            @RequestParam("reason") String reason,
+            @RequestParam(value = "receiptImage1", required = true) MultipartFile receiptImage1,
+            @RequestParam(value = "receiptImage2", required = false) MultipartFile receiptImage2) {
+        
+        try {
+            ReimbursementRequestDTO dto = new ReimbursementRequestDTO();
+            dto.setExpenseDate(LocalDate.parse(expenseDate));
+            dto.setAmountRequested(new BigDecimal(amountRequested));
+            dto.setReason(reason);
+            dto.setReceiptImage1(receiptImage1.getBytes());
+            
+            if (receiptImage2 != null && !receiptImage2.isEmpty()) {
+                dto.setReceiptImage2(receiptImage2.getBytes());
+            }
+
+            return new ResponseEntity<>(
+                    reimbursementRequestService.createReimbursementRequest(dto),
+                    HttpStatus.CREATED);
+        } catch (IOException e) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "Failed to process receipt images: " + e.getMessage());
+        }
     }
 
     /**

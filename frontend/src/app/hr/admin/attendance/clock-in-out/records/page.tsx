@@ -595,8 +595,7 @@ export default function AttendanceRecordsPage() {
                                 {record.employeeName}
                               </div>
                               <div className="text-sm text-[#6B7280] dark:text-[#9CA3AF]">
-                                {employeeProfiles[record.employeeId]?.email ||
-                                  record.employeeEmail}
+                                {record.employeeEmail}
                               </div>
                             </div>
                           </div>

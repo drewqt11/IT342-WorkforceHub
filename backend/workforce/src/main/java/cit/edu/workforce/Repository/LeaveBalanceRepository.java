@@ -1,6 +1,5 @@
 package cit.edu.workforce.Repository;
 
-import cit.edu.workforce.Entity.EmployeeEntity;
 import cit.edu.workforce.Entity.LeaveBalanceEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -9,24 +8,23 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * LeaveBalanceRepository - Repository for leave balances
- * New file: Provides methods to access leave balance data
+ * Repository for managing leave balance data
  */
 @Repository
 public interface LeaveBalanceRepository extends JpaRepository<LeaveBalanceEntity, String> {
     
     /**
-     * Find all leave balances for an employee
+     * Find all leave balances for a specific employee
      */
-    List<LeaveBalanceEntity> findByEmployee(EmployeeEntity employee);
+    List<LeaveBalanceEntity> findByEmployeeEmployeeId(String employeeId);
     
     /**
-     * Find leave balance for an employee and leave type
+     * Find a specific leave balance for an employee by leave type
      */
-    Optional<LeaveBalanceEntity> findByEmployeeAndLeaveType(EmployeeEntity employee, String leaveType);
+    Optional<LeaveBalanceEntity> findByEmployeeEmployeeIdAndLeaveType(String employeeId, String leaveType);
     
     /**
-     * Check if a leave balance exists for an employee and leave type
+     * Delete all leave balances for a specific employee
      */
-    boolean existsByEmployeeAndLeaveType(EmployeeEntity employee, String leaveType);
+    void deleteByEmployeeEmployeeId(String employeeId);
 } 

@@ -58,7 +58,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: "Job ID is required" }, { status: 400 });
     }
     const body = await request.json();
-    console.log('PUT job title body:', body);
     const { jobName, jobDescription, payGrade, departmentId } = body;
     if (!jobName || !departmentId) {
       return NextResponse.json({ error: "Job name and departmentId are required" }, { status: 400 });
@@ -67,7 +66,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     let updateUrl = `${process.env.NEXT_PUBLIC_API_URL}/hr/job-titles/${jobId}?jobName=${encodeURIComponent(jobName)}&departmentId=${encodeURIComponent(departmentId)}`;
     if (jobDescription) updateUrl += `&jobDescription=${encodeURIComponent(jobDescription)}`;
     if (payGrade) updateUrl += `&payGrade=${encodeURIComponent(payGrade)}`;
-    console.log('PUT job title backend URL:', updateUrl);
     const response = await fetch(updateUrl, {
       method: "PUT",
       headers: { Authorization: authHeader },

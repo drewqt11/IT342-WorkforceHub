@@ -53,6 +53,7 @@ import {
 } from "@/components/ui/tooltip"
 
 interface Employee {
+ 
   employeeId: string
   idNumber: string
   firstName: string
@@ -75,10 +76,10 @@ interface Employee {
   isActive: boolean
   userId: string
   lastLogin: string
-  workTimeIn: string
-  workTimeOut: string
   roleId: string
   roleName: string
+  workTimeInSched: string
+  workTimeOutSched: string
 }
 
 interface Department {
@@ -86,6 +87,25 @@ interface Department {
   departmentName: string
   description?: string
 }
+
+// Add helper function for time formatting
+const formatTimeTo12Hour = (timeString: string | null | undefined): string => {
+  if (!timeString || timeString === "Not set") return "Not set";
+  
+  try {
+    // Parse the time string (assuming format like "HH:mm:ss" or "HH:mm")
+    const [hours, minutes] = timeString.split(':').map(Number);
+    
+    // Convert to 12-hour format
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const hours12 = hours % 12 || 12;
+    
+    // Format with leading zeros for minutes
+    return `${hours12}:${minutes.toString().padStart(2, '0')} ${period}`;
+  } catch (error) {
+    return "Invalid time";
+  }
+};
 
 export default function AllEmployeesPage() {
   const router = useRouter()
@@ -131,7 +151,6 @@ export default function AllEmployeesPage() {
 
         try {
           const userData = await authService.getOAuth2UserInfo()
-          console.log('OAuth2 User Info:', userData)
           setUserAccount({
             ...data,
             userId: userData.userId || "N/A",
@@ -141,7 +160,6 @@ export default function AllEmployeesPage() {
             isActive: data.status
           })
         } catch (userErr) {
-          console.error("Error fetching OAuth2 user info:", userErr)
           if (data) {
             setUserAccount({
               ...data,
@@ -154,7 +172,6 @@ export default function AllEmployeesPage() {
           }
         }
       } catch (err) {
-        console.error("Error fetching profile:", err)
         if (err instanceof Error) {
           if (err.message.includes("Network error")) {
             setError("Unable to connect to the server. Please check your internet connection and try again.")
@@ -234,7 +251,9 @@ export default function AllEmployeesPage() {
             createdAt: emp.createdAt ? new Date(emp.createdAt).toLocaleString() : "Not provided",
             isActive: emp.status || false,
             lastLogin: emp.lastLogin ? new Date(emp.lastLogin).toLocaleString() : "Not available",
-            userId: emp.userId || emp.employeeId
+            userId: emp.userId || emp.employeeId,
+            workTimeInSched: emp.workTimeInSched || "Not set",
+            workTimeOutSched: emp.workTimeOutSched || "Not set"
           }
         })
       )
@@ -242,10 +261,6 @@ export default function AllEmployeesPage() {
       // Filter out null values but keep all employees
       const validEmployees = processedEmployees.filter(emp => emp !== null) as Employee[]
       
-      console.log('Processed Employees:', validEmployees);
-      console.log('Total Employees:', validEmployees.length);
-      console.log('Active Employees:', validEmployees.filter(emp => emp.status).length);
-      console.log('Inactive Employees:', validEmployees.filter(emp => !emp.status).length);
       
       // Set employees for display (active only)
       const activeEmployeesForDisplay = validEmployees.filter(emp => emp.status)
@@ -264,7 +279,6 @@ export default function AllEmployeesPage() {
         total: activeEmployeesForDisplay.length
       })
     } catch (error) {
-      console.error("Error fetching employees:", error)
       toast.error("Failed to load employees. Please try again.")
     } finally {
       setLoading(false)
@@ -292,7 +306,6 @@ export default function AllEmployeesPage() {
       const data = await response.json()
       setDepartments(data)
     } catch (error) {
-      console.error("Error fetching departments:", error)
       toast.error("Failed to load departments. Please try again.")
     }
   }
@@ -381,7 +394,6 @@ export default function AllEmployeesPage() {
         isActive: employee.status
       });
     } catch (error) {
-      console.error("Error fetching profile:", error);
       toast.error("Failed to load profile data");
     } finally {
       setIsProfileLoading(false);
@@ -461,7 +473,6 @@ export default function AllEmployeesPage() {
       // Refresh the employee list after the change
       await fetchEmployees();
     } catch (error) {
-      console.error(`Error ${action}ing account:`, error);
       toast.error(error instanceof Error ? error.message : `Failed to ${action} account`);
     } finally {
       setIsStatusUpdating(false);
@@ -913,7 +924,6 @@ export default function AllEmployeesPage() {
                     setSelectedDepartmentId("")
                     setSelectedEmployeeForDepartment(null)
                   } catch (error) {
-                    console.error("Error updating department:", error)
                     toast.error(error instanceof Error ? error.message : "Failed to update department")
                   } finally {
                     setProcessingDepartment(null)
@@ -1265,6 +1275,23 @@ export default function AllEmployeesPage() {
                       <div>
                         <p className="text-xs text-[#6B7280] dark:text-[#9CA3AF]">Manager</p>
                         <p className="text-sm font-medium text-[#1F2937] dark:text-white">Not assigned</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-[#6B7280] dark:text-[#9CA3AF]">Work Schedule</p>
+                        <div className="flex items-center gap-4">
+                          <div>
+                            <p className="text-xs text-[#6B7280] dark:text-[#9CA3AF]">Time In</p>
+                            <p className="text-sm font-medium text-[#1F2937] dark:text-white">
+                              {formatTimeTo12Hour(selectedEmployeeProfile.workTimeInSched)}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-[#6B7280] dark:text-[#9CA3AF]">Time Out</p>
+                            <p className="text-sm font-medium text-[#1F2937] dark:text-white">
+                              {formatTimeTo12Hour(selectedEmployeeProfile.workTimeOutSched)}
+                            </p>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>

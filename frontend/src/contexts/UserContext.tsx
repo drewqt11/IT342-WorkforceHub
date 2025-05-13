@@ -3,51 +3,62 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { authService } from "@/lib/auth";
 
+export interface User {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+  status: boolean;
+  idNumber?: string;
+}
+
 interface UserContextType {
-  userStatus: string;
-  isLoading: boolean;
-  error: string | null;
-  refreshUserStatus: () => Promise<void>;
+  user: User | null;
+  setUser: (user: User | null) => void;
+  loading: boolean;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
-  const [userStatus, setUserStatus] = useState<string>("");
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchUserStatus = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const profile = await authService.getEmployeeProfile();
-      setUserStatus(profile.status === true ? "Active" : "Inactive");
-    } catch (err) {
-      setError("Failed to fetch user status");
-      console.error("Error fetching user status:", err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchUserStatus();
+    const fetchUser = async () => {
+      try {
+        // Check if we have an authentication token first
+        const token = authService.getToken();
+        if (!token) {
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+
+        const profile = await authService.getEmployeeProfile();
+        setUser({
+          id: profile.id,
+          email: profile.email,
+          firstName: profile.firstName,
+          lastName: profile.lastName,
+          role: profile.role,
+          status: profile.status,
+          idNumber: profile.idNumber,
+        });
+      } catch (error) {
+        console.error("Error fetching user:", error);
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUser();
   }, []);
 
-  const refreshUserStatus = async () => {
-    await fetchUserStatus();
-  };
-
   return (
-    <UserContext.Provider
-      value={{
-        userStatus,
-        isLoading,
-        error,
-        refreshUserStatus,
-      }}
-    >
+    <UserContext.Provider value={{ user, setUser, loading }}>
       {children}
     </UserContext.Provider>
   );

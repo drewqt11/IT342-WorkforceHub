@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 /**
  * FeedbackComplaintEntity - Represents employee feedback, complaints, or concerns
@@ -19,6 +20,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class FeedbackComplaintEntity {
+
+    private static final ZoneId ZONE_ID = ZoneId.of("Asia/Manila");
 
     @Id
     @GeneratedValue(generator = "custom-feedback-id")
@@ -59,7 +62,7 @@ public class FeedbackComplaintEntity {
 
     @PrePersist
     protected void onCreate() {
-        submittedAt = LocalDateTime.now();
+        submittedAt = LocalDateTime.now(ZONE_ID);
         if (status == null) {
             status = "Open";
         }

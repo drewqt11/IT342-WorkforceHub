@@ -1,5 +1,6 @@
 package cit.edu.workforce.Entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -37,11 +38,13 @@ public class ApplicationRecordEntity {
     // New relationship added: Application belongs to an applicant
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "applicant_id", nullable = false)
+    @JsonBackReference("applicant-applications")
     private ApplicantEntity applicant;
     
     // New relationship added: Application is for a job listing
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "job_id", nullable = false)
+    @JsonBackReference("job-applications")
     private JobListingEntity jobListing;
     
     // New relationship added: Application is reviewed by a user

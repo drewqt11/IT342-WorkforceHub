@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 /**
  * ReimbursementRequestEntity - Represents an employee's request for reimbursement
  * New file: This entity stores information about employee reimbursement requests,
- * including the related benefit plan, amount requested, approval status, and documentation.
+ * including the amount requested, approval status, and documentation.
  */
 @Entity
 @Table(name = "reimbursement_request")
@@ -28,15 +28,9 @@ public class ReimbursementRequestEntity {
     @Column(name = "reimbursement_id", updatable = false, nullable = false, length = 16)
     private String reimbursementId;
 
-    // New relationship added: Reimbursement Request belongs to an Employee
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "emp_id", nullable = false)
     private EmployeeEntity employee;
-
-    // New relationship added: Reimbursement Request belongs to a Benefit Plan
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "plan_id", nullable = false)
-    private BenefitPlanEntity benefitPlan;
 
     @Column(name = "request_date", nullable = false)
     private LocalDate requestDate;
@@ -47,8 +41,11 @@ public class ReimbursementRequestEntity {
     @Column(name = "amount_requested", precision = 10, scale = 2, nullable = false)
     private BigDecimal amountRequested;
 
-    @Column(name = "document_path")
-    private String documentPath;
+    @Column(name = "receipt_image1", columnDefinition = "bytea")
+    private byte[] receiptImage1;
+
+    @Column(name = "receipt_image2", columnDefinition = "bytea")
+    private byte[] receiptImage2;
 
     @Column(name = "reason", columnDefinition = "TEXT", nullable = false)
     private String reason;
@@ -56,7 +53,6 @@ public class ReimbursementRequestEntity {
     @Column(name = "status", nullable = false)
     private String status = "PENDING"; // PENDING, APPROVED, REJECTED
 
-    // New relationship added: Reimbursement Request is reviewed by a User
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reviewed_by")
     private UserAccountEntity reviewedBy;

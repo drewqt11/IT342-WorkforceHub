@@ -1,5 +1,6 @@
 package cit.edu.workforce.Entity;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -52,6 +53,7 @@ public class ApplicantEntity {
     
     // New relationship added: Applicant has many application records
     @OneToMany(mappedBy = "applicant", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference("applicant-applications")
     private List<ApplicationRecordEntity> applications = new ArrayList<>();
     
     // Set default values
